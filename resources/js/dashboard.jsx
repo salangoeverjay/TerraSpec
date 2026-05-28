@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PANABO, loadConversations } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
@@ -52,11 +52,32 @@ function relativeTime(ts) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function levelVariant(level) {
+  if (level === 'Highly Suitable')     return 'brand';
+  if (level === 'Moderately Suitable') return 'warn';
+  return 'destructive';
+}
+
 export function DashboardScreen({ go }) {
-  const total    = PANABO.parcels.length;
-  const flagged  = PANABO.parcels.filter(p => p.flag).length;
-  const avgScore = total > 0 ? Math.round(PANABO.parcels.reduce((s, p) => s + p.score, 0) / total) : 0;
-  const top5     = [...PANABO.barangayRankings].sort((a, b) => b.score - a.score).slice(0, 5);
+  const [rankings, setRankings]   = useState([]);
+  const [avgScore, setAvgScore]   = useState(null);
+  const [loading, setLoading]     = useState(true);
+
+  useEffect(() => {
+    fetch('/suitability/rankings?analysis_type=commercial')
+      .then(r => r.json())
+      .then(json => {
+        setRankings(json.data ?? []);
+        setAvgScore(json.avg_score ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const top5          = rankings.slice(0, 5);
+  const zoneUnitCount = rankings.length || 40;
+  const displayAvg    = avgScore !== null ? `${avgScore}%` : `${Math.round(PANABO.parcels.reduce((s, p) => s + p.score, 0) / (PANABO.parcels.length || 1))}%`;
+  const flagged       = PANABO.parcels.filter(p => p.flag).length;
   const activeReports = PANABO.reports.filter(r => r.status !== 'Archived').length;
 
   const recentQueries = useMemo(() => {
@@ -90,10 +111,10 @@ export function DashboardScreen({ go }) {
 
       <div className="grid grid-4" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Zone Units',        value: PANABO.zones.length, icon: 'pin', sub: `${PANABO.barangays.length} barangays` },
-          { label: 'Avg Suitability',  value: `${avgScore}%`, icon: 'chart', sub: 'MCDA weighted score' },
-          { label: 'Flagged Areas',    value: flagged,       icon: 'alert', sub: 'Env. restrictions' },
-          { label: 'Active Reports',   value: activeReports, icon: 'file',  sub: 'Pending / Draft / Final' },
+          { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: `${PANABO.barangays.length} barangays` },
+          { label: 'Avg Suitability',  value: displayAvg,     icon: 'chart', sub: 'Commercial · AHP-WLC score' },
+          { label: 'Flagged Areas',    value: flagged,        icon: 'alert', sub: 'Env. restrictions' },
+          { label: 'Active Reports',   value: activeReports,  icon: 'file',  sub: 'Pending / Draft / Final' },
         ].map(s => (
           <Card key={s.label}>
             <CardBody>
@@ -135,25 +156,31 @@ export function DashboardScreen({ go }) {
           <CardHeader>
             <div className="row-between">
               <span className="card-title">Top Suitability Scores</span>
-              <Btn sz="sm" variant="outline" onClick={() => go('suitability')}>Full Analysis</Btn>
+              <div className="row" style={{ gap: 8 }}>
+                <span className="muted" style={{ fontSize: 11 }}>Commercial</span>
+                <Btn sz="sm" variant="outline" onClick={() => go('suitability')}>Full Analysis</Btn>
+              </div>
             </div>
           </CardHeader>
           <CardBody style={{ padding: 0 }}>
-            {top5.map((p, i) => {
-              const zone = PANABO.zones.find(z => z.id === p.zone);
-              return (
-                <div key={p.barangay} className="row-between" style={{ padding: '10px 18px', borderBottom: i < 4 ? '1px solid hsl(var(--border))' : 'none' }}>
-                  <div className="row" style={{ gap: 10 }}>
-                    <span className="muted mono" style={{ fontSize: 11, width: 18, textAlign: 'right' }}>#{i+1}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500 }}>{p.barangay}</div>
-                      <div className="muted" style={{ fontSize: 11.5 }}><span style={{ color: zone?.hex }}>{p.zone}</span> · {p.flood} flood</div>
+            {loading ? (
+              <div style={{ padding: '24px 18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>Loading…</div>
+            ) : top5.length === 0 ? (
+              <div style={{ padding: '24px 18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>No data available</div>
+            ) : top5.map((row, i) => (
+              <div key={row.zone_unit_id} className="row-between" style={{ padding: '10px 18px', borderBottom: i < 4 ? '1px solid hsl(var(--border))' : 'none' }}>
+                <div className="row" style={{ gap: 10 }}>
+                  <span className="muted mono" style={{ fontSize: 11, width: 18, textAlign: 'right' }}>#{row.rank}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{row.unit_name}</div>
+                    <div className="muted" style={{ fontSize: 11.5 }}>
+                      {row.unit_type} · {row.settlement_tier.replace('_', ' ')}
                     </div>
                   </div>
-                  <Badge variant={p.score >= 75 ? 'brand' : p.score >= 50 ? 'warn' : 'destructive'}>{p.score}%</Badge>
                 </div>
-              );
-            })}
+                <Badge variant={levelVariant(row.suitability_level)}>{row.total_pct}%</Badge>
+              </div>
+            ))}
           </CardBody>
         </Card>
       </div>
