@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Icon, Logo, Btn } from './components.jsx';
+import { Icon, Logo, Btn, Inp } from './components.jsx';
 
 function LoginModal({ onSuccess, onClose }) {
   const [username, setUsername] = useState('');
@@ -92,6 +92,8 @@ function App() {
   const [role, setRole]               = useState('public');
   const [dark, setDark]               = useState(false);
   const [showLogin, setShowLogin]     = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [search, setSearch] = useState('');
 
   function go(s, props = {}) { setScreen(s); setScreenProps(props); }
 
@@ -121,7 +123,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${showSidebar ? ' mobile-sidebar-open' : ''}`}>
       {showLogin && (
         <LoginModal
           onSuccess={() => { setRole('admin'); setShowLogin(false); }}
@@ -129,15 +131,29 @@ function App() {
         />
       )}
       {/* Topbar */}
-      <header className="topbar">
-        <Logo/>
-        <div className="sep-v" style={{ height: 24, margin: '0 4px' }}/>
-        <div className="row" style={{ gap: 6 }}>
-          <Icon name="pin" size={13} style={{ color: 'hsl(var(--brand))' }}/>
-          <span className="muted" style={{ fontSize: 12.5 }}>Panabo City, Davao del Norte</span>
+      <header className="topbar" style={{ gap: 0 }}>
+        {/* Left section */}
+        <div className="row" style={{ flex: 1, gap: 12, minWidth: 0 }}>
+          <button className="btn btn-ghost btn-icon btn-sm btn-menu" onClick={() => setShowSidebar(s => !s)} style={{ marginRight: 8 }} aria-label="Toggle menu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <Logo/>
+          <div className="sep-v" style={{ height: 24 }}/>
+          <div className="row" style={{ gap: 6 }}>
+            <Icon name="pin" size={13} style={{ color: 'hsl(var(--brand))' }}/>
+            <span className="muted" style={{ fontSize: 12.5, whiteSpace: 'nowrap' }}>Panabo City, Davao del Norte</span>
+          </div>
         </div>
 
-        <div className="row" style={{ marginLeft: 'auto', gap: 8 }}>
+        {/* Center section – search (only on map screen) */}
+        <div style={{ flex: '0 0 360px', maxWidth: '36%', display: 'flex', justifyContent: 'center' }}>
+          {screen === 'map' && (
+            <Inp icon="search" placeholder="Search parcels or barangays…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
+          )}
+        </div>
+
+        {/* Right section */}
+        <div className="row" style={{ flex: 1, justifyContent: 'flex-end', gap: 8 }}>
           <div className="tabs">
             <div className={`tab${role === 'public' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setRole('public')}>Public</div>
             <div className={`tab${role === 'admin' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? setRole('public') : setShowLogin(true)}>LGU Admin</div>
@@ -154,7 +170,7 @@ function App() {
       </header>
 
       {/* Sidebar */}
-      <nav className="sidebar">
+      <nav className="sidebar" onClick={() => { /* keep clicks inside */ }}>
         {sections.map(sec => {
           const items = NAV.filter(n => n.section === sec && (!n.adminOnly || role === 'admin'));
           if (!items.length) return null;
@@ -162,7 +178,7 @@ function App() {
             <div key={sec}>
               <div className="nav-section">{sectionLabels[sec]}</div>
               {items.map(n => (
-                <div key={n.id} className={`nav-item${screen === n.id ? ' active' : ''}`} onClick={() => go(n.id)}>
+                <div key={n.id} className={`nav-item${screen === n.id ? ' active' : ''}`} onClick={() => { go(n.id); setShowSidebar(false); }}>
                   <Icon name={n.icon} size={15}/>
                   <span>{n.label}</span>
                 </div>
@@ -184,9 +200,12 @@ function App() {
             </div>
           </div>
         ) : (
-          <Screen go={go} role={role} {...screenProps}/>
+          <Screen go={go} role={role} search={search} setSearch={setSearch} {...screenProps}/>
         )}
       </main>
+      {showSidebar && (
+        <div className="mobile-overlay" onClick={() => setShowSidebar(false)} />
+      )}
     </div>
   );
 }

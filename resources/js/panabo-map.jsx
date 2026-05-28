@@ -57,10 +57,7 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
               <div style={{ width: 26, height: 26, borderRadius: 7, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="bot" size={14} style={{ color: 'white' }}/>
               </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>Map AI</div>
-                <div style={{ fontSize: 10.5, color: 'hsl(var(--muted-foreground))' }}>Gemini 2.5 Flash</div>
-              </div>
+              {/* Layers panel – left; anchored from bottom so legends stay visible */}
             </div>
             <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', padding: 4, borderRadius: 5, display: 'flex' }}>
               <Icon name="x" size={14}/>
@@ -211,6 +208,19 @@ const DUMMY_FLOOD_DATA = {
   })),
 };
 
+// Fallback sample data for landslide hazard when the real file is not present
+const DUMMY_LANDSLIDE_DATA = {
+  type: 'FeatureCollection',
+  features: [
+    { box: [[125.66, 7.29], [125.68, 7.305]], hazard: 'Green' },
+    { box: [[125.695, 7.30], [125.712, 7.317]], hazard: 'Yellow' },
+  ].map(({ box: [[w, s], [e, n]], hazard }) => ({
+    type: 'Feature',
+    properties: { hazard },
+    geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] },
+  })),
+};
+
 const DUMMY_ZONES_DATA = {
   type: 'FeatureCollection',
   features: [
@@ -289,20 +299,23 @@ function LandslideLayer({ visible, hiddenLandslide }) {
     if (!ctx?.map) return;
     let mounted = true;
     const map = ctx.map;
-    fetch('/data/landslide_hazard_panabo_final.geojson')
-      .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
-      .then(data => {
-        if (!mounted) return;
-        try {
-          if (map.getSource('landslide-hazard')) { map.getSource('landslide-hazard').setData(data); return; }
-          map.addSource('landslide-hazard', { type: 'geojson', data });
-          map.addLayer({ id: 'landslide-fill', type: 'fill', source: 'landslide-hazard',
-            paint: { 'fill-color': ['match', ['get', 'hazard'], 'Green', '#16a34a', 'Yellow', '#f59e0b', '#888'], 'fill-opacity': 0.5 } });
-          map.addLayer({ id: 'landslide-line', type: 'line', source: 'landslide-hazard',
-            paint: { 'line-color': ['match', ['get', 'hazard'], 'Green', '#136c2e', 'Yellow', '#b45309', '#444'], 'line-width': 1.5 } });
-        } catch (e) { console.warn('LandslideLayer error', e); }
-      })
-      .catch(e => console.warn('Landslide load error', e));
+      fetch('/data/landslide_hazard_panabo_final.geojson')
+        .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+        .catch(() => {
+          // fallback to bundled sample data when the file is missing
+          return DUMMY_LANDSLIDE_DATA;
+        })
+        .then(data => {
+          if (!mounted) return;
+          try {
+            if (map.getSource('landslide-hazard')) { map.getSource('landslide-hazard').setData(data); return; }
+            map.addSource('landslide-hazard', { type: 'geojson', data });
+            map.addLayer({ id: 'landslide-fill', type: 'fill', source: 'landslide-hazard',
+              paint: { 'fill-color': ['match', ['get', 'hazard'], 'Green', '#16a34a', 'Yellow', '#f59e0b', '#888'], 'fill-opacity': 0.65 } });
+            map.addLayer({ id: 'landslide-line', type: 'line', source: 'landslide-hazard',
+              paint: { 'line-color': ['match', ['get', 'hazard'], 'Green', '#136c2e', 'Yellow', '#b45309', '#444'], 'line-width': 2.5 } });
+          } catch (e) { console.warn('LandslideLayer error', e); }
+        });
     return () => { mounted = false; };
   }, [ctx]);
 
@@ -367,12 +380,13 @@ function FloodLayer({ visible, hiddenFlood }) {
   return null;
 }
 
-export function MapScreen({ initial }) {
+export function MapScreen({ initial, search, setSearch }) {
   const mapRef = useRef(null);
   const [selected, setSelected] = useState(initial?.parcel || null);
-  const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [layers, setLayers] = useState({ zoning: true, reforestation: false, landslide: true, flood: false });
+
+  useEffect(() => { setShowSearch(!!search); }, [search]);
+  const [layers, setLayers] = useState({ zoning: true, reforestation: false, landslide: true, flood: true });
   const [hiddenZones, setHiddenZones] = useState(new Set());
   function toggleZone(id) { setHiddenZones(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
   const [hiddenRefoZones, setHiddenRefoZones] = useState(new Set());
@@ -472,19 +486,16 @@ export function MapScreen({ initial }) {
         </Map>
       </div>
 
-      {/* Search panel – top left */}
-      <div style={{ position: 'absolute', top: 16, left: 16, width: 320, zIndex: 10 }}>
-        <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.14)' }}>
-          <div style={{ padding: 8 }}>
-            <Inp icon="search" placeholder="Search parcels or barangays…" value={search} onChange={e => { setSearch(e.target.value); setShowSearch(!!e.target.value); }}/>
-          </div>
-          {showSearch && hasResults && (
-            <div style={{ borderTop: '1px solid hsl(var(--border))', maxHeight: 260, overflowY: 'auto' }}>
+      {/* Search results dropdown – fixed so it aligns with topbar search bar */}
+      {showSearch && hasResults && (
+        <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', width: 360, maxWidth: '50%', zIndex: 50 }}>
+          <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+            <div style={{ maxHeight: 260, overflowY: 'auto' }}>
               {filteredBarangays.length > 0 && (
                 <>
-                  <div style={{ padding: '5px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Barangays</div>
+                  <div style={{ padding: '6px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Barangays</div>
                   {filteredBarangays.map(b => (
-                    <div key={b} className="row" style={{ padding: '9px 14px', gap: 10, cursor: 'pointer' }}
+                    <div key={b} className="row" style={{ padding: '8px 14px', gap: 10, cursor: 'pointer' }}
                       onClick={() => {
                         const coords = BARANGAY_COORDS[b];
                         mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1000 });
@@ -501,9 +512,9 @@ export function MapScreen({ initial }) {
               )}
               {filteredParcels.length > 0 && (
                 <>
-                  <div style={{ padding: '5px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', borderTop: filteredBarangays.length > 0 ? '1px solid hsl(var(--border))' : 'none' }}>Parcels</div>
+                  <div style={{ padding: '6px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', borderTop: filteredBarangays.length > 0 ? '1px solid hsl(var(--border))' : 'none' }}>Parcels</div>
                   {filteredParcels.map(p => (
-                    <div key={p.id} className="row" style={{ padding: '9px 14px', gap: 10, cursor: 'pointer' }}
+                    <div key={p.id} className="row" style={{ padding: '8px 14px', gap: 10, cursor: 'pointer' }}
                       onClick={() => { setSelected(p.id); setSearch(''); setShowSearch(false); }}>
                       <Icon name="pin" size={14} style={{ color: 'hsl(var(--brand))', flexShrink: 0 }}/>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -516,17 +527,21 @@ export function MapScreen({ initial }) {
                 </>
               )}
             </div>
-          )}
-        </Card>
-        <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick filter chips – bottom center of map */}
+      <div style={{ position: 'absolute', bottom: 52, left: '50%', transform: 'translateX(-50%)', zIndex: 11 }}>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
           {['Residential','Commercial','Mangrove','Flagged'].map(t => (
             <button key={t} className="chip" style={{ background: 'hsl(var(--background))', fontSize: 12 }}>{t}</button>
           ))}
         </div>
       </div>
 
-      {/* Layers panel – left below search */}
-      <div style={{ position: 'absolute', top: 350, left: 16, width: 210, zIndex: 10 }}>
+      {/* Layers panel – left; anchored from bottom so legends stay visible */}
+      <div style={{ position: 'absolute', left: 16, bottom: 110, width: 210, zIndex: 10 }}>
         <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.12)' }}>
           <CardHeader style={{ padding: '10px 14px' }}>
             <div className="row" style={{ gap: 8 }}>
@@ -534,7 +549,7 @@ export function MapScreen({ initial }) {
               <span style={{ fontSize: 13, fontWeight: 600 }}>Layers</span>
             </div>
           </CardHeader>
-          <CardBody style={{ padding: '10px 14px' }}>
+          <CardBody style={{ padding: '10px 14px', maxHeight: '60vh', overflowY: 'auto' }}>
             <div className="stack" style={{ gap: 7, marginBottom: 12 }}>
               {[['zoning','Zoning ordinance'],['reforestation','Reforestation'],['landslide','Landslide Hazard'],['flood','Flood Hazard']].map(([k, label]) => (
                 <label key={k} className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>

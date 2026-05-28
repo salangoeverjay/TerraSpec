@@ -90,7 +90,7 @@ export function DashboardScreen({ go }) {
 
       <div className="grid grid-4" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Total Parcels',    value: total,         icon: 'pin',   sub: `${PANABO.barangays.length} barangays` },
+          { label: 'Zone Units',        value: PANABO.zones.length, icon: 'pin', sub: `${PANABO.barangays.length} barangays` },
           { label: 'Avg Suitability',  value: `${avgScore}%`, icon: 'chart', sub: 'MCDA weighted score' },
           { label: 'Flagged Areas',    value: flagged,       icon: 'alert', sub: 'Env. restrictions' },
           { label: 'Active Reports',   value: activeReports, icon: 'file',  sub: 'Pending / Draft / Final' },
