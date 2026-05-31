@@ -16,9 +16,21 @@ const TYPE_VARIANT = {
 };
 
 export function EnvironmentalScreen() {
-  const [data, setData]     = useState(null);
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(null);
+  const [error, setError]     = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  function exportReport() {
+    setExporting(true);
+    const link = document.createElement('a');
+    link.href = '/environmental/report';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => setExporting(false), 3000);
+  }
 
   useEffect(() => {
     fetch('/environmental/summary')
@@ -59,7 +71,9 @@ export function EnvironmentalScreen() {
           <h1 className="page-title">Environmental Analysis</h1>
           <p className="page-subtitle">Restrictions, flood risk, and protected area overlays for Panabo City</p>
         </div>
-        <Btn variant="outline" icon="download">Export Report</Btn>
+        <Btn variant="outline" icon="download" disabled={loading || exporting} onClick={exportReport}>
+          {exporting ? 'Generating…' : 'Export Report'}
+        </Btn>
       </div>
 
       {/* Stat cards */}

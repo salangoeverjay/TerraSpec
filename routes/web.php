@@ -11,6 +11,7 @@ Route::get('/', function () {
 });
 
 Route::get('/environmental/summary', [EnvironmentalController::class, 'summary']);
+Route::get('/environmental/report',  [EnvironmentalController::class, 'report']);
 Route::get('/reports/generate', [ReportController::class, 'generate']);
 
 Route::prefix('reforestation')->group(function () {
