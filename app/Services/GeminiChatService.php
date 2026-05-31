@@ -2,15 +2,19 @@
 
 namespace App\Services;
 
+use App\Models\SuitabilityAnalysis;
+use App\Models\ZoneUnit;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class GeminiChatService
 {
+    public function __construct(private TerraSpecContextService $context) {}
+
     public function reply(string $prompt, array $context = []): array
     {
         $apiKey = config('services.gemini.api_key');
-        $model = config('services.gemini.model', 'gemini-2.5-flash');
+        $model  = config('services.gemini.model', 'gemini-2.5-flash');
 
         if (! is_string($apiKey) || $apiKey === '') {
             throw new RuntimeException('Gemini API key is not configured.');
@@ -22,30 +26,20 @@ class GeminiChatService
             ->connectTimeout(10)
             ->timeout(30)
             ->retry([250, 500, 1000], throw: false)
-            ->withQueryParameters([
-                'key' => $apiKey,
-            ])
+            ->withQueryParameters(['key' => $apiKey])
             ->post(sprintf('/models/%s:generateContent', $model), [
                 'systemInstruction' => [
-                    'parts' => [
-                        [
-                            'text' => $this->systemPrompt(),
-                        ],
-                    ],
+                    'parts' => [['text' => $this->systemPrompt()]],
                 ],
                 'contents' => [
                     [
-                        'role' => 'user',
-                        'parts' => [
-                            [
-                                'text' => $this->buildPrompt($prompt, $context),
-                            ],
-                        ],
+                        'role'  => 'user',
+                        'parts' => [['text' => $this->buildPrompt($prompt, $context)]],
                     ],
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.2,
-                    'topP' => 0.9,
+                    'temperature'     => 0.2,
+                    'topP'            => 0.9,
                     'maxOutputTokens' => 700,
                 ],
             ]);
@@ -60,36 +54,92 @@ class GeminiChatService
             throw new RuntimeException('Gemini returned an empty response.');
         }
 
+        $normalized = $this->normalizeAnswer($answer);
+
         return [
-            'answer' => $this->normalizeAnswer($answer),
-            'model' => $model,
+            'answer'             => $normalized,
+            'model'              => $model,
+            'recommended_zones'  => $this->extractMentionedZones($normalized, $prompt),
         ];
+    }
+
+    private function extractMentionedZones(string $answer, string $prompt): array
+    {
+        $allZones = ZoneUnit::pluck('unit_name', 'zone_unit_id')->all();
+        $type     = $this->detectAnalysisType($prompt);
+
+        $mentionedIds = [];
+        foreach ($allZones as $id => $name) {
+            if (stripos($answer, $name) !== false) {
+                $mentionedIds[] = $id;
+            }
+        }
+
+        if (empty($mentionedIds)) {
+            return [];
+        }
+
+        return SuitabilityAnalysis::with('zoneUnit')
+            ->whereIn('zone_unit_id', $mentionedIds)
+            ->where('analysis_type', $type)
+            ->orderByDesc('total_score')
+            ->get()
+            ->take(5)
+            ->map(fn ($a) => [
+                'zone_unit_id'      => $a->zone_unit_id,
+                'unit_name'         => $a->zoneUnit->unit_name,
+                'unit_type'         => $a->zoneUnit->unit_type,
+                'total_pct'         => round($a->total_score * 100, 1),
+                'suitability_level' => $a->suitability_level,
+                'analysis_type'     => $type,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function detectAnalysisType(string $prompt): string
+    {
+        if (preg_match('/residen|house|home|living|dwell|neighborhood|subdivision/i', $prompt)) {
+            return 'residential';
+        }
+        if (preg_match('/industr|factory|manufactur|warehouse|logistics/i', $prompt)) {
+            return 'industrial';
+        }
+        if (preg_match('/reforest|mangrove|forest|tree.plant|plant.*tree|what.*tree|which.*tree|species.*plant|bakawan|pagatpat|nipa|molave|ipil|toog|dao/i', $prompt)) {
+            return 'reforestation';
+        }
+        return 'commercial';
     }
 
     private function systemPrompt(): string
     {
-        return <<<'PROMPT'
-You are TERRASPEC, an AI assistant for Panabo City land suitability and zoning review.
-Give concise, practical answers.
-Do not use markdown formatting or asterisks.
-Use the provided context when discussing parcel suitability, map filters, protected zones, and reforestation recommendations.
-If the user asks for legal advice, clearly state that the output is decision support only and must be verified by the City Planning and Development Office.
+        $dataContext = $this->context->build();
+
+        return <<<PROMPT
+You are TerraSpec AI, a land-use suitability assistant for Panabo City, Davao del Norte, Philippines.
+You answer questions about where to build, invest, or develop land based on AHP-WLC suitability scores.
+Give concise, practical answers. Do not use markdown formatting or asterisks.
+Always cite specific barangay names and scores when recommending locations.
+If a barangay has environmental restrictions or hazard flags, mention them as caveats.
+If the user asks for legal advice, state clearly that this is decision support only and must be verified by the City Planning and Development Office.
+
+--- PANABO CITY DATA ---
+{$dataContext}
+--- END OF DATA ---
 PROMPT;
     }
 
     private function buildPrompt(string $prompt, array $context): string
     {
-        $contextText = json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $extra = '';
+        if (! empty($context['selection'])) {
+            $extra .= "\nCurrent map selection: {$context['selection']}";
+        }
+        if (! empty($context['suitability'])) {
+            $extra .= "\nDisplayed suitability score: {$context['suitability']}%";
+        }
 
-        return trim(<<<PROMPT
-User request:
-{$prompt}
-
-Context:
-{$contextText}
-
-Respond with an actionable answer for a geospatial land suitability assistant.
-PROMPT);
+        return trim("User question: {$prompt}{$extra}");
     }
 
     private function normalizeAnswer(string $answer): string

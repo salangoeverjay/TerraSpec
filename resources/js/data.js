@@ -1,50 +1,72 @@
-export const CHAT_STORAGE_KEY = 'terraspec-chat-conversations';
+export const CHAT_STORAGE_KEY = 'terraspec-chat-conversations'; // legacy key — no longer written
+export const ADMIN_CHAT_KEY   = 'terraspec-chat-admin';
+export const GUEST_TOKEN_KEY  = 'terraspec-guest-token';
+
+export function getOrCreateGuestToken() {
+  if (typeof window === 'undefined') return 'OFFLINE';
+  try {
+    let token = localStorage.getItem(GUEST_TOKEN_KEY);
+    if (!token) {
+      const seg = () => Math.random().toString(36).slice(2, 7).toUpperCase();
+      token = `${seg()}-${seg()}`;
+      localStorage.setItem(GUEST_TOKEN_KEY, token);
+    }
+    return token;
+  } catch { return 'OFFLINE'; }
+}
+
+export function getChatStorageKey(role) {
+  if (role === 'admin') return ADMIN_CHAT_KEY;
+  return `terraspec-chat-guest-${getOrCreateGuestToken()}`;
+}
 
 // Barangay centroids for Panabo City [lng, lat]
 // OSM-verified (22): Buenavista, Cacao, Cagangohan, Consolacion, Datu Abdul Dadia,
 //   Gredu, J.P. Laurel, Katipunan, Kauswagan, Mabunao, Maduao, Malativas, Manay,
-//   Minda, New Pandan, New Visayas, San Francisco, San Nicolas, San Pedro,
-//   San Roque, San Vicente, Santo Niño, Tibungol
-// Estimated (15): remaining barangays based on relative position within the city
+//   New Pandan, New Visayas, San Francisco, San Nicolas, San Pedro,
+//   San Roque, San Vicente, Santo Nino, Tibungol
+// Estimated (18): remaining barangays based on relative position within the city
 export const BARANGAY_COORDS = {
+  'A.O. Floirendo':   [125.7423, 7.3318],  // est. northeast estate
   'Buenavista':       [125.5912, 7.2747],  // OSM
   'Cacao':            [125.6072, 7.3079],  // OSM
   'Cagangohan':       [125.6824, 7.2855],  // OSM
   'Consolacion':      [125.5537, 7.3165],  // OSM
+  'Dapco':            [125.6401, 7.2610],  // est. south-central
   'Datu Abdul Dadia': [125.6547, 7.3151],  // OSM
   'Gredu':            [125.6787, 7.2967],  // OSM
   'J.P. Laurel':      [125.6696, 7.2752],  // OSM
-  'Kakar':            [125.6760, 7.3075],  // est. urban core
+  'Kasilak':          [125.5905, 7.3407],  // est. northwest
   'Katipunan':        [125.6310, 7.3016],  // OSM
+  'Katualan':         [125.5712, 7.2412],  // est. far south
   'Kauswagan':        [125.5827, 7.3099],  // OSM
-  'Langcam':          [125.6420, 7.3380],  // est. between Cacao and Manay
+  'Kiotoy':           [125.6194, 7.2718],  // est. south
+  'Little Panay':     [125.6118, 7.3224],  // est. central
+  'Lower Panaga':     [125.7198, 7.3042],  // est. coastal east
   'Mabunao':          [125.5753, 7.2556],  // OSM
   'Maduao':           [125.6421, 7.2796],  // OSM
   'Malativas':        [125.5654, 7.2947],  // OSM
   'Manay':            [125.6028, 7.3462],  // OSM
-  'Matiao':           [125.6700, 7.3200],  // est. north of San Francisco
-  'Minda':            [125.5822, 7.3583],  // OSM
-  'Mindanao':         [125.6370, 7.3500],  // est. between Minda and Manay
-  'New Corella':      [125.6200, 7.3680],  // est. far north
-  'New Jerusalem':    [125.7050, 7.2890],  // est. near New Pandan, east side
+  'Nanyo':            [125.6498, 7.2847],  // est. central
+  'New Malaga':       [125.5602, 7.2854],  // est. west
+  'New Malitbog':     [125.6002, 7.2912],  // est. west-central
   'New Pandan':       [125.6852, 7.2989],  // OSM
   'New Visayas':      [125.6676, 7.3082],  // OSM
-  'Padada':           [125.6500, 7.3100],  // est. between Katipunan and Datu Abdul Dadia
-  'Panabo':           [125.6820, 7.3060],  // est. urban core
-  'Poblacion':        [125.6842, 7.3081],  // city center
+  'Quezon':           [125.6752, 7.3001],  // est. urban core
+  'Salvacion':        [125.6722, 7.2901],  // est. urban core
   'San Francisco':    [125.6789, 7.3114],  // OSM
   'San Nicolas':      [125.6179, 7.2635],  // OSM
   'San Pedro':        [125.7100, 7.2972],  // OSM
   'San Roque':        [125.5497, 7.2504],  // OSM
   'San Vicente':      [125.7011, 7.3163],  // OSM
-  'Santo Niño':       [125.6898, 7.3064],  // OSM
-  'Sto. Tomas':       [125.6821, 7.3102],  // parcel ref.
-  'Tagbobo':          [125.6920, 7.2870],  // est. south-east
+  'Santa Cruz':       [125.5797, 7.2358],  // est. far south
+  'Santo Nino':       [125.6898, 7.3064],  // OSM
+  'Sindaton':         [125.7152, 7.2848],  // est. coastal east
+  'Southern Davao':   [125.6853, 7.2641],  // est. south urban
+  'Tagpore':          [125.6221, 7.3306],  // est. north-central
   'Tibungol':         [125.5516, 7.4010],  // OSM (far north)
-  'Toto':             [125.6280, 7.3680],  // est. far north
-  'Tuganay':          [125.6720, 7.3260],  // est. north of center
-  'Ula':              [125.6810, 7.2980],  // est. south of center
-  'Wangan':           [125.7120, 7.3060],  // est. east side
+  'Upper Licanan':    [125.6312, 7.2514],  // est. south
+  'Waterfall':        [125.5898, 7.2653],  // est. west
 };
 
 export function createConversation(title = 'New conversation') {
@@ -56,10 +78,11 @@ export function createConversation(title = 'New conversation') {
   };
 }
 
-export function loadConversations() {
+export function loadConversations(role = 'public') {
+  const key = getChatStorageKey(role);
   if (typeof window === 'undefined') return [createConversation()];
   try {
-    const saved = window.localStorage.getItem(CHAT_STORAGE_KEY);
+    const saved = window.localStorage.getItem(key);
     if (!saved) return [createConversation()];
     const parsed = JSON.parse(saved);
     if (Array.isArray(parsed) && parsed.length > 0) {
@@ -87,44 +110,46 @@ export const PANABO = {
   ],
   parcels: [],
   barangayRankings: [
-    { barangay: 'Poblacion',        zone: 'C-1', score: 91, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'Sto. Tomas',       zone: 'C-1', score: 88, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'New Visayas',      zone: 'C-1', score: 85, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'San Francisco',    zone: 'C-1', score: 83, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'Kakar',            zone: 'C-1', score: 81, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'J.P. Laurel',      zone: 'R-1', score: 79, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'Santo Niño',       zone: 'R-1', score: 78, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'New Pandan',       zone: 'R-1', score: 76, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'San Vicente',      zone: 'R-1', score: 74, flood: 'Low',  slope: '1–5%',  flag: null },
-    { barangay: 'Tuganay',          zone: 'R-1', score: 72, flood: 'Low',  slope: '1–5%',  flag: null },
-    { barangay: 'Panabo',           zone: 'R-1', score: 71, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'Gredu',            zone: 'I-1', score: 70, flood: 'Low',  slope: '0–3%',  flag: null },
-    { barangay: 'Cagangohan',       zone: 'I-1', score: 68, flood: 'Med',  slope: '0–3%',  flag: null },
-    { barangay: 'Maduao',           zone: 'I-1', score: 67, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'New Jerusalem',    zone: 'R-1', score: 66, flood: 'Low',  slope: '1–5%',  flag: null },
-    { barangay: 'Tagbobo',          zone: 'R-1', score: 65, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Datu Abdul Dadia', zone: 'R-1', score: 64, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Wangan',           zone: 'R-1', score: 63, flood: 'Low',  slope: '1–5%',  flag: null },
-    { barangay: 'Ula',              zone: 'R-1', score: 62, flood: 'Med',  slope: '0–3%',  flag: null },
-    { barangay: 'Matiao',           zone: 'R-1', score: 61, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Padada',           zone: 'R-1', score: 60, flood: 'Med',  slope: '3–8%',  flag: null },
-    { barangay: 'San Nicolas',      zone: 'R-1', score: 58, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Katipunan',        zone: 'R-1', score: 57, flood: 'Med',  slope: '3–8%',  flag: null },
-    { barangay: 'Kauswagan',        zone: 'R-1', score: 56, flood: 'Med',  slope: '1–5%',  flag: null },
-    { barangay: 'Consolacion',      zone: 'R-1', score: 55, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Langcam',          zone: 'R-1', score: 54, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Cacao',            zone: 'R-1', score: 53, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Mindanao',         zone: 'R-1', score: 52, flood: 'Med',  slope: '3–8%',  flag: null },
-    { barangay: 'San Pedro',        zone: 'R-1', score: 51, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Manay',            zone: 'R-1', score: 50, flood: 'Low',  slope: '3–8%',  flag: null },
-    { barangay: 'Malativas',        zone: 'R-1', score: 48, flood: 'Med',  slope: '3–8%',  flag: null },
-    { barangay: 'New Corella',      zone: 'R-1', score: 46, flood: 'Low',  slope: '8–15%', flag: null },
-    { barangay: 'Toto',             zone: 'R-1', score: 44, flood: 'Low',  slope: '8–15%', flag: null },
-    { barangay: 'Minda',            zone: 'R-1', score: 42, flood: 'High', slope: '1–5%',  flag: 'flood zone' },
-    { barangay: 'Buenavista',       zone: 'R-1', score: 40, flood: 'High', slope: '0–3%',  flag: 'flood zone' },
-    { barangay: 'Mabunao',          zone: 'R-1', score: 38, flood: 'High', slope: '0–3%',  flag: 'flood zone' },
-    { barangay: 'San Roque',        zone: 'R-1', score: 35, flood: 'High', slope: '0–3%',  flag: 'flood zone' },
-    { barangay: 'Tibungol',         zone: 'R-1', score: 22, flood: 'Low',  slope: '8–15%', flag: 'watershed' },
+    { barangay: 'Quezon',           zone: 'C-1', score: 91, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Salvacion',        zone: 'C-1', score: 88, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'New Visayas',      zone: 'C-1', score: 85, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'San Francisco',    zone: 'C-1', score: 83, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Santo Nino',       zone: 'C-1', score: 81, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'J.P. Laurel',      zone: 'R-1', score: 79, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'New Pandan',       zone: 'R-1', score: 78, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'San Vicente',      zone: 'R-1', score: 76, flood: 'Low',  slope: '1–5%',   flag: null },
+    { barangay: 'Gredu',            zone: 'R-1', score: 74, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Cagangohan',       zone: 'I-1', score: 72, flood: 'Med',  slope: '0–3%',   flag: null },
+    { barangay: 'San Pedro',        zone: 'R-1', score: 70, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'A.O. Floirendo',   zone: 'I-1', score: 68, flood: 'Med',  slope: '0–3%',   flag: null },
+    { barangay: 'Maduao',           zone: 'I-1', score: 67, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Southern Davao',   zone: 'R-1', score: 66, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Dapco',            zone: 'R-1', score: 65, flood: 'Med',  slope: '0–3%',   flag: null },
+    { barangay: 'Datu Abdul Dadia', zone: 'R-1', score: 64, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Lower Panaga',     zone: 'R-1', score: 63, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Sindaton',         zone: 'R-1', score: 62, flood: 'Med',  slope: '0–3%',   flag: null },
+    { barangay: 'Nanyo',            zone: 'R-1', score: 61, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Tagpore',          zone: 'R-1', score: 60, flood: 'Med',  slope: '3–8%',   flag: null },
+    { barangay: 'San Nicolas',      zone: 'R-1', score: 58, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Katipunan',        zone: 'R-1', score: 57, flood: 'Med',  slope: '3–8%',   flag: null },
+    { barangay: 'Kauswagan',        zone: 'R-1', score: 56, flood: 'Low',  slope: '1–5%',   flag: null },
+    { barangay: 'Consolacion',      zone: 'R-1', score: 55, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Little Panay',     zone: 'R-1', score: 54, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Cacao',            zone: 'R-1', score: 53, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'New Malitbog',     zone: 'R-1', score: 52, flood: 'Med',  slope: '3–8%',   flag: null },
+    { barangay: 'San Roque',        zone: 'R-1', score: 51, flood: 'Low',  slope: '0–3%',   flag: null },
+    { barangay: 'Manay',            zone: 'R-1', score: 50, flood: 'Low',  slope: '3–8%',   flag: null },
+    { barangay: 'Malativas',        zone: 'R-1', score: 48, flood: 'Med',  slope: '3–8%',   flag: null },
+    { barangay: 'New Malaga',       zone: 'R-1', score: 46, flood: 'Low',  slope: '8–15%',  flag: null },
+    { barangay: 'Kiotoy',           zone: 'R-1', score: 44, flood: 'Low',  slope: '8–15%',  flag: null },
+    { barangay: 'Kasilak',          zone: 'R-1', score: 42, flood: 'High', slope: '1–5%',   flag: 'flood zone' },
+    { barangay: 'Mabunao',          zone: 'R-1', score: 40, flood: 'High', slope: '0–3%',   flag: 'flood zone' },
+    { barangay: 'Buenavista',       zone: 'R-1', score: 38, flood: 'High', slope: '0–3%',   flag: 'flood zone' },
+    { barangay: 'Waterfall',        zone: 'R-1', score: 35, flood: 'High', slope: '0–3%',   flag: 'flood zone' },
+    { barangay: 'Upper Licanan',    zone: 'R-1', score: 30, flood: 'Low',  slope: '8–15%',  flag: 'watershed' },
+    { barangay: 'Tibungol',         zone: 'R-1', score: 27, flood: 'Low',  slope: '8–15%',  flag: 'watershed' },
+    { barangay: 'Katualan',         zone: 'R-1', score: 24, flood: 'Low',  slope: '15–30%', flag: 'watershed' },
+    { barangay: 'Santa Cruz',       zone: 'R-1', score: 22, flood: 'Low',  slope: '15–30%', flag: 'watershed' },
   ],
   criteria: [
     { id: 'soil',    name: 'Soil Quality',    weight: 0.25 },
@@ -151,18 +176,21 @@ export const PANABO = {
     { id: 'R05', name: '20-meter Riparian Buffer',   zone: null,  severity: 'medium', description: 'Clean Water Act (RA 9275) buffer along rivers/streams.' },
   ],
   barangays: [
-    'Buenavista','Cacao','Cagangohan','Consolacion','Datu Abdul Dadia','Gredu','J.P. Laurel',
-    'Kakar','Katipunan','Kauswagan','Langcam','Mabunao','Maduao','Malativas','Manay','Matiao',
-    'Minda','Mindanao','New Corella','New Jerusalem','New Pandan','New Visayas','Padada',
-    'Panabo','Poblacion','San Francisco','San Nicolas','San Pedro','San Roque','San Vicente',
-    'Santo Niño','Sto. Tomas','Tagbobo','Tibungol','Toto','Tuganay','Ula','Wangan',
+    'A.O. Floirendo','Buenavista','Cacao','Cagangohan','Consolacion',
+    'Dapco','Datu Abdul Dadia','Gredu','J.P. Laurel','Kasilak',
+    'Katipunan','Katualan','Kauswagan','Kiotoy','Little Panay',
+    'Lower Panaga','Mabunao','Maduao','Malativas','Manay',
+    'Nanyo','New Malaga','New Malitbog','New Pandan','New Visayas',
+    'Quezon','Salvacion','San Francisco','San Nicolas','San Pedro',
+    'San Roque','San Vicente','Santa Cruz','Santo Nino','Sindaton',
+    'Southern Davao','Tagpore','Tibungol','Upper Licanan','Waterfall',
   ],
   reports: [
-    { id: 'RPT-001', type: 'Suitability Summary',    parcel: 'PCL-00184', date: '2026-05-20', status: 'Final',    generatedBy: 'CPDO' },
-    { id: 'RPT-002', type: 'Environmental Clearance', parcel: 'PCL-00473', date: '2026-05-15', status: 'Draft',    generatedBy: 'CENRO' },
-    { id: 'RPT-003', type: 'Zone Compliance Check',  parcel: 'PCL-00291', date: '2026-05-10', status: 'Final',    generatedBy: 'CPDO' },
-    { id: 'RPT-004', type: 'Reforestation Plan',     parcel: 'PCL-00608', date: '2026-04-28', status: 'Review',   generatedBy: 'CENRO' },
-    { id: 'RPT-005', type: 'Suitability Summary',    parcel: 'PCL-00715', date: '2026-04-15', status: 'Archived', generatedBy: 'CPDO' },
+    { id: 'RPT-001', type: 'Suitability Summary',    barangay: 'Gredu',          date: '2026-05-20', status: 'Final',    generatedBy: 'CPDO' },
+    { id: 'RPT-002', type: 'Environmental Clearance', barangay: 'Cagangohan',    date: '2026-05-15', status: 'Draft',    generatedBy: 'CENRO' },
+    { id: 'RPT-003', type: 'Zone Compliance Check',  barangay: 'New Visayas',    date: '2026-05-10', status: 'Final',    generatedBy: 'CPDO' },
+    { id: 'RPT-004', type: 'Reforestation Plan',     barangay: 'Upper Licanan',  date: '2026-04-28', status: 'Review',   generatedBy: 'CENRO' },
+    { id: 'RPT-005', type: 'Suitability Summary',    barangay: 'San Vicente',    date: '2026-04-15', status: 'Archived', generatedBy: 'CPDO' },
   ],
   recentQueries: [
     { id: 1, text: 'What is the flood risk for PCL-00473?',          time: '2 min ago' },

@@ -29,6 +29,7 @@ export function Icon({ name, size = 16, style, className = '' }) {
     trash:        <><polyline points="3 6 5 6 21 6" {...s}/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" {...s}/></>,
     sliders:      <><line x1="4" y1="21" x2="4" y2="14" {...s}/><line x1="4" y1="10" x2="4" y2="3" {...s}/><line x1="12" y1="21" x2="12" y2="12" {...s}/><line x1="12" y1="8" x2="12" y2="3" {...s}/><line x1="20" y1="21" x2="20" y2="16" {...s}/><line x1="20" y1="12" x2="20" y2="3" {...s}/><line x1="1" y1="14" x2="7" y2="14" {...s}/><line x1="9" y1="8" x2="15" y2="8" {...s}/><line x1="17" y1="16" x2="23" y2="16" {...s}/></>,
     check:        <polyline points="20 6 9 17 4 12" {...s}/>,
+    copy:         <><rect x="9" y="9" width="13" height="13" rx="2" ry="2" {...s}/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" {...s}/></>,
     filter:       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" {...s}/>,
     download:     <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" {...s}/><polyline points="7 10 12 15 17 10" {...s}/><line x1="12" y1="15" x2="12" y2="3" {...s}/></>,
     eye:          <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" {...s}/><circle cx="12" cy="12" r="3" {...s}/></>,
@@ -102,9 +103,7 @@ export function ScoreRing({ value = 0, size = 80 }) {
 export function Logo() {
   return (
     <div className="row" style={{ gap: 8 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 8, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <svg viewBox="0 0 20 20" fill="white" width={14} height={14}><path d="M10 2L3 7v11h5v-6h4v6h5V7L10 2z"/></svg>
-      </div>
+      <img src="/favicon.png" alt="TerraSpec" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}/>
       <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.02em' }}>TERRASPEC</span>
     </div>
   );

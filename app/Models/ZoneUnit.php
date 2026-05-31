@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -23,6 +24,9 @@ class ZoneUnit extends Model
         'dominant_soil_type',
         'dominant_slope_class',
         'land_capability_class',
+        'elevation_min',
+        'elevation_max',
+        'salinity_level',
         'center_latitude',
         'center_longitude',
         'geojson_poly',
@@ -60,5 +64,15 @@ class ZoneUnit extends Model
     {
         return $this->hasOne(SuitabilityAnalysis::class, 'zone_unit_id', 'zone_unit_id')
                     ->latestOfMany('analysis_id');
+    }
+
+    public function restrictions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            EnvironmentalRestriction::class,
+            'zone_restrictions',
+            'zone_unit_id',
+            'restriction_id'
+        );
     }
 }

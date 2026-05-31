@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CHAT_STORAGE_KEY, createConversation, loadConversations } from './data.js';
+import { createConversation, loadConversations, getChatStorageKey, getOrCreateGuestToken, GUEST_TOKEN_KEY } from './data.js';
 import { Icon, Btn } from './components.jsx';
 
-export function ChatScreen({ initialConvId } = {}) {
-  const initConvs = useMemo(() => loadConversations(), []);
-  const [conversations, setConversations] = useState(initConvs);
+export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
+  const [conversations, setConversations] = useState(() => loadConversations(role));
   const [activeId, setActiveId] = useState(() => {
+    const convs = loadConversations(role);
     let target = null;
     try { target = sessionStorage.getItem('ts-nav-conv'); if (target) sessionStorage.removeItem('ts-nav-conv'); } catch {}
     target = target || initialConvId || null;
-    if (target && initConvs.some(c => c.id === target)) return target;
-    return initConvs[0].id;
+    if (target && convs.some(c => c.id === target)) return target;
+    return convs[0]?.id ?? null;
   });
-  const [pinnedIds, setPinnedIds] = useState(() => new Set(initConvs.filter(c => c.pinned).map(c => c.id)));
+  const [pinnedIds, setPinnedIds] = useState(() => {
+    const convs = loadConversations(role);
+    return new Set(convs.filter(c => c.pinned).map(c => c.id));
+  });
+  const [guestToken, setGuestToken] = useState(() => role !== 'admin' ? getOrCreateGuestToken() : null);
+  const [tokenCopied, setTokenCopied]   = useState(false);
+  const [showRestore, setShowRestore]   = useState(false);
+  const [restoreInput, setRestoreInput] = useState('');
+  const [restoreError, setRestoreError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const [sidebarRenameId, setSidebarRenameId] = useState(null);
@@ -32,13 +40,23 @@ export function ChatScreen({ initialConvId } = {}) {
   const pinnedConvs = useMemo(() => conversations.filter(c => pinnedIds.has(c.id)), [conversations, pinnedIds]);
   const unpinnedConvs = useMemo(() => conversations.filter(c => !pinnedIds.has(c.id)), [conversations, pinnedIds]);
 
+  // Reload conversations when role switches (admin ↔ public)
+  useEffect(() => {
+    const loaded = loadConversations(role);
+    setConversations(loaded);
+    setPinnedIds(new Set(loaded.filter(c => c.pinned).map(c => c.id)));
+    setActiveId(loaded[0]?.id ?? null);
+    setChatInput('');
+    setChatError('');
+  }, [role]);
+
   useEffect(() => {
     try {
-      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(
+      window.localStorage.setItem(getChatStorageKey(role), JSON.stringify(
         conversations.map(c => ({ ...c, pinned: pinnedIds.has(c.id) }))
       ));
     } catch { /* ignore */ }
-  }, [conversations, pinnedIds]);
+  }, [conversations, pinnedIds, role]);
 
   useEffect(() => {
     if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -147,7 +165,11 @@ export function ChatScreen({ initialConvId } = {}) {
         throw new Error(payload?.message || validMsg || 'The assistant could not answer right now.');
       }
       updateActive(c => ({
-        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: payload.answer || 'Gemini returned an empty response.' }),
+        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({
+          role:  'assistant',
+          content: payload.answer || 'Gemini returned an empty response.',
+          zones: payload.recommended_zones ?? [],
+        }),
       }));
     } catch (err) {
       const text = err instanceof Error ? err.message : 'The assistant could not answer right now.';
@@ -160,7 +182,41 @@ export function ChatScreen({ initialConvId } = {}) {
     }
   }
 
-  const quickPrompts = ['Analyze flood risk for PCL-00473', 'Compare commercial zones', 'Best species for mangrove reforestation', 'Setback requirements overview'];
+  function copyToken() {
+    if (!guestToken) return;
+    navigator.clipboard?.writeText(guestToken).catch(() => {});
+    setTokenCopied(true);
+    setTimeout(() => setTokenCopied(false), 2000);
+  }
+
+  function handleRestore() {
+    const token = restoreInput.trim().toUpperCase();
+    if (!token) { setRestoreError('Enter a Chat ID.'); return; }
+    const key = `terraspec-chat-guest-${token}`;
+    try {
+      const saved = window.localStorage.getItem(key);
+      if (!saved) { setRestoreError('No history found for this ID.'); return; }
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) { setRestoreError('No conversations found.'); return; }
+      // Swap the active guest token so future saves go to this key
+      window.localStorage.setItem(GUEST_TOKEN_KEY, token);
+      setGuestToken(token);
+      const loaded = parsed.map(c => ({
+        id: c.id || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        title: c.title || 'Conversation',
+        pinned: !!c.pinned,
+        messages: Array.isArray(c.messages) && c.messages.length > 0 ? c.messages : createConversation().messages,
+      }));
+      setConversations(loaded);
+      setPinnedIds(new Set(loaded.filter(c => c.pinned).map(c => c.id)));
+      setActiveId(loaded[0]?.id ?? null);
+      setShowRestore(false);
+      setRestoreInput('');
+      setRestoreError('');
+    } catch { setRestoreError('Invalid Chat ID.'); }
+  }
+
+  const quickPrompts = ['Where can I build a business in Panabo City?', 'Best barangays for residential development', 'Where to build an industrial facility?', 'Top reforestation sites in Panabo'];
   const lastMsg = activeConv?.messages.slice(-1)[0];
   const detectedIntent = lastMsg?.role === 'user' ? 'land_suitability' : null;
 
@@ -278,7 +334,59 @@ export function ChatScreen({ initialConvId } = {}) {
           {unpinnedConvs.map(renderConvItem)}
         </div>
         <div style={{ padding: '10px 10px', borderTop: '1px solid hsl(var(--border))' }}>
-          <div className="muted" style={{ fontSize: 11, textAlign: 'center' }}>Gemini 2.5 Flash</div>
+          {role === 'admin' ? (
+            <div className="muted" style={{ fontSize: 11, textAlign: 'center' }}>LGU Admin · Gemini 2.5 Flash</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* Current token display */}
+              <div className="muted" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'center' }}>Your Chat ID</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'hsl(var(--muted))', borderRadius: 6, padding: '4px 8px' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 600, flex: 1, letterSpacing: '0.05em', color: 'hsl(var(--brand))', userSelect: 'all' }}>{guestToken}</span>
+                <button onClick={copyToken} title="Copy Chat ID" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'hsl(var(--muted-foreground))', flexShrink: 0 }}>
+                  <Icon name={tokenCopied ? 'check' : 'copy'} size={11}/>
+                </button>
+              </div>
+
+              {/* Restore panel */}
+              {showRestore ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div className="muted" style={{ fontSize: 10, textAlign: 'center' }}>Enter a saved Chat ID to restore</div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <input
+                      autoFocus
+                      value={restoreInput}
+                      onChange={e => { setRestoreInput(e.target.value.toUpperCase()); setRestoreError(''); }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRestore(); if (e.key === 'Escape') { setShowRestore(false); setRestoreInput(''); setRestoreError(''); } }}
+                      placeholder="XXXXX-XXXXX"
+                      maxLength={11}
+                      className="input"
+                      style={{ flex: 1, height: 28, fontSize: 11, padding: '0 7px', fontFamily: 'monospace', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                    />
+                    <button
+                      onClick={handleRestore}
+                      title="Restore"
+                      style={{ width: 28, height: 28, borderRadius: 6, background: 'hsl(var(--brand))', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                    >
+                      <Icon name="check" size={12} style={{ color: 'white' }}/>
+                    </button>
+                  </div>
+                  {restoreError && (
+                    <div style={{ fontSize: 10, color: 'hsl(var(--destructive))', textAlign: 'center' }}>{restoreError}</div>
+                  )}
+                  <button onClick={() => { setShowRestore(false); setRestoreInput(''); setRestoreError(''); }} style={{ background: 'none', border: 'none', fontSize: 10, color: 'hsl(var(--muted-foreground))', cursor: 'pointer', padding: 0, textAlign: 'center' }}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowRestore(true)}
+                  style={{ background: 'none', border: 'none', fontSize: 10, color: 'hsl(var(--muted-foreground))', cursor: 'pointer', padding: '2px 0', textAlign: 'center', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+                >
+                  Restore a previous chat
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -353,19 +461,61 @@ export function ChatScreen({ initialConvId } = {}) {
                   <Icon name="bot" size={14} style={{ color: 'white' }}/>
                 </div>
               )}
-              <div style={{
-                maxWidth: '75%', padding: '10px 14px', borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
-                color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
-                fontSize: 13.5, lineHeight: 1.55,
-              }}>
-                {m.content === 'Thinking...' ? (
-                  <div className="row" style={{ gap: 4 }}>
-                    {[0, 150, 300].map(d => (
-                      <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'hsl(var(--muted-foreground))', display: 'inline-block', animation: `bounce 1.2s ${d}ms ease-in-out infinite` }}/>
-                    ))}
+              <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{
+                  padding: '10px 14px', borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                  background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+                  color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
+                  fontSize: 13.5, lineHeight: 1.55,
+                }}>
+                  {m.content === 'Thinking...' ? (
+                    <div className="row" style={{ gap: 4 }}>
+                      {[0, 150, 300].map(d => (
+                        <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'hsl(var(--muted-foreground))', display: 'inline-block', animation: `bounce 1.2s ${d}ms ease-in-out infinite` }}/>
+                      ))}
+                    </div>
+                  ) : m.content}
+                </div>
+                {m.role === 'assistant' && m.zones?.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                      {m.zones.map((z, zi) => (
+                        <div
+                          key={z.zone_unit_id}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '4px 10px', borderRadius: 8,
+                            background: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--brand) / 0.35)',
+                            fontSize: 12, cursor: 'default',
+                          }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'hsl(var(--brand))', minWidth: 16 }}>{zi + 1}</span>
+                          <span style={{ fontWeight: 500 }}>{z.unit_name}</span>
+                          <span style={{
+                            padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                            background: z.total_pct >= 75 ? 'hsl(142 72% 29% / 0.15)' : z.total_pct >= 55 ? 'hsl(38 92% 50% / 0.15)' : 'hsl(var(--muted))',
+                            color: z.total_pct >= 75 ? 'hsl(142 72% 29%)' : z.total_pct >= 55 ? 'hsl(32 95% 44%)' : 'hsl(var(--muted-foreground))',
+                          }}>{z.total_pct}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    {go && (
+                      <button
+                        onClick={() => go('map', { highlightZones: m.zones })}
+                        style={{
+                          alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          background: 'hsl(var(--brand))', color: 'white',
+                          border: 'none', cursor: 'pointer',
+                        }}
+                      >
+                        <Icon name="map" size={12} style={{ color: 'white' }}/>
+                        View on Map
+                      </button>
+                    )}
                   </div>
-                ) : m.content}
+                )}
               </div>
             </div>
           ))}

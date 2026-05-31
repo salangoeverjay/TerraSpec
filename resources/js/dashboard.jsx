@@ -59,9 +59,11 @@ function levelVariant(level) {
 }
 
 export function DashboardScreen({ go }) {
-  const [rankings, setRankings]   = useState([]);
-  const [avgScore, setAvgScore]   = useState(null);
-  const [loading, setLoading]     = useState(true);
+  const [rankings, setRankings]         = useState([]);
+  const [avgScore, setAvgScore]         = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [flagged, setFlagged]           = useState(null);
+  const [hazardBreakdown, setBreakdown] = useState(null);
 
   useEffect(() => {
     fetch('/suitability/rankings?analysis_type=commercial')
@@ -72,12 +74,20 @@ export function DashboardScreen({ go }) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch('/api/dashboard-stats')
+      .then(r => r.json())
+      .then(json => {
+        setFlagged(json.flagged_count ?? 0);
+        setBreakdown(json.breakdown ?? null);
+      })
+      .catch(() => setFlagged(0));
   }, []);
 
   const top5          = rankings.slice(0, 5);
   const zoneUnitCount = rankings.length || 40;
-  const displayAvg    = avgScore !== null ? `${avgScore}%` : `${Math.round(PANABO.parcels.reduce((s, p) => s + p.score, 0) / (PANABO.parcels.length || 1))}%`;
-  const flagged       = PANABO.parcels.filter(p => p.flag).length;
+  const displayAvg    = avgScore !== null ? `${avgScore}%` : '—';
+  const flaggedCount  = flagged ?? '…';
   const activeReports = PANABO.reports.filter(r => r.status !== 'Archived').length;
 
   const recentQueries = useMemo(() => {
@@ -113,7 +123,7 @@ export function DashboardScreen({ go }) {
         {[
           { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: `${PANABO.barangays.length} barangays` },
           { label: 'Avg Suitability',  value: displayAvg,     icon: 'chart', sub: 'Commercial · AHP-WLC score' },
-          { label: 'Flagged Areas',    value: flagged,        icon: 'alert', sub: 'Env. restrictions' },
+          { label: 'Flagged Areas',    value: flaggedCount,   icon: 'alert', sub: hazardBreakdown ? `Flood ${hazardBreakdown.flood} · Landslide ${hazardBreakdown.landslide} · Storm ${hazardBreakdown.storm_surge}` : 'Hazard-flagged zones' },
           { label: 'Active Reports',   value: activeReports,  icon: 'file',  sub: 'Pending / Draft / Final' },
         ].map(s => (
           <Card key={s.label}>

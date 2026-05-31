@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Icon, Logo, Btn, Inp } from './components.jsx';
 
 function LoginModal({ onSuccess, onClose }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
@@ -11,18 +11,40 @@ function LoginModal({ onSuccess, onClose }) {
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin123') {
-        onSuccess();
-      } else {
-        setError('Invalid username or password.');
+
+    try {
+      await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+
+      const res = await fetch('/api/lgu/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-XSRF-TOKEN': decodeURIComponent(
+            document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? ''
+          ),
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message ?? 'Invalid email or password.');
         setLoading(false);
+        return;
       }
-    }, 500);
+
+      onSuccess(data);
+    } catch {
+      setError('Connection error. Please try again.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,8 +62,8 @@ function LoginModal({ onSuccess, onClose }) {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 5 }}>Username</label>
-            <input ref={inputRef} className="input" style={{ width: '100%', boxSizing: 'border-box' }} placeholder="Enter username" value={username} onChange={e => setUsername(e.target.value)} autoComplete="username"/>
+            <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 5 }}>Email</label>
+            <input ref={inputRef} className="input" style={{ width: '100%', boxSizing: 'border-box' }} type="email" placeholder="Enter email address" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email"/>
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 5 }}>Password</label>
@@ -90,10 +112,24 @@ function App() {
   const [screen, setScreen]           = useState('landing');
   const [screenProps, setScreenProps] = useState({});
   const [role, setRole]               = useState('public');
+  const [lguUser, setLguUser]         = useState(null);
   const [dark, setDark]               = useState(false);
   const [showLogin, setShowLogin]     = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [search, setSearch] = useState('');
+
+  function handleLoginSuccess(user) {
+    setLguUser(user);
+    setRole('admin');
+    setShowLogin(false);
+  }
+
+  function handleLogout() {
+    fetch('/api/lgu/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    setLguUser(null);
+    setRole('public');
+    if (screen === 'admin') go('dashboard');
+  }
 
   function go(s, props = {}) { setScreen(s); setScreenProps(props); }
 
@@ -126,7 +162,7 @@ function App() {
     <div className={`app${showSidebar ? ' mobile-sidebar-open' : ''}`}>
       {showLogin && (
         <LoginModal
-          onSuccess={() => { setRole('admin'); setShowLogin(false); }}
+          onSuccess={handleLoginSuccess}
           onClose={() => setShowLogin(false)}
         />
       )}
@@ -137,7 +173,9 @@ function App() {
           <button className="btn btn-ghost btn-icon btn-sm btn-menu" onClick={() => setShowSidebar(s => !s)} style={{ marginRight: 8 }} aria-label="Toggle menu">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
           </button>
-          <Logo/>
+          <button onClick={() => go('landing')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <Logo/>
+          </button>
           <div className="sep-v" style={{ height: 24 }}/>
           <div className="row" style={{ gap: 6 }}>
             <Icon name="pin" size={13} style={{ color: 'hsl(var(--brand))' }}/>
@@ -155,16 +193,20 @@ function App() {
         {/* Right section */}
         <div className="row" style={{ flex: 1, justifyContent: 'flex-end', gap: 8 }}>
           <div className="tabs">
-            <div className={`tab${role === 'public' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setRole('public')}>Public</div>
-            <div className={`tab${role === 'admin' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? setRole('public') : setShowLogin(true)}>LGU Admin</div>
+            <div className={`tab${role === 'public' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? handleLogout() : null}>Public</div>
+            <div className={`tab${role === 'admin' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? null : setShowLogin(true)}>LGU Admin</div>
           </div>
+
+          {role === 'admin' && lguUser && (
+            <span className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{lguUser.name}</span>
+          )}
 
           <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setDark(d => !d)} title={dark ? 'Light mode' : 'Dark mode'}>
             <Icon name={dark ? 'sun' : 'moon'} size={14}/>
           </button>
 
           <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 600 }}>
-            {role === 'admin' ? 'A' : 'G'}
+            {lguUser ? lguUser.name.charAt(0).toUpperCase() : 'G'}
           </div>
         </div>
       </header>
@@ -196,7 +238,7 @@ function App() {
               <Icon name="lock" size={48} style={{ color: 'hsl(var(--muted-foreground))' }}/>
               <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>Admin Access Required</h2>
               <p className="muted">Switch to LGU Admin role to access this section.</p>
-              <Btn variant="brand" onClick={() => setRole('admin')}>Switch to Admin</Btn>
+              <Btn variant="brand" onClick={() => setShowLogin(true)}>Sign In as LGU Admin</Btn>
             </div>
           </div>
         ) : (

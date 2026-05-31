@@ -13,8 +13,8 @@ class SuitabilityScoreService
 
     private const SLOPE_SCORES = [
         '0-8'   => 1.00,
-        '8-18'  => 0.60,
-        '18-30' => 0.30,
+        '8-18'  => 0.80,
+        '18-30' => 0.50,
         '30-50' => 0.10,
         '50+'   => 0.00,
     ];

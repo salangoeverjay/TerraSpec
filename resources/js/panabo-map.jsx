@@ -380,7 +380,27 @@ function FloodLayer({ visible, hiddenFlood }) {
   return null;
 }
 
-export function MapScreen({ initial, search, setSearch }) {
+const LEVEL_COLOR = { 'Highly Suitable': '#16a34a', 'Moderately Suitable': '#f59e0b', 'Low Suitability': '#ef4444' };
+
+function FlyToHighlight({ zones }) {
+  const ctx = useMap();
+  const done = useRef(false);
+  useMemo(() => {
+    if (!ctx?.map || done.current || !zones.length) return;
+    const coords = zones.map(z => BARANGAY_COORDS[z.unit_name]).filter(Boolean);
+    if (!coords.length) return;
+    done.current = true;
+    const lngs = coords.map(c => c[0]);
+    const lats = coords.map(c => c[1]);
+    ctx.map.fitBounds(
+      [[Math.min(...lngs) - 0.02, Math.min(...lats) - 0.02], [Math.max(...lngs) + 0.02, Math.max(...lats) + 0.02]],
+      { padding: 80, duration: 1200, maxZoom: 14 },
+    );
+  }, [ctx, zones]);
+  return null;
+}
+
+export function MapScreen({ initial, search, setSearch, highlightZones = [] }) {
   const mapRef = useRef(null);
   const [selected, setSelected] = useState(initial?.parcel || null);
   const [showSearch, setShowSearch] = useState(false);
@@ -457,6 +477,37 @@ export function MapScreen({ initial, search, setSearch }) {
           <ReforestationLayer visible={layers.reforestation} hiddenRefoZones={hiddenRefoZones}/>
           <LandslideLayer visible={layers.landslide} hiddenLandslide={hiddenLandslide}/>
           <FloodLayer visible={layers.flood} hiddenFlood={hiddenFlood}/>
+          {highlightZones.length > 0 && <FlyToHighlight zones={highlightZones}/>}
+          {highlightZones.map((z, i) => {
+            const coords = BARANGAY_COORDS[z.unit_name];
+            if (!coords) return null;
+            const color = LEVEL_COLOR[z.suitability_level] ?? '#6b7280';
+            return (
+              <MapMarker key={z.zone_unit_id} longitude={coords[0]} latitude={coords[1]}>
+                <MarkerContent className="translate-y-[-12px]">
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{
+                      background: color, color: 'white',
+                      padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                      boxShadow: `0 2px 8px ${color}66`,
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      whiteSpace: 'nowrap',
+                    }}>
+                      <span style={{ opacity: 0.8, fontSize: 10 }}>#{i + 1}</span>
+                      <span>{z.unit_name}</span>
+                      <span style={{ opacity: 0.9 }}>{z.total_pct}%</span>
+                    </div>
+                    <div style={{
+                      width: 12, height: 12, borderRadius: '50%',
+                      background: color, border: '2.5px solid white',
+                      boxShadow: `0 0 0 6px ${color}33`,
+                    }}/>
+                  </div>
+                </MarkerContent>
+                <MarkerTooltip>{z.unit_name} · {z.suitability_level} · {z.total_pct}%</MarkerTooltip>
+              </MapMarker>
+            );
+          })}
           <MapMarker longitude={125.6847} latitude={7.307}>
             <MarkerContent className="translate-y-[-8px]">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -485,6 +536,27 @@ export function MapScreen({ initial, search, setSearch }) {
           )}
         </Map>
       </div>
+
+      {/* AI Recommendations banner */}
+      {highlightZones.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 30, display: 'flex', alignItems: 'center', gap: 8,
+          background: 'hsl(var(--card))', border: '1px solid hsl(var(--brand) / 0.4)',
+          borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+          fontSize: 12.5, whiteSpace: 'nowrap',
+        }}>
+          <Icon name="bot" size={13} style={{ color: 'hsl(var(--brand))' }}/>
+          <span style={{ fontWeight: 600, color: 'hsl(var(--brand))' }}>AI Recommendations</span>
+          <span className="muted">·</span>
+          {highlightZones.map((z, i) => (
+            <span key={z.zone_unit_id} style={{ fontWeight: 500 }}>
+              {i > 0 && <span className="muted" style={{ marginRight: 4 }}>·</span>}
+              {z.unit_name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Search results dropdown – fixed so it aligns with topbar search bar */}
       {showSearch && hasResults && (

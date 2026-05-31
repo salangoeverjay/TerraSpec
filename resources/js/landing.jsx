@@ -202,16 +202,13 @@ export function LandingPage({ go }) {
         <nav className="lp-nav">
           <div className="lp-shell lp-nav-inner">
             <div className="lp-brand">
-              <div className="lp-mark">T</div>
+              <img src="/favicon.png" alt="TerraSpec" style={{ width: 26, height: 26, borderRadius: 7, objectFit: 'cover', flexShrink: 0 }}/>
               <span>TERRASPEC</span>
-              <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 11, color: 'hsl(240 6% 55%)', marginLeft: 6, borderLeft: '1px solid hsl(240 6% 85%)', paddingLeft: 10 }}>v0.1 · Capstone Build</span>
+              <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 11, color: 'hsl(240 6% 55%)', marginLeft: 6, borderLeft: '1px solid hsl(240 6% 85%)', paddingLeft: 10 }}></span>
             </div>
             <div className="lp-nav-links">
-              <a href="#system">The system</a>
-              <a href="#pillars">Capabilities</a>
+              <a href="#howto">How to use</a>
               <a href="#arch">Architecture</a>
-              <a href="#compare">Compared</a>
-              <a href="#team">Team</a>
             </div>
             <button className="lp-btn lp-btn-primary" onClick={() => go('dashboard')} style={{ height: 38, padding: '0 16px', fontSize: 13.5, borderRadius: 8 }}>
               Launch system
@@ -232,7 +229,7 @@ export function LandingPage({ go }) {
                 <h1 className="lp-h1">
                   Urban planning,<br/>
                   <em>modernized.</em>
-                  <span className="lp-h1-mono">[v0.1]</span>
+                  <span className="lp-h1-mono"></span>
                 </h1>
                 <p className="lp-sub">
                   TERRASPEC is a Geospatial Decision Support System that replaces Panabo City's
@@ -242,10 +239,9 @@ export function LandingPage({ go }) {
                 </p>
                 <div className="lp-cta-row">
                   <button className="lp-btn lp-btn-primary" onClick={() => go('dashboard')}>
-                    Launch the system
+                    Get Started
                     <svg className="lp-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
                   </button>
-                  <a className="lp-btn lp-btn-ghost" href="#system">Read the study</a>
                 </div>
 
                 <div className="lp-hero-meta">
@@ -339,128 +335,79 @@ export function LandingPage({ go }) {
           </div>
         </section>
 
-        {/* THE SHIFT */}
-        <section id="system" className="lp-section">
-          <div className="lp-shell">
-            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 64, alignItems: 'start' }}>
-              <div>
-                <div className="lp-section-tag">— The shift</div>
-                <h2 className="lp-section-h">From <em>scanned PDFs</em> and site visits to a single, queryable map of the city.</h2>
-                <p className="lp-section-lead">
-                  Panabo City, an agro-industrial hub in Davao del Norte, still runs much of its
-                  urban land management on paper records and unsearchable scans. Zoning is hard
-                  to interpret, environmental boundaries are invisible to developers, and reforestation
-                  drives lose trees because species don't match the site.
-                </p>
-                <p className="lp-section-lead">
-                  TERRASPEC consolidates the city's zoning ordinances, soil and topographic data,
-                  and protected-area boundaries into one decision-support layer — accessible through
-                  a chatbot, an interactive map, and an automated report writer.
-                </p>
-              </div>
 
-              <div className="lp-before-after">
-                <div className="lp-section-tag" style={{ marginBottom: 18 }}>— Before · After</div>
-                <div style={{ display: 'grid', gap: 14 }}>
-                  {[
-                    ['Walk to City Hall, request map.', 'Ask the chatbot in plain English.'],
-                    ['Eyeball overlap with hazard maps.', 'Auto-flagged via spatial overlay.'],
-                    ['Guess which species survives.', 'Native species matched to soil + slope.'],
-                    ['Type a memo, attach screenshots.', 'One-click PDF report.'],
-                  ].map(([before, after], i) => (
-                    <React.Fragment key={i}>
-                      {i > 0 && <hr className="lp-ba-hr"/>}
-                      <div className="lp-ba-row">
-                        <div className="lp-ba-before">{before}</div>
-                        <span className="lp-ba-arrow">→</span>
-                        <div className="lp-ba-after">{after}</div>
-                      </div>
-                    </React.Fragment>
-                  ))}
+        {/* HOW TO USE */}
+        <section id="howto" className="lp-section">
+          <div className="lp-shell">
+            <div className="lp-section-tag">— For the public</div>
+            <h2 className="lp-section-h">How to use <em>TerraSpec</em> in five steps.</h2>
+            <p className="lp-section-lead">No account required. The system is open to investors, developers, researchers, and residents of Panabo City.</p>
+
+            <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, background: '#fff', border: '1px solid hsl(240 6% 90%)', borderRadius: 16, overflow: 'hidden' }}>
+              {[
+                {
+                  step: '01',
+                  icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+                  title: 'Ask the AI',
+                  desc: 'Type any question in plain Filipino or English. Try: "Saan pwede mag-invest ng commercial sa Panabo?" or "Where can I plant mangroves?"',
+                  sample: '"Where can I build a business?"',
+                  color: 'hsl(162 47% 39%)',
+                },
+                {
+                  step: '02',
+                  icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+                  title: 'View on Map',
+                  desc: 'Click "View on Map" in the AI response. Recommended barangays are pinpointed with color-coded suitability markers — green is highly suitable.',
+                  sample: 'Green = Highly Suitable',
+                  color: 'hsl(220 70% 55%)',
+                },
+                {
+                  step: '03',
+                  icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+                  title: 'Check Scores',
+                  desc: 'Go to the Suitability tab to see all 40 barangays ranked by commercial, residential, industrial, or reforestation score based on real CLUP data.',
+                  sample: 'Gredu — 72.9% Commercial',
+                  color: 'hsl(38 92% 50%)',
+                },
+                {
+                  step: '04',
+                  icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+                  title: 'Check Hazards',
+                  desc: 'Open the Environmental tab to see flood risk, landslide zones, storm surge, and ecological restrictions per barangay before making any decision.',
+                  sample: 'Flood · Landslide · Storm Surge',
+                  color: 'hsl(0 70% 55%)',
+                },
+                {
+                  step: '05',
+                  icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12M12 12C12 12 8 9 5 6s1-5 4-3 3 4 3 4M12 12c0 0 4-3 7-6s-1-5-4-3-3 4-3 4"/></svg>,
+                  title: 'Plan Reforestation',
+                  desc: 'Go to the Reforestation tab, select a barangay, and get matched tree species (Bakawan, Molave, Toog, etc.) based on its soil, elevation, and salinity data.',
+                  sample: 'Bakawan · Pagatpat · Molave',
+                  color: 'hsl(142 60% 35%)',
+                },
+              ].map(({ step, icon, title, desc, sample, color }, i) => (
+                <div key={step} style={{ padding: '28px 22px', borderRight: i < 4 ? '1px solid hsl(240 6% 92%)' : 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>{icon}</div>
+                    <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 300, color: 'hsl(240 6% 88%)', letterSpacing: '-0.04em' }}>{step}</span>
+                  </div>
+                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 18, fontWeight: 400, letterSpacing: '-0.015em', lineHeight: 1.2, color: 'hsl(240 10% 8%)' }}>{title}</div>
+                  <p style={{ fontSize: 13, lineHeight: 1.55, color: 'hsl(240 6% 35%)', margin: 0, flex: 1 }}>{desc}</p>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, padding: '6px 10px', background: 'hsl(240 6% 97%)', border: '1px solid hsl(240 6% 92%)', borderRadius: 6, color: 'hsl(240 6% 35%)' }}>{sample}</div>
                 </div>
-              </div>
+              ))}
             </div>
-          </div>
-        </section>
 
-        {/* PILLARS */}
-        <section id="pillars" className="lp-section">
-          <div className="lp-shell">
-            <div className="lp-section-tag">— Four pillars</div>
-            <h2 className="lp-section-h">Each capability maps to a <em>specific objective</em> of the study.</h2>
-            <div className="lp-pillars">
-              <div className="lp-pillar">
-                <span className="lp-pillar-num">OBJECTIVE 01</span>
-                <h3>An interface that reads ordinances, not buttons.</h3>
-                <p>The NLP layer translates queries like "show residential parcels near a school, no flood risk" into structured spatial filters. Powered by an Ollama LLM with a Gemini 2.5 Flash fallback.</p>
-                <div className="lp-pillar-viz" style={{ fontFamily: "'Geist Mono', monospace", fontSize: 12.5, color: 'hsl(240 10% 12%)' }}>
-                  <span style={{ color: 'hsl(240 6% 50%)' }}>&gt;</span>&nbsp;Find residential zones near a school
-                  <span style={{ display: 'inline-block', width: 7, height: 14, background: 'hsl(162 47% 39%)', marginLeft: 6, animation: 'lpdotpulse 1s steps(1) infinite' }}/>
-                </div>
-                <div className="lp-pillar-stack">
-                  {['Ollama','Gemini 2.5 Flash','Intent parser'].map(t => <span key={t} className="lp-tech">{t}</span>)}
-                </div>
+            <div style={{ marginTop: 24, background: 'hsl(162 47% 39% / 0.06)', border: '1px solid hsl(162 47% 39% / 0.2)', borderRadius: 12, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(162 47% 32%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style={{ fontSize: 13.5, color: 'hsl(240 6% 25%)' }}>
+                  <strong>Note for LGU Staff:</strong> Log in as LGU Admin to generate official PDF reports, update suitability data, and access the Admin panel.
+                </span>
               </div>
-
-              <div className="lp-pillar">
-                <span className="lp-pillar-num">OBJECTIVE 02</span>
-                <h3>A weighted scoring engine that explains itself.</h3>
-                <p>Multi-Criteria Decision Analysis combines road proximity, lot size, flood risk and zoning constraints into a single suitability percentage — with every weight transparent and tunable by LGU planners.</p>
-                <div className="lp-pillar-viz" style={{ gap: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
-                    <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: 'hsl(240 6% 45%)', width: 90 }}>Flood risk</span>
-                    <div style={{ flex: 1, height: 6, background: 'hsl(240 6% 92%)', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ width: '85%', height: '100%', background: 'hsl(0 70% 60%)' }}/>
-                    </div>
-                    <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, width: 28, textAlign: 'right' }}>0.32</span>
-                  </div>
-                </div>
-                <div className="lp-pillar-stack">
-                  {['AHP','Weighted Linear Combination','Laravel'].map(t => <span key={t} className="lp-tech">{t}</span>)}
-                </div>
-              </div>
-
-              <div className="lp-pillar">
-                <span className="lp-pillar-num">OBJECTIVE 03</span>
-                <h3>An overlay that says no to encroachment.</h3>
-                <p>The spatial overlay module compares proposals against mangrove parks and ecological reserves, automatically flagging — and refusing to score — any parcel inside a protected boundary.</p>
-                <div className="lp-pillar-viz" style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
-                  <svg viewBox="0 0 300 80" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                    <defs>
-                      <pattern id="lp-hatch2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-                        <line x1="0" y1="0" x2="0" y2="6" stroke="hsl(0 70% 55% / 0.4)" strokeWidth="1.5"/>
-                      </pattern>
-                    </defs>
-                    <rect width="300" height="80" fill="hsl(240 6% 97%)"/>
-                    <rect x="40" y="14" width="80" height="52" rx="4" fill="hsl(220 70% 55% / 0.25)" stroke="hsl(220 70% 45%)" strokeWidth="1"/>
-                    <rect x="90" y="22" width="80" height="44" rx="4" fill="url(#lp-hatch2)" stroke="hsl(0 70% 50%)" strokeWidth="1" strokeDasharray="3 3"/>
-                    <text x="200" y="40" fontFamily="Geist Mono" fontSize="11" fill="hsl(0 70% 35%)" fontWeight="600">⚠ OVERLAP</text>
-                    <text x="200" y="56" fontFamily="Geist Mono" fontSize="10" fill="hsl(240 6% 40%)">Mangrove buffer</text>
-                  </svg>
-                </div>
-                <div className="lp-pillar-stack">
-                  {['Mapcn API','Spatial overlay','SQLite spatial'].map(t => <span key={t} className="lp-tech">{t}</span>)}
-                </div>
-              </div>
-
-              <div className="lp-pillar">
-                <span className="lp-pillar-num">OBJECTIVE 04</span>
-                <h3>The right tree for the right soil.</h3>
-                <p>A species-matching module cross-references soil pH, texture, elevation and temperature against a registry of native flora — turning reforestation from guesswork into a 94% accurate match.</p>
-                <div className="lp-pillar-viz" style={{ justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, color: 'hsl(240 6% 45%)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Suggested</div>
-                    <div style={{ fontFamily: "'Fraunces',serif", fontSize: 18, letterSpacing: '-0.01em' }}>Narra · Molave · Lauan</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, color: 'hsl(240 6% 45%)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Match</div>
-                    <div style={{ fontFamily: "'Fraunces',serif", fontSize: 22, color: 'hsl(162 47% 32%)', fontWeight: 500, letterSpacing: '-0.02em' }}>94%</div>
-                  </div>
-                </div>
-                <div className="lp-pillar-stack">
-                  {['PHP rules engine','Soil + slope data','Native species registry'].map(t => <span key={t} className="lp-tech">{t}</span>)}
-                </div>
-              </div>
+              <button className="lp-btn lp-btn-primary" onClick={() => go('dashboard')} style={{ height: 38, padding: '0 18px', fontSize: 13, borderRadius: 8, flexShrink: 0 }}>
+                Try it now →
+              </button>
             </div>
           </div>
         </section>
@@ -476,7 +423,7 @@ export function LandingPage({ go }) {
                 {
                   tier: 'TIER 01 · PRESENTATION', title: "What the citizen sees.",
                   items: [
-                    ['①', 'Ollama AI Assistant', 'handles unstructured public queries.'],
+                    ['①', 'Gemini 2.5 Flash AI', 'handles unstructured public queries with live barangay context.'],
                     ['②', 'Zoning & Suitability Map', 'renders color-coded polygons with environmental alerts.'],
                     ['③', 'Analytics & Report', 'panel for LGU planners.'],
                   ],
@@ -517,50 +464,6 @@ export function LandingPage({ go }) {
           </div>
         </section>
 
-        {/* COMPARE */}
-        <section id="compare" className="lp-section">
-          <div className="lp-shell">
-            <div className="lp-section-tag">— Where it fits</div>
-            <h2 className="lp-section-h">Existing tools digitize records. <em>TERRASPEC decides.</em></h2>
-            <p className="lp-section-lead">Other municipal GIS portals stop at visualization. TERRASPEC adds multi-criteria scoring, a conversational interface and a reforestation module in one platform.</p>
-            <div className="lp-compare">
-              <table>
-                <thead>
-                  <tr>
-                    <th style={{ width: '34%' }}>Capability</th>
-                    <th className="lp-cur" style={{ textAlign: 'center' }}>TerraSpec</th>
-                    <th style={{ textAlign: 'center' }}>QC Zoning Viewer</th>
-                    <th style={{ textAlign: 'center' }}>Davao GIS Map</th>
-                    <th style={{ textAlign: 'center' }}>ArcGIS Urban</th>
-                    <th style={{ textAlign: 'center' }}>i-Tree Eco</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ['Cloud-based map viewer',            true,  true,  true,  true,  false],
-                    ['Official zoning visualizations',    true,  true,  true,  true,  false],
-                    ['Multi-criteria suitability (MCDA)', true,  false, false, true,  false],
-                    ['Environmental parameter analysis',  true,  false, false, true,  true ],
-                    ['AI-powered chatbot (NLP)',           true,  false, false, false, false],
-                    ['Automated suitability scoring',     true,  false, false, true,  false],
-                    ['Reforestation & species matching',  true,  false, false, false, true ],
-                    ['Automated analytics reporting',     true,  false, false, false, true ],
-                  ].map(([feat, ...vals]) => (
-                    <tr key={feat}>
-                      <td className="lp-feat">{feat}</td>
-                      {vals.map((v, i) => (
-                        <td key={i} className={i === 0 ? 'lp-cur' : ''} style={{ textAlign: 'center' }}>
-                          {v ? <span className="lp-ccheck">✓</span> : <span className="lp-cdash">—</span>}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
         {/* SDG */}
         <section className="lp-section">
           <div className="lp-shell">
@@ -581,7 +484,7 @@ export function LandingPage({ go }) {
                 <div>
                   <div className="sdg-num">SDG 15</div>
                   <h4>Life on Land</h4>
-                  <p>Reforestation success depends on matching species to site. TERRASPEC raises native species suitability from a baseline 54% to up to 99% by reading biophysical conditions per parcel.</p>
+                  <p>Reforestation success depends on matching species to site. TERRASPEC raises native species suitability from a baseline 54% to up to 99% by reading biophysical conditions per barangay.</p>
                 </div>
                 <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, opacity: .85, letterSpacing: '0.1em' }}>→ SPECIES-SITE MATCHING</div>
               </div>
@@ -589,28 +492,6 @@ export function LandingPage({ go }) {
           </div>
         </section>
 
-        {/* TEAM */}
-        <section id="team" className="lp-section">
-          <div className="lp-shell">
-            <div className="lp-section-tag">— The researchers</div>
-            <h2 className="lp-section-h">A three-person team out of the <em>Institute of Computing.</em></h2>
-            <p className="lp-section-lead">Davao del Norte State College · Bachelor of Science in Information Technology · March 2026.</p>
-            <div className="lp-team">
-              {[
-                { initials: 'AT', name: 'Abegail C. Tacogue',    role: 'System Analyst',   bio: "Gathers zoning requirements from the LGU, defines MCDA logic, and verifies that the platform meets the city's sustainable planning needs." },
-                { initials: 'ES', name: 'Everjay G. Salango',    role: 'Programmer',       bio: 'Builds the Web-GIS interface, implements the suitability scoring engine, and integrates the AI-driven NLP chatbot.' },
-                { initials: 'HI', name: 'Hannah Mae B. Inting',  role: 'Documentarian',   bio: 'Records every Agile phase, integration test, and produces the technical and user manuals that ship with the system to LGU officials.' },
-              ].map(({ initials, name, role, bio }) => (
-                <div key={name} className="lp-person">
-                  <div className="lp-avatar">{initials}</div>
-                  <div className="lp-nm">{name}</div>
-                  <div className="lp-rl">{role}</div>
-                  <p className="lp-bio">{bio}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* CLOSING CTA */}
         <section className="lp-section" style={{ borderTop: 'none', paddingTop: 48, paddingBottom: 48 }}>
@@ -621,7 +502,7 @@ export function LandingPage({ go }) {
                 <div>
                   <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'hsl(162 55% 60%)', marginBottom: 14 }}>— Now go decide</div>
                   <h3 style={{ fontFamily: "'Fraunces',serif", fontWeight: 300, fontSize: 48, lineHeight: 1.05, letterSpacing: '-0.025em', margin: 0 }}>
-                    Open the system and<br/>score your first <em style={{ color: 'hsl(162 55% 60%)' }}>parcel.</em>
+                    Open the system and<br/>explore your first <em style={{ color: 'hsl(162 55% 60%)' }}>barangay.</em>
                   </h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -645,7 +526,7 @@ export function LandingPage({ go }) {
             <div className="lp-footer-grid">
               <div>
                 <div className="lp-brand" style={{ marginBottom: 14 }}>
-                  <div className="lp-mark">T</div>
+                  <img src="/favicon.png" alt="TerraSpec" style={{ width: 26, height: 26, borderRadius: 7, objectFit: 'cover', flexShrink: 0 }}/>
                   <span>TERRASPEC</span>
                 </div>
                 <p className="lp-footer-cap">A Geospatial Decision Support System for Multi-Sectoral Land Suitability Optimization and Spatial Analytics. In partial fulfillment of the BS Information Technology degree.</p>
@@ -653,14 +534,12 @@ export function LandingPage({ go }) {
               <div>
                 <h5>System</h5>
                 <a onClick={() => go('dashboard')}>Launch app</a>
-                <a href="#pillars">Capabilities</a>
                 <a href="#arch">Architecture</a>
               </div>
               <div>
                 <h5>Study</h5>
-                <a href="#system">Background</a>
-                <a href="#compare">Comparative review</a>
-                <a href="#team">Researchers</a>
+                <a href="#arch">Architecture</a>
+                <a href="#howto">How to use</a>
               </div>
               <div>
                 <h5>Institution</h5>
@@ -670,8 +549,8 @@ export function LandingPage({ go }) {
               </div>
             </div>
             <div className="lp-footer-bottom">
-              <span>© 2026 TERRASPEC · CAPSTONE PROJECT</span>
-              <span>BUILT WITH LARAVEL · OLLAMA · MAPCN · SQLITE</span>
+              <span>© 2026 TERRASPEC</span>
+              <span>BUILT WITH LARAVEL · GEMINI 2.5 FLASH · MAPLIBRE · MYSQL</span>
             </div>
           </div>
         </footer>
