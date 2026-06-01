@@ -113,8 +113,15 @@ function App() {
     try { return sessionStorage.getItem('terraspec-screen') || 'landing'; } catch { return 'landing'; }
   });
   const [screenProps, setScreenProps] = useState({});
-  const [role, setRole]               = useState('public');
-  const [lguUser, setLguUser]         = useState(null);
+  const [role, setRole]               = useState(() => {
+    try { return sessionStorage.getItem('terraspec-role') || 'public'; } catch { return 'public'; }
+  });
+  const [lguUser, setLguUser]         = useState(() => {
+    try {
+      const u = sessionStorage.getItem('terraspec-user');
+      return u ? JSON.parse(u) : null;
+    } catch { return null; }
+  });
   const [dark, setDark]               = useState(false);
   const [showLogin, setShowLogin]     = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -125,12 +132,20 @@ function App() {
     setLguUser(user);
     setRole('admin');
     setShowLogin(false);
+    try {
+      sessionStorage.setItem('terraspec-role', 'admin');
+      sessionStorage.setItem('terraspec-user', JSON.stringify(user));
+    } catch {}
   }
 
   function handleLogout() {
     fetch('/api/lgu/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     setLguUser(null);
     setRole('public');
+    try {
+      sessionStorage.removeItem('terraspec-role');
+      sessionStorage.removeItem('terraspec-user');
+    } catch {}
     if (screen === 'admin') go('dashboard');
   }
 

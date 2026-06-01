@@ -1,15 +1,22 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AhpController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\DashboardStatsController;
 use App\Http\Controllers\LguAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/chatbot', ChatbotController::class);
+Route::get('/reports',  [App\Http\Controllers\ReportController::class, 'archive']);
 Route::get('/dashboard-stats', DashboardStatsController::class);
 Route::post('/lgu/login', [LguAuthController::class, 'login']);
 Route::post('/lgu/logout', [LguAuthController::class, 'logout']);
+
+Route::prefix('admin/ahp')->group(function () {
+    Route::post('/compute', [AhpController::class, 'compute']);
+    Route::post('/apply',   [AhpController::class, 'apply']);
+});
 
 Route::prefix('admin')->group(function () {
     Route::get('/zones',                 [AdminController::class, 'zones']);

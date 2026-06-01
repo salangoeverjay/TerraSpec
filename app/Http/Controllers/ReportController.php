@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Report;
 use App\Models\ZoneUnit;
 use App\Models\SuitabilityCriteria;
 use App\Services\GeminiChatService;
 use App\Services\SuitabilityScoreService;
 use App\Services\ReforestationService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -88,9 +90,36 @@ class ReportController extends Controller
         // AI-generated narrative — gracefully falls back to '' on failure
         $data['ai_narrative'] = $this->gemini->generateNarrative($data);
 
+        // Save report record to DB
+        Report::create([
+            'report_type'  => $type,
+            'barangay'     => $barangay ?: null,
+            'zone_unit_id' => $zone?->zone_unit_id,
+            'generated_by' => $request->user()?->id,
+            'status'       => 'Final',
+            'sections'     => $sections,
+        ]);
+
         $pdf = Pdf::loadView('pdf.report', $data)->setPaper('a4', 'portrait');
 
         $slug = Str::slug($type) . '-' . Str::slug($barangay ?: 'all') . '-' . now()->format('Ymd');
         return $pdf->download("{$slug}.pdf");
+    }
+
+    public function archive(): JsonResponse
+    {
+        $reports = Report::with(['generatedBy'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn ($r) => [
+                'id'           => $r->id,
+                'report_type'  => $r->report_type,
+                'barangay'     => $r->barangay ?? 'All Barangays',
+                'status'       => $r->status,
+                'generated_by' => $r->generatedBy?->name ?? 'CPDO',
+                'created_at'   => $r->created_at->format('Y-m-d'),
+            ]);
+
+        return response()->json($reports);
     }
 }

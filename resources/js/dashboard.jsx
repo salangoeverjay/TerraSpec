@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { PANABO, loadConversations } from './data.js';
+import { loadConversations } from './data.js';
+import { PANABO } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
 
@@ -62,33 +63,28 @@ export function DashboardScreen({ go }) {
   const [rankings, setRankings]         = useState([]);
   const [avgScore, setAvgScore]         = useState(null);
   const [loading, setLoading]           = useState(true);
-  const [flagged, setFlagged]           = useState(null);
-  const [hazardBreakdown, setBreakdown] = useState(null);
+  const [stats, setStats]               = useState(null);
 
   useEffect(() => {
     fetch('/suitability/rankings?analysis_type=commercial')
       .then(r => r.json())
-      .then(json => {
-        setRankings(json.data ?? []);
-        setAvgScore(json.avg_score ?? null);
-      })
+      .then(json => { setRankings(json.data ?? []); setAvgScore(json.avg_score ?? null); })
       .catch(() => {})
       .finally(() => setLoading(false));
 
     fetch('/api/dashboard-stats')
       .then(r => r.json())
-      .then(json => {
-        setFlagged(json.flagged_count ?? 0);
-        setBreakdown(json.breakdown ?? null);
-      })
-      .catch(() => setFlagged(0));
+      .then(json => setStats(json))
+      .catch(() => {});
   }, []);
 
   const top5          = rankings.slice(0, 5);
-  const zoneUnitCount = rankings.length || 40;
-  const displayAvg    = avgScore !== null ? `${avgScore}%` : '—';
-  const flaggedCount  = flagged ?? '…';
-  const activeReports = PANABO.reports.filter(r => r.status !== 'Archived').length;
+  const zoneUnitCount = stats?.zone_count   ?? rankings.length ?? 40;
+  const displayAvg    = avgScore !== null    ? `${avgScore}%`  : '—';
+  const flaggedCount  = stats?.flagged_count ?? '…';
+  const activeReports = stats?.report_count  ?? '…';
+  const restrictions  = stats?.restrictions  ?? [];
+  const topSpecies    = stats?.species       ?? [];
 
   const recentQueries = useMemo(() => {
     const convs = loadConversations();
@@ -121,9 +117,9 @@ export function DashboardScreen({ go }) {
 
       <div className="grid grid-4" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: `${PANABO.barangays.length} barangays` },
+          { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: '40 barangays · Panabo City' },
           { label: 'Avg Suitability',  value: displayAvg,     icon: 'chart', sub: 'Commercial · AHP-WLC score' },
-          { label: 'Flagged Areas',    value: flaggedCount,   icon: 'alert', sub: hazardBreakdown ? `Flood ${hazardBreakdown.flood} · Landslide ${hazardBreakdown.landslide} · Storm ${hazardBreakdown.storm_surge}` : 'Hazard-flagged zones' },
+          { label: 'Flagged Areas',    value: flaggedCount,   icon: 'alert', sub: stats?.breakdown ? `Flood ${stats.breakdown.flood} · Landslide ${stats.breakdown.landslide} · Storm ${stats.breakdown.storm_surge}` : 'Hazard-flagged zones' },
           { label: 'Active Reports',   value: activeReports,  icon: 'file',  sub: 'Pending / Draft / Final' },
         ].map(s => (
           <Card key={s.label}>
@@ -219,14 +215,16 @@ export function DashboardScreen({ go }) {
         </Card>
 
         <Card>
-          <CardHeader><span className="card-title">Environmental Flags</span></CardHeader>
+          <CardHeader><span className="card-title">Environmental Restrictions</span></CardHeader>
           <CardBody style={{ padding: 0 }}>
-            {PANABO.restrictions.map((r, i) => (
-              <div key={r.id} className="row" style={{ padding: '10px 18px', gap: 10, borderBottom: i < PANABO.restrictions.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
+            {restrictions.length === 0 ? (
+              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>Loading…</div>
+            ) : restrictions.map((r, i) => (
+              <div key={r.id} className="row" style={{ padding: '10px 18px', gap: 10, borderBottom: i < restrictions.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <Badge variant={r.severity === 'high' ? 'destructive' : r.severity === 'medium' ? 'warn' : ''}>{r.severity}</Badge>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500 }}>{r.name}</div>
-                  <div className="muted" style={{ fontSize: 11.5 }}>{r.zone || 'All zones'}</div>
+                  <div className="muted" style={{ fontSize: 11.5 }}>{r.type}</div>
                 </div>
               </div>
             ))}
@@ -241,13 +239,15 @@ export function DashboardScreen({ go }) {
             </div>
           </CardHeader>
           <CardBody style={{ padding: 0 }}>
-            {PANABO.species.slice(0, 5).map((s, i) => (
-              <div key={s.id} className="row-between" style={{ padding: '9px 18px', borderBottom: i < 4 ? '1px solid hsl(var(--border))' : 'none' }}>
+            {topSpecies.length === 0 ? (
+              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>Loading…</div>
+            ) : topSpecies.map((s, i) => (
+              <div key={s.species_id} className="row-between" style={{ padding: '9px 18px', borderBottom: i < topSpecies.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name.split(' (')[0]}</div>
-                  <div className="muted" style={{ fontSize: 11.5 }}>{s.soil.split('/')[0].trim()}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.common_name}</div>
+                  <div className="muted" style={{ fontSize: 11.5 }}>{s.soil_preference?.split('/')[0].trim()}</div>
                 </div>
-                <Badge variant="brand">{s.score}%</Badge>
+                <Badge variant={s.salinity_level === 'High' ? 'brand' : s.salinity_level === 'Med' ? 'warn' : ''}>{s.salinity_level}</Badge>
               </div>
             ))}
           </CardBody>

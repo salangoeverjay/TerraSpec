@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PANABO } from './data.js';
 import { Btn, Card, CardHeader, CardBody, Badge, Inp, Icon } from './components.jsx';
 
@@ -29,10 +29,20 @@ function statusVariant(status) {
 
 export function ReportsScreen({ role }) {
   const [type, setType]         = useState(REPORT_TYPES[0]);
-  const [barangay, setBarangay] = useState(PANABO.barangays[0]);
+  const [barangay, setBarangay] = useState('Poblacion');
   const [sections, setSections] = useState(new Set(SECTIONS));
   const [filter, setFilter]     = useState('');
   const [generating, setGenerating] = useState(false);
+  const [archive, setArchive]   = useState([]);
+  const [archiveLoading, setArchiveLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/reports')
+      .then(r => r.json())
+      .then(json => setArchive(Array.isArray(json) ? json : []))
+      .catch(() => setArchive([]))
+      .finally(() => setArchiveLoading(false));
+  }, []);
 
   function generateReport() {
     const isComparative = type === 'Comparative Analysis';
@@ -49,7 +59,14 @@ export function ReportsScreen({ role }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => setGenerating(false), 3000);
+    // Refresh archive after a short delay so the new record appears
+    setTimeout(() => {
+      fetch('/api/reports')
+        .then(r => r.json())
+        .then(json => setArchive(Array.isArray(json) ? json : []))
+        .catch(() => {});
+      setGenerating(false);
+    }, 4000);
   }
 
   function toggleSection(s) {
@@ -60,11 +77,11 @@ export function ReportsScreen({ role }) {
     });
   }
 
-  const filtered = PANABO.reports.filter(r =>
+  const filtered = archive.filter(r =>
     !filter ||
-    r.type.toLowerCase().includes(filter.toLowerCase()) ||
-    r.barangay.toLowerCase().includes(filter.toLowerCase()) ||
-    r.generatedBy.toLowerCase().includes(filter.toLowerCase())
+    (r.report_type ?? '').toLowerCase().includes(filter.toLowerCase()) ||
+    (r.barangay    ?? '').toLowerCase().includes(filter.toLowerCase()) ||
+    (r.generated_by ?? '').toLowerCase().includes(filter.toLowerCase())
   );
 
   return (
@@ -74,7 +91,6 @@ export function ReportsScreen({ role }) {
           <h1 className="page-title">Reports</h1>
           <p className="page-subtitle">Generate, review, and download land analysis reports</p>
         </div>
-        {role === 'admin' && <Btn variant="brand" icon="plus">New Report</Btn>}
       </div>
 
       {role === 'admin' ? (
@@ -178,20 +194,24 @@ export function ReportsScreen({ role }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className="muted">No reports found.</td></tr>
+              {archiveLoading && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className="muted">Loading archive…</td></tr>
+              )}
+              {!archiveLoading && filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className="muted">
+                  {archive.length === 0 ? 'No reports generated yet. Use the Report Builder above.' : 'No reports match your search.'}
+                </td></tr>
               )}
               {filtered.map(r => (
                 <tr key={r.id}>
-                  <td><span className="mono muted" style={{ fontSize: 11.5 }}>{r.id}</span></td>
-                  <td>{r.type}</td>
+                  <td><span className="mono muted" style={{ fontSize: 11.5 }}>RPT-{String(r.id).padStart(4, '0')}</span></td>
+                  <td>{r.report_type}</td>
                   <td><span style={{ fontWeight: 500 }}>{r.barangay}</span></td>
-                  <td>{r.date}</td>
+                  <td>{r.created_at}</td>
                   <td><Badge variant={statusVariant(r.status)}>{r.status}</Badge></td>
-                  <td>{r.generatedBy}</td>
+                  <td>{r.generated_by}</td>
                   <td>
                     <div className="row" style={{ gap: 4 }}>
-                      <Btn sz="xs" variant="ghost" icon="eye"/>
                       <Btn sz="xs" variant="ghost" icon="download"/>
                     </div>
                   </td>

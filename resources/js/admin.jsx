@@ -1,5 +1,247 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Icon, Btn, Card, CardHeader, CardBody, Inp } from './components.jsx';
+
+// ── AHP constants ────────────────────────────────────────────────────────────
+const AHP_RI = [0, 0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.45]; // n=0..9
+const SAATY_OPTS = [
+  { v: '9',   l: '9 — Extreme importance' },
+  { v: '8',   l: '8' },
+  { v: '7',   l: '7 — Very strong importance' },
+  { v: '6',   l: '6' },
+  { v: '5',   l: '5 — Strong importance' },
+  { v: '4',   l: '4' },
+  { v: '3',   l: '3 — Moderate importance' },
+  { v: '2',   l: '2' },
+  { v: '1',   l: '1 — Equal importance' },
+  { v: '1/2', l: '1/2' },
+  { v: '1/3', l: '1/3 — Moderate (inverse)' },
+  { v: '1/4', l: '1/4' },
+  { v: '1/5', l: '1/5 — Strong (inverse)' },
+  { v: '1/6', l: '1/6' },
+  { v: '1/7', l: '1/7 — Very strong (inverse)' },
+  { v: '1/8', l: '1/8' },
+  { v: '1/9', l: '1/9 — Extreme (inverse)' },
+];
+
+function parseScale(s) {
+  if (typeof s === 'number') return s;
+  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a / b; }
+  return Number(s);
+}
+
+function buildMatrix(upper, n) {
+  return Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => {
+      if (i === j) return 1;
+      return i < j ? parseScale(upper[i][j]) : 1 / parseScale(upper[j][i]);
+    })
+  );
+}
+
+function computeAHP(matrix) {
+  const n = matrix.length;
+  // Column sums
+  const colSums = Array(n).fill(0);
+  matrix.forEach(row => row.forEach((v, j) => { colSums[j] += v; }));
+  // Priority vector (row averages of normalized matrix)
+  const weights = matrix.map(row =>
+    row.reduce((s, v, j) => s + v / colSums[j], 0) / n
+  );
+  // Weighted sum → λmax
+  const lambdaMax =
+    matrix.reduce((s, row, i) =>
+      s + row.reduce((ss, v, j) => ss + v * weights[j], 0) / weights[i], 0
+    ) / n;
+  const ci = (lambdaMax - n) / (n - 1);
+  const cr = n > 2 ? ci / AHP_RI[n] : 0;
+  return {
+    weights,
+    lambdaMax: +lambdaMax.toFixed(4),
+    ci:        +ci.toFixed(4),
+    cr:        +cr.toFixed(4),
+    valid:     cr <= 0.10,
+  };
+}
+
+function defaultUpper(n) {
+  return Array.from({ length: n }, () => Array(n).fill('1'));
+}
+
+// ── AHP Calculator component ─────────────────────────────────────────────────
+function AhpCalculator({ criteria }) {
+  const n = criteria.length;
+  const TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
+  const TYPE_LABELS = { commercial: 'Commercial', residential: 'Residential', industrial: 'Industrial', agricultural: 'Agricultural', reforestation: 'Reforestation' };
+
+  const [analysisType, setAnalysisType] = useState('commercial');
+  const [upper, setUpper]               = useState(() => defaultUpper(n));
+  const [saving, setSaving]             = useState(false);
+  const [saved, setSaved]               = useState(false);
+  const [saveErr, setSaveErr]           = useState('');
+
+  // Reset matrix when n changes (shouldn't happen, but safety)
+  useEffect(() => { setUpper(defaultUpper(n)); }, [n]);
+
+  const matrix = useMemo(() => buildMatrix(upper, n), [upper, n]);
+  const result = useMemo(() => computeAHP(matrix), [matrix]);
+
+  function setCell(i, j, v) {
+    setUpper(prev => {
+      const next = prev.map(r => [...r]);
+      next[i][j] = v;
+      return next;
+    });
+    setSaved(false);
+  }
+
+  function reciprocalLabel(i, j) {
+    // Show lower triangle reciprocal as fraction string
+    const val = parseScale(upper[j][i]);
+    if (val === 1) return '1';
+    if (val >= 2 && Number.isInteger(val)) return `1/${val}`;
+    const inv = 1 / val;
+    if (Number.isInteger(inv)) return String(inv);
+    return (1 / val).toFixed(2);
+  }
+
+  async function applyWeights() {
+    if (!result.valid) return;
+    setSaving(true); setSaveErr('');
+    try {
+      // Send full matrix to backend — backend re-validates CR and saves weights
+      const res = await fetch('/api/admin/ahp/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ analysis_type: analysisType, matrix }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || json.message || 'Failed to apply weights.');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) { setSaveErr(e.message); }
+    finally { setSaving(false); }
+  }
+
+  const crOk  = result.valid;
+  const crPct = (result.cr * 100).toFixed(2);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Card>
+        <CardHeader>
+          <div className="row-between">
+            <div>
+              <span className="card-title">AHP Pairwise Comparison Matrix</span>
+              <span className="muted" style={{ fontSize: 12, marginLeft: 10 }}>Fill the upper triangle using Saaty's 1–9 scale</span>
+            </div>
+            <select className="input" value={analysisType} onChange={e => { setAnalysisType(e.target.value); setSaved(false); }} style={{ width: 190 }}>
+              {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]} Analysis</option>)}
+            </select>
+          </div>
+        </CardHeader>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table" style={{ fontSize: 11, minWidth: 600 }}>
+            <thead>
+              <tr>
+                <th style={{ minWidth: 140 }}>Criterion</th>
+                {criteria.map((c, j) => (
+                  <th key={j} style={{ textAlign: 'center', minWidth: 78, padding: '6px 3px', lineHeight: 1.3 }}>
+                    {c.criteria_name.split(' ')[0]}
+                  </th>
+                ))}
+                <th style={{ textAlign: 'center', color: 'hsl(var(--brand))', minWidth: 64 }}>AHP Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              {criteria.map((c, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 600, fontSize: 11.5, whiteSpace: 'nowrap' }}>{c.criteria_name}</td>
+                  {criteria.map((_, j) => (
+                    <td key={j} style={{ textAlign: 'center', padding: '4px 3px' }}>
+                      {i === j ? (
+                        <span style={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600 }}>1</span>
+                      ) : i < j ? (
+                        <select
+                          value={upper[i][j]}
+                          onChange={e => setCell(i, j, e.target.value)}
+                          style={{ width: 72, height: 28, fontSize: 11, borderRadius: 5, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          {SAATY_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                        </select>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', fontStyle: 'italic' }}>
+                          {reciprocalLabel(i, j)}
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: 'hsl(var(--brand))', fontSize: 13 }}>
+                    {(result.weights[i] * 100).toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Results bar */}
+        <div style={{ padding: '14px 18px', borderTop: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+          {[
+            { label: 'λmax', val: result.lambdaMax },
+            { label: 'CI',   val: result.ci },
+          ].map(({ label, val }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{val}</div>
+            </div>
+          ))}
+          <div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>CR</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: crOk ? 'hsl(var(--brand))' : 'hsl(var(--destructive))' }}>
+              {crPct}% {crOk ? '✓' : '✗'}
+            </div>
+          </div>
+          <div style={{ flex: 1, fontSize: 12.5, color: crOk ? 'hsl(var(--brand))' : 'hsl(var(--destructive))' }}>
+            {crOk
+              ? `CR = ${crPct}% ≤ 10% — Comparisons are consistent. Weights are valid.`
+              : `CR = ${crPct}% > 10% — Comparisons are inconsistent. Adjust values until CR ≤ 10%.`}
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            {saveErr && <span style={{ fontSize: 12, color: 'hsl(var(--destructive))' }}>{saveErr}</span>}
+            {saved   && <span style={{ fontSize: 12, color: 'hsl(var(--brand))' }}>Applied to {TYPE_LABELS[analysisType]}.</span>}
+            <Btn variant="brand" icon="check" disabled={!crOk || saving} onClick={applyWeights}>
+              {saving ? 'Applying…' : `Apply to ${TYPE_LABELS[analysisType]}`}
+            </Btn>
+          </div>
+        </div>
+      </Card>
+
+      {/* Saaty scale legend */}
+      <Card>
+        <CardHeader><span className="card-title">Saaty Scale Reference</span></CardHeader>
+        <CardBody>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+            {[
+              { v: '1',   d: 'Equal importance — two criteria contribute equally' },
+              { v: '3',   d: 'Moderate importance — one slightly favoured over other' },
+              { v: '5',   d: 'Strong importance — one strongly favoured' },
+              { v: '7',   d: 'Very strong importance — dominance demonstrated practically' },
+              { v: '9',   d: 'Extreme importance — highest possible affirmation' },
+              { v: '2,4,6,8', d: 'Intermediate values between adjacent judgements' },
+              { v: '1/n', d: 'Reciprocals — if row i has value x over column j, then j over i = 1/x' },
+            ].map(({ v, d }) => (
+              <div key={v} style={{ display: 'flex', gap: 10 }}>
+                <span style={{ fontWeight: 700, minWidth: 52, fontSize: 12.5, color: 'hsl(var(--brand))' }}>{v}</span>
+                <span style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', lineHeight: 1.45 }}>{d}</span>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
 
 const WEIGHT_TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
@@ -75,7 +317,7 @@ async function apiFetch(method, path, body) {
 }
 
 export function AdminScreen() {
-  const TABS = ['zones', 'criteria', 'restrictions', 'species', 'users'];
+  const TABS = ['ahp', 'zones', 'criteria', 'restrictions', 'species', 'users'];
   const [tab, setTab]       = useState('zones');
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(false);
@@ -94,12 +336,13 @@ export function AdminScreen() {
   const [weightsSaved, setWeightsSaved] = useState(false);
 
   const load = useCallback(async (t) => {
+    const apiTab = t === 'ahp' ? 'criteria' : t;
     setLoading(true); setLoadErr(''); setFilter('');
     try {
-      const json = await apiFetch('GET', `/${t}`);
+      const json = await apiFetch('GET', `/${apiTab}`);
       const list = Array.isArray(json) ? json : [];
       setRows(list);
-      if (t === 'criteria') {
+      if (t === 'criteria' || t === 'ahp') {
         const w = {};
         list.forEach(c => {
           w[c.criteria_id] = {
@@ -203,7 +446,7 @@ export function AdminScreen() {
           <h1 className="page-title">Administration</h1>
           <p className="page-subtitle">Manage zones, criteria weights, restrictions, species, and users</p>
         </div>
-        {cfg?.canAdd && (
+        {cfg?.canAdd && tab !== 'ahp' && (
           <Btn variant="brand" icon="plus" onClick={openAdd}>Add Record</Btn>
         )}
       </div>
@@ -216,7 +459,7 @@ export function AdminScreen() {
             style={{ cursor: 'pointer', textTransform: 'capitalize' }}
             onClick={() => { setTab(t); setModal(null); }}
           >
-            {t === 'criteria' ? 'AHP Weights' : t}
+            {t === 'ahp' ? 'AHP Matrix' : t === 'criteria' ? 'AHP Weights' : t}
           </div>
         ))}
       </div>
@@ -228,6 +471,15 @@ export function AdminScreen() {
       )}
 
       {/* ── CRITERIA WEIGHT MATRIX ── */}
+      {/* ── AHP Matrix calculator ── */}
+      {tab === 'ahp' && (
+        loading
+          ? <div style={{ padding: 40, textAlign: 'center' }} className="muted">Loading criteria…</div>
+          : rows.length > 0
+            ? <AhpCalculator criteria={rows}/>
+            : <div style={{ padding: 40, textAlign: 'center' }} className="muted">No criteria found. Run database seeder first.</div>
+      )}
+
       {tab === 'criteria' && (
         <Card>
           <CardHeader>

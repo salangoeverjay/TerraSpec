@@ -171,6 +171,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
   const [isLoading, setIsLoading] = useState(false);
   const [nlpPane, setNlpPane] = useState(true);
   const [nlpData, setNlpData] = useState({ intent: null, entities: [], messageCount: 0 });
+  const [confirmModal, setConfirmModal] = useState(null); // { message, onConfirm }
   const messagesRef = React.useRef(null);
   const headerMenuRef = React.useRef(null);
 
@@ -276,10 +277,12 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
 
   function removeActiveConversation() {
     if (!activeConv) return;
-    const ok = window.confirm('Delete this chat history?');
-    if (!ok) return;
-    deleteConv(activeConv.id);
     setShowHeaderMenu(false);
+    setConfirmModal({
+      title:   'Delete conversation?',
+      message: `"${activeConv.title}" will be permanently removed from your chat history.`,
+      onConfirm: () => { deleteConv(activeConv.id); setConfirmModal(null); },
+    });
   }
 
   async function sendChatPrompt(prompt) {
@@ -568,7 +571,11 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
               onClick={e => {
                 e.stopPropagation();
                 setMenuOpenId(null);
-                if (window.confirm('Delete this chat history?')) deleteConv(c.id);
+                setConfirmModal({
+                  title:   'Delete conversation?',
+                  message: `"${c.title}" will be permanently removed from your chat history.`,
+                  onConfirm: () => { deleteConv(c.id); setConfirmModal(null); },
+                });
               }}
               className="row"
               style={{ width: '100%', border: 'none', background: 'transparent', padding: '7px 10px', borderRadius: 6, fontSize: 12.5, textAlign: 'left', color: 'hsl(var(--destructive))', cursor: 'pointer', gap: 8 }}
@@ -975,6 +982,46 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {confirmModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}
+          onClick={() => setConfirmModal(null)}
+        >
+          <div
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '28px 28px 22px', width: 360, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', display: 'flex', flexDirection: 'column', gap: 14 }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'hsl(var(--destructive) / 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="trash" size={20} style={{ color: 'hsl(var(--destructive))' }}/>
+            </div>
+
+            {/* Text */}
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{confirmModal.title}</div>
+              <div style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>{confirmModal.message}</div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button
+                onClick={() => setConfirmModal(null)}
+                style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: 'hsl(var(--destructive))', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
