@@ -123,6 +123,14 @@
 @if(in_array('Executive Summary', $sections) && $zone)
 <div class="section">
   <div class="section-title">Executive Summary</div>
+
+  @if(!empty($ai_narrative))
+  <div style="background:#f0fdf4;border-left:3px solid #16a34a;border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;line-height:1.7;color:#1a1a1a;">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#16a34a;font-weight:700;margin-bottom:6px;">AI-Generated Narrative — Gemini 2.5 Flash</div>
+    {{ $ai_narrative }}
+  </div>
+  @endif
+
   <table class="info-table">
     <tr><td>Barangay / Zone Unit</td><td>{{ $zone->unit_name }}</td></tr>
     <tr><td>Report Type</td><td>{{ $report_type }}</td></tr>
@@ -280,6 +288,15 @@
 
 {{-- ── COMPARATIVE ANALYSIS RANKINGS ── --}}
 @if($report_type === 'Comparative Analysis' && isset($rankings))
+@if(!empty($ai_narrative))
+<div class="section">
+  <div class="section-title">Executive Summary</div>
+  <div style="background:#f0fdf4;border-left:3px solid #16a34a;border-radius:4px;padding:10px 14px;margin-bottom:6px;font-size:11.5px;line-height:1.7;color:#1a1a1a;">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#16a34a;font-weight:700;margin-bottom:6px;">AI-Generated Narrative — Gemini 2.5 Flash</div>
+    {{ $ai_narrative }}
+  </div>
+</div>
+@endif
 <div class="section">
   <div class="section-title">City-Wide Suitability Rankings — Commercial Analysis (All 40 Barangays)</div>
   <table class="ranking-table">

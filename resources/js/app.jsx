@@ -109,14 +109,17 @@ const NAV = [
 ];
 
 function App() {
-  const [screen, setScreen]           = useState('landing');
+  const [screen, setScreen]           = useState(() => {
+    try { return sessionStorage.getItem('terraspec-screen') || 'landing'; } catch { return 'landing'; }
+  });
   const [screenProps, setScreenProps] = useState({});
   const [role, setRole]               = useState('public');
   const [lguUser, setLguUser]         = useState(null);
   const [dark, setDark]               = useState(false);
   const [showLogin, setShowLogin]     = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch]           = useState('');
+  const [mapContext, setMapContext]    = useState(null); // { barangay, zone, score }
 
   function handleLoginSuccess(user) {
     setLguUser(user);
@@ -131,7 +134,11 @@ function App() {
     if (screen === 'admin') go('dashboard');
   }
 
-  function go(s, props = {}) { setScreen(s); setScreenProps(props); }
+  function go(s, props = {}) {
+    setScreen(s);
+    setScreenProps(props);
+    try { sessionStorage.setItem('terraspec-screen', s); } catch {}
+  }
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -242,7 +249,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <Screen go={go} role={role} search={search} setSearch={setSearch} {...screenProps}/>
+          <Screen go={go} role={role} search={search} setSearch={setSearch} mapContext={mapContext} setMapContext={setMapContext} {...screenProps}/>
         )}
       </main>
       {showSidebar && (

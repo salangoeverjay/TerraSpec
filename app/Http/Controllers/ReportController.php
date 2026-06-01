@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ZoneUnit;
 use App\Models\SuitabilityCriteria;
+use App\Services\GeminiChatService;
 use App\Services\SuitabilityScoreService;
 use App\Services\ReforestationService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -15,7 +16,8 @@ class ReportController extends Controller
 {
     public function __construct(
         private SuitabilityScoreService $scorer,
-        private ReforestationService $reforestation,
+        private ReforestationService    $reforestation,
+        private GeminiChatService       $gemini,
     ) {}
 
     public function generate(Request $request): Response
@@ -83,9 +85,12 @@ class ReportController extends Controller
             ])->values();
         }
 
+        // AI-generated narrative — gracefully falls back to '' on failure
+        $data['ai_narrative'] = $this->gemini->generateNarrative($data);
+
         $pdf = Pdf::loadView('pdf.report', $data)->setPaper('a4', 'portrait');
 
-        $slug     = Str::slug($type) . '-' . Str::slug($barangay ?: 'all') . '-' . now()->format('Ymd');
+        $slug = Str::slug($type) . '-' . Str::slug($barangay ?: 'all') . '-' . now()->format('Ymd');
         return $pdf->download("{$slug}.pdf");
     }
 }

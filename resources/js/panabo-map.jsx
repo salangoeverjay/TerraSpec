@@ -6,7 +6,7 @@ import {
 import { PANABO, BARANGAY_COORDS } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
 
-function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
+function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Ask me about the map — parcels, zoning, flood risk, or reforestation.' }
@@ -14,6 +14,43 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+
+  const b = parcel?.barangay ?? nearestBarangay;
+
+  const bubblePrompts = useMemo(() => {
+    const lastMsg = messages.filter(m => m.role === 'assistant').at(-1)?.content ?? '';
+    const talked  = messages.length > 1;
+
+    const isRefo  = /reforest|tree|species|mangrove|bakawan|molave|toog|nipa/i.test(lastMsg);
+    const isEnv   = /flood|hazard|landslide|storm|restrict|protect|watershed/i.test(lastMsg);
+    const isSuit  = /suitabilit|score|suitable|commercial|residential|industrial/i.test(lastMsg);
+
+    if (!talked) {
+      return b ? [
+        `What is the suitability of ${b}?`,
+        `Are there flood risks in ${b}?`,
+        `Best tree species for ${b}?`,
+        `What zone is ${b} under?`,
+      ] : [
+        'Which areas have high flood risk?',
+        'Where are the mangrove protection zones?',
+        'Top commercial zones in Panabo City',
+        'Best reforestation sites in Panabo',
+      ];
+    }
+
+    if (b) {
+      if (isRefo) return [`What species are best for ${b}?`, `Watershed restrictions in ${b}?`, `Elevation of ${b}?`, 'Other reforestation zones'];
+      if (isEnv)  return [`Suitability score of ${b}?`, `What development is allowed in ${b}?`, 'Which zones have similar risks?', `Reforestation options for ${b}?`];
+      if (isSuit) return [`Flood risks in ${b}?`, `Restrictions in ${b}?`, `Best tree species for ${b}?`, `Compare ${b} with nearby zones`];
+      return [`Commercial suitability of ${b}?`, `Environmental risks in ${b}?`, `Zone classification of ${b}?`, `Reforestation potential of ${b}?`];
+    }
+
+    if (isRefo) return ['Which barangays are in watershed zones?', 'Native trees best for coastal areas?', 'DENR priority reforestation sites?', 'Mangrove restoration areas in Panabo'];
+    if (isEnv)  return ['Barangays with storm surge risk?', 'Where are all protected areas?', 'Zones with landslide exposure?', 'Show all SAFDZ areas'];
+    if (isSuit) return ['Top commercial zones in Panabo City', 'Best barangays for residential use?', 'Zones with lowest flood risk?', 'Compare urban vs rural suitability'];
+    return ['Which areas have the highest flood risk?', 'Where are the protected mangrove zones?', 'Top commercial zones in Panabo', 'Reforestation potential here?'];
+  }, [b, messages]);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,8 +65,10 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
 
     const selection = parcel
       ? `Parcel ${parcel.id}, ${parcel.barangay}, zone ${parcel.zone}. Area: ${parcel.area} sqm. Soil: ${parcel.soil}. Slope: ${parcel.slope}. Flood: ${parcel.flood}. Road: ${parcel.road_m}m. Suitability: ${parcel.score}%.`
-      : selectedPoint
-      ? `Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E. Suitability: ${selectedPoint.score}%.`
+      : nearestBarangay && selectedPoint
+      ? `Barangay ${nearestBarangay}. Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E. Suitability: ${selectedPoint.score}%.`
+      : nearestBarangay
+      ? `Barangay ${nearestBarangay}, Panabo City.`
       : 'Panabo City map view';
 
     try {
@@ -64,11 +103,13 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
             </button>
           </div>
 
-          {parcel && (
-            <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--muted) / 0.4)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {(parcel || nearestBarangay) && (
+            <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--brand) / 0.06)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Icon name="pin" size={11} style={{ color: 'hsl(var(--brand))' }}/>
-              <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Context:</span>
-              <span style={{ fontSize: 11, fontWeight: 500 }}>{parcel.id} · {parcel.barangay}</span>
+              <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Viewing:</span>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>
+                {parcel ? `${parcel.id} · ${parcel.barangay}` : nearestBarangay}
+              </span>
             </div>
           )}
 
@@ -88,9 +129,14 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
                   fontSize: 12.5, lineHeight: 1.5,
                 }}>
                   {m.content === 'Thinking...' ? (
-                    <div style={{ display: 'flex', gap: 3 }}>
-                      {[0,150,300].map(d => (
-                        <span key={d} style={{ width: 5, height: 5, borderRadius: '50%', background: 'hsl(var(--muted-foreground))', display: 'inline-block', animation: `bounce 1.2s ${d}ms ease-in-out infinite` }}/>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '2px 0' }}>
+                      {[0, 180, 360].map(d => (
+                        <span key={d} style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: 'hsl(var(--brand))',
+                          display: 'inline-block',
+                          animation: `bounce 1.5s ${d}ms ease-in-out infinite`,
+                        }}/>
                       ))}
                     </div>
                   ) : m.content}
@@ -100,12 +146,37 @@ function MapChatBubble({ parcel, selectedPoint, rightOffset }) {
             <div ref={bottomRef}/>
           </div>
 
+          {/* Dynamic quick prompts */}
+          <div style={{ padding: '5px 8px', borderTop: '1px solid hsl(var(--border) / 0.5)', display: 'flex', gap: 4, overflowX: 'auto', flexWrap: 'nowrap' }}>
+            {bubblePrompts.map((p, i) => (
+              <button
+                key={i}
+                onClick={() => { if (!loading) { setInput(p); } }}
+                disabled={loading}
+                style={{
+                  flexShrink: 0, fontSize: 10.5, padding: '3px 9px',
+                  borderRadius: 6, border: '1px solid hsl(var(--border))',
+                  background: 'hsl(var(--muted))', color: 'hsl(var(--foreground))',
+                  cursor: loading ? 'default' : 'pointer', whiteSpace: 'nowrap',
+                  opacity: loading ? 0.5 : 1,
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'hsl(var(--brand))'; e.currentTarget.style.background = 'hsl(var(--brand) / 0.06)'; }}}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'hsl(var(--border))'; e.currentTarget.style.background = 'hsl(var(--muted))'; }}
+              >{p}</button>
+            ))}
+          </div>
+
           <div style={{ padding: '8px 10px', borderTop: '1px solid hsl(var(--border))', display: 'flex', gap: 6 }}>
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void send(); } }}
-              placeholder="Ask about this location…"
+              placeholder={
+                parcel          ? `Ask about ${parcel.barangay}…` :
+                nearestBarangay ? `Ask about ${nearestBarangay}…` :
+                'Ask about this location…'
+              }
               className="input"
               style={{ flex: 1, height: 36, fontSize: 12.5, padding: '0 10px' }}
             />
@@ -400,9 +471,21 @@ function FlyToHighlight({ zones }) {
   return null;
 }
 
-export function MapScreen({ initial, search, setSearch, highlightZones = [] }) {
+export function MapScreen({ initial, search, setSearch, highlightZones = [], setMapContext }) {
   const mapRef = useRef(null);
   const [selected, setSelected] = useState(initial?.parcel || null);
+
+  // When a parcel is selected from the right panel, sync to app-level chat context
+  useEffect(() => {
+    if (!setMapContext || !selected) return;
+    const parcel  = PANABO.parcels.find(p => p.id === selected);
+    const ranking = (PANABO.barangayRankings ?? []).find(r => r.barangay === (parcel?.barangay ?? selected));
+    setMapContext({
+      barangay: parcel?.barangay ?? selected,
+      zone:     parcel?.zone     ?? ranking?.zone  ?? null,
+      score:    parcel?.score    ?? ranking?.score ?? null,
+    });
+  }, [selected, setMapContext]);
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => { setShowSearch(!!search); }, [search]);
@@ -415,7 +498,8 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [] }) {
   function toggleLandslide(label) { setHiddenLandslide(prev => { const n = new Set(prev); n.has(label) ? n.delete(label) : n.add(label); return n; }); }
   const [hiddenFlood, setHiddenFlood] = useState(new Set());
   function toggleFlood(level) { setHiddenFlood(prev => { const n = new Set(prev); n.has(level) ? n.delete(level) : n.add(level); return n; }); }
-  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedPoint, setSelectedPoint]     = useState(null);
+  const [nearestBarangay, setNearestBarangay] = useState(null);
 
   const factorScores = useMemo(() => ({ soil: 0.8, water: 0.7, road: 0.6, slope: 0.9, flood: 0.95, landUse: 0.7 }), []);
   const weights = useMemo(() => ({ soil: 0.25, water: 0.2, road: 0.2, slope: 0.15, flood: 0.1, landUse: 0.1 }), []);
@@ -440,8 +524,26 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [] }) {
     useMemo(() => {
       if (!ctx?.map) return;
       const handler = e => {
-        const coords = [e.lngLat?.lng ?? 0, e.lngLat?.lat ?? 0];
-        setSelectedPoint({ coords, score: computeSuitabilityAt(coords) });
+        const [lng, lat] = [e.lngLat?.lng ?? 0, e.lngLat?.lat ?? 0];
+        setSelectedPoint({ coords: [lng, lat], score: computeSuitabilityAt([lng, lat]) });
+
+        // Find nearest barangay and push to app-level context (powers the AI chat chip)
+        if (setMapContext) {
+          let nearest = null, minDist = Infinity;
+          for (const [name, [bLng, bLat]] of Object.entries(BARANGAY_COORDS)) {
+            const d = Math.hypot(lng - bLng, lat - bLat);
+            if (d < minDist) { minDist = d; nearest = name; }
+          }
+          if (nearest) {
+            const ranking = (PANABO.barangayRankings ?? []).find(r => r.barangay === nearest);
+            setNearestBarangay(nearest);
+            setMapContext({
+              barangay: nearest,
+              zone:     ranking?.zone  ?? null,
+              score:    ranking?.score ?? null,
+            });
+          }
+        }
       };
       ctx.map.on('click', handler);
       return () => ctx.map.off('click', handler);
@@ -755,7 +857,7 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [] }) {
       </div>
 
       {/* AI Chat bubble */}
-      <MapChatBubble parcel={parcel} selectedPoint={selectedPoint} rightOffset={parcel ? 362 : 16}/>
+      <MapChatBubble parcel={parcel} selectedPoint={selectedPoint} nearestBarangay={nearestBarangay} rightOffset={parcel ? 362 : 16}/>
     </div>
   );
 }

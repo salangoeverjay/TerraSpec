@@ -2,7 +2,145 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createConversation, loadConversations, getChatStorageKey, getOrCreateGuestToken, GUEST_TOKEN_KEY } from './data.js';
 import { Icon, Btn } from './components.jsx';
 
-export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
+function renderInline(text) {
+  const result = [];
+  const pattern = /(\*\*[^*\n]+\*\*|\*(?!\*)[^*\n]+\*)/g;
+  let last = 0, key = 0, match;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > last) result.push(text.slice(last, match.index));
+    const token = match[0];
+    if (token.startsWith('**')) {
+      result.push(<strong key={key++} style={{ fontWeight: 700 }}>{token.slice(2, -2)}</strong>);
+    } else {
+      result.push(<strong key={key++} style={{ fontWeight: 600 }}>{token.slice(1, -1)}</strong>);
+    }
+    last = pattern.lastIndex;
+  }
+  if (last < text.length) result.push(text.slice(last));
+  return result;
+}
+
+function renderMarkdown(text) {
+  if (!text || typeof text !== 'string') return text;
+  const lines = text.split('\n');
+  const blocks = [];
+  let listItems = [];
+  let listType  = null;
+  let k = 0;
+
+  function flushList() {
+    if (!listItems.length) return;
+    const Tag = listType === 'ol' ? 'ol' : 'ul';
+    blocks.push(
+      <Tag key={k++} style={{ margin: '5px 0 6px', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {listItems.map((item, i) => (
+          <li key={i} style={{ lineHeight: 1.55 }}>{renderInline(item)}</li>
+        ))}
+      </Tag>
+    );
+    listItems = []; listType = null;
+  }
+
+  for (const line of lines) {
+    const t = line.trimStart();
+    if (/^[-*•] /.test(t)) {
+      if (listType && listType !== 'ul') flushList();
+      listType = 'ul';
+      listItems.push(t.slice(2).trimStart());
+    } else if (/^\d+\. /.test(t)) {
+      if (listType && listType !== 'ol') flushList();
+      listType = 'ol';
+      listItems.push(t.replace(/^\d+\. /, '').trimStart());
+    } else {
+      flushList();
+      if (t === '') {
+        if (blocks.length) blocks.push(<div key={k++} style={{ height: 5 }}/>);
+      } else {
+        blocks.push(<div key={k++} style={{ lineHeight: 1.6 }}>{renderInline(t)}</div>);
+      }
+    }
+  }
+  flushList();
+  return <>{blocks}</>;
+}
+
+const ANALYSIS_COLORS = {
+  commercial:    '#3b82f6',
+  residential:   '#f97316',
+  industrial:    '#8b5cf6',
+  agricultural:  '#84cc16',
+  reforestation: '#16a34a',
+};
+
+function LiveCalcCard({ data, go }) {
+  const scoreColor = data.total_pct >= 75 ? '#16a34a' : data.total_pct >= 50 ? '#d97706' : '#dc2626';
+  const typeColor  = ANALYSIS_COLORS[data.analysis_type] ?? 'hsl(var(--brand))';
+
+  return (
+    <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 10, padding: 14, maxWidth: '100%' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.2)', flexShrink: 0 }}/>
+            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#16a34a' }}>Live AHP-WLC Result</span>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>{data.zone_name}</div>
+          <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>{data.zone_type}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 30, fontWeight: 700, color: scoreColor, lineHeight: 1, letterSpacing: '-0.03em' }}>{data.total_pct}%</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: scoreColor, marginTop: 2 }}>{data.suitability_level}</div>
+          <div style={{ marginTop: 4, display: 'inline-block', padding: '1px 8px', borderRadius: 99, fontSize: 10, fontWeight: 600, background: typeColor + '20', color: typeColor, textTransform: 'capitalize' }}>
+            {data.analysis_type}
+          </div>
+        </div>
+      </div>
+
+      {/* Criteria bars */}
+      {data.criteria_breakdown && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+          {Object.entries(data.criteria_breakdown).map(([name, vals]) => {
+            const pct = Math.round(vals.score * 100);
+            const barColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ef4444';
+            return (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 100, fontSize: 10, color: 'hsl(var(--muted-foreground))', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                <div style={{ flex: 1, background: 'hsl(var(--muted))', borderRadius: 99, height: 5, overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 99, transition: 'width 0.6s ease' }}/>
+                </div>
+                <div style={{ width: 30, fontSize: 10, fontWeight: 600, textAlign: 'right', color: barColor }}>{pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Footer actions */}
+      <div style={{ display: 'flex', gap: 6, borderTop: '1px solid hsl(var(--border))', paddingTop: 8 }}>
+        {go && (
+          <button
+            onClick={() => go('suitability')}
+            style={{ flex: 1, background: 'hsl(var(--muted))', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: 'hsl(var(--foreground))' }}
+          >
+            Full Rankings
+          </button>
+        )}
+        {go && (
+          <button
+            onClick={() => go('map', { highlightZones: [{ zone_unit_id: data.zone_unit_id, unit_name: data.zone_name, total_pct: data.total_pct }] })}
+            style={{ flex: 1, background: 'hsl(var(--brand))', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+          >
+            <Icon name="map" size={11} style={{ color: 'white' }}/>
+            View on Map
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ChatScreen({ initialConvId, go, role = 'public', mapContext, setMapContext } = {}) {
   const [conversations, setConversations] = useState(() => loadConversations(role));
   const [activeId, setActiveId] = useState(() => {
     const convs = loadConversations(role);
@@ -32,6 +170,7 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
   const [chatError, setChatError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [nlpPane, setNlpPane] = useState(true);
+  const [nlpData, setNlpData] = useState({ intent: null, entities: [], messageCount: 0 });
   const messagesRef = React.useRef(null);
   const headerMenuRef = React.useRef(null);
 
@@ -157,20 +296,37 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: message, context: { selection: 'Panabo City' } }),
+        body: JSON.stringify({
+          prompt: message,
+          context: {
+            selection:   mapContext?.barangay ?? 'Panabo City',
+            suitability: mapContext?.score    ?? null,
+            zone:        mapContext?.zone     ?? null,
+          },
+        }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const validMsg = Object.values(payload?.errors || {}).flat().filter(Boolean)[0];
         throw new Error(payload?.message || validMsg || 'The assistant could not answer right now.');
       }
-      updateActive(c => ({
-        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({
-          role:  'assistant',
-          content: payload.answer || 'Gemini returned an empty response.',
-          zones: payload.recommended_zones ?? [],
-        }),
-      }));
+      updateActive(c => {
+        const intent   = payload.detected_intent || null;
+        const entities = payload.extracted_entities || [];
+        const msgs = c.messages.filter(m => m.content !== 'Thinking...').concat({
+          role:             'assistant',
+          content:          payload.answer || 'Gemini returned an empty response.',
+          zones:            payload.recommended_zones ?? [],
+          live_calculation: payload.live_calculation || null,
+          followups:        buildFollowups(intent, entities),
+        });
+        setNlpData({
+          intent:       payload.detected_intent  || null,
+          entities:     payload.extracted_entities || [],
+          messageCount: msgs.length,
+        });
+        return { messages: msgs };
+      });
     } catch (err) {
       const text = err instanceof Error ? err.message : 'The assistant could not answer right now.';
       setChatError(text);
@@ -179,6 +335,66 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
       }));
     } finally {
       setIsLoading(false); setChatInput('');
+    }
+  }
+
+  function buildFollowups(intent, entities) {
+    const barangays = entities.filter(e => e.type === 'barangay').map(e => e.value);
+    const hazards   = entities.filter(e => e.type === 'hazard').map(e => e.value);
+    const species   = entities.filter(e => e.type === 'species').map(e => e.value);
+    const b1 = barangays[0], b2 = barangays[1];
+
+    const pick = (...opts) => opts.filter(Boolean).slice(0, 3);
+
+    switch (intent) {
+      case 'commercial_suitability':
+        return pick(
+          b1 ? `What are the flood risks in ${b1}?` : null,
+          b1 && b2 ? `Compare ${b1} and ${b2} for commercial` : `Show top 5 commercial zones in Panabo City`,
+          b1 ? `Generate a suitability report for ${b1}` : `What zoning is required for a commercial building?`,
+        );
+      case 'residential_suitability':
+        return pick(
+          b1 ? `Are there environmental restrictions in ${b1}?` : null,
+          b1 ? `Calculate residential suitability for ${b1}` : `Best barangays for residential near the city center`,
+          `What are the setback requirements for residential zones?`,
+        );
+      case 'industrial_suitability':
+        return pick(
+          b1 ? `Is ${b1} near any protected zones?` : null,
+          b1 ? `What is the liquefaction risk in ${b1}?` : `Top industrial zones in Panabo City`,
+          `What land uses are allowed in industrial zones?`,
+        );
+      case 'agricultural_suitability':
+        return pick(
+          b1 ? `What soil type does ${b1} have?` : null,
+          `Which barangays fall under SAFDZ restrictions?`,
+          `What crops are viable in flat-terrain agricultural zones?`,
+        );
+      case 'reforestation':
+        return pick(
+          b1 ? `What tree species are best for ${b1}?` : null,
+          species[0] ? `Tell me more about ${species[0]}` : `Which barangays need reforestation most?`,
+          `What are the watershed protection zones in Panabo City?`,
+        );
+      case 'environmental_assessment':
+        return pick(
+          b1 ? `What are the restrictions in ${b1}?` : null,
+          hazards[0] ? `Which barangays have ${hazards[0]} risk?` : `Show all protected zones in Panabo City`,
+          `What environmental clearance is needed for development?`,
+        );
+      case 'zoning_compliance':
+        return pick(
+          b1 ? `What is the zoning classification of ${b1}?` : null,
+          `What land uses are allowed in commercial zones?`,
+          `What are the setback requirements along classified roads?`,
+        );
+      default:
+        return [
+          'Where can I build a business in Panabo City?',
+          'Which barangays are at high flood risk?',
+          'Top reforestation sites in Panabo City',
+        ];
     }
   }
 
@@ -216,7 +432,62 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
     } catch { setRestoreError('Invalid Chat ID.'); }
   }
 
-  const quickPrompts = ['Where can I build a business in Panabo City?', 'Best barangays for residential development', 'Where to build an industrial facility?', 'Top reforestation sites in Panabo'];
+  const quickPrompts = useMemo(() => {
+    const b      = mapContext?.barangay;
+    const intent = nlpData.intent;
+    const talked = (activeConv?.messages?.length ?? 0) > 1;
+
+    // ── Admin prompts (no mapContext, fresh chat) ──────────────────────────
+    if (!talked && role === 'admin') return [
+      'Run a commercial suitability analysis for all barangays',
+      'Which zones have the highest flood risk?',
+      'Generate a city-wide comparative analysis',
+      'Which barangays need reforestation most urgently?',
+    ];
+
+    // ── Public fresh chat ──────────────────────────────────────────────────
+    if (!talked) return [
+      'Where can I build a business in Panabo City?',
+      'Best barangays for residential development',
+      'Top reforestation sites in Panabo',
+      'Which barangays are at high flood risk?',
+    ];
+
+    // ── Barangay selected + intent-aware ──────────────────────────────────
+    if (b) {
+      const report = role === 'admin' ? `Generate a suitability report for ${b}` : `Compare ${b} with nearby barangays`;
+      switch (intent) {
+        case 'commercial_suitability':   return [`What are the flood risks in ${b}?`, `Are there restrictions in ${b}?`, `Calculate residential suitability for ${b}`, report];
+        case 'residential_suitability':  return [`What hazards affect ${b}?`, `What is the zoning classification of ${b}?`, `Is ${b} near any protected areas?`, report];
+        case 'industrial_suitability':   return [`What is the liquefaction risk in ${b}?`, `Are there protected zones near ${b}?`, `What infrastructure is available in ${b}?`, report];
+        case 'agricultural_suitability': return [`What is the soil type in ${b}?`, `Are there SAFDZ restrictions in ${b}?`, `What crops are viable in ${b}?`, report];
+        case 'reforestation':            return [`What tree species are best for ${b}?`, `Are there watershed restrictions in ${b}?`, `What is the elevation range of ${b}?`, role === 'admin' ? `Generate a reforestation plan for ${b}` : `Other reforestation barangays near ${b}`];
+        case 'environmental_assessment': return [`What is the suitability score of ${b}?`, `What development is allowed in ${b}?`, `Which barangays have similar flood risk?`, report];
+        case 'zoning_compliance':        return [`What uses are allowed in ${b}?`, `What permits are needed to build in ${b}?`, `What zone is ${b} classified under?`, report];
+        default: return [
+          `What is the commercial suitability of ${b}?`,
+          `What environmental restrictions apply to ${b}?`,
+          `What tree species are best for ${b}?`,
+          report,
+        ];
+      }
+    }
+
+    // ── Intent-aware, no barangay ─────────────────────────────────────────
+    switch (intent) {
+      case 'commercial_suitability':   return ['Which barangays have the highest commercial suitability?', 'What environmental risks should I check before building?', 'Best barangays for a hospital or clinic?', role === 'admin' ? 'Run commercial analysis for all 40 barangays' : 'Top 5 commercial zones in Panabo City'];
+      case 'residential_suitability':  return ['Which barangays are best for subdivisions?', 'What setback requirements apply to residential zones?', 'Which residential zones are near schools?', role === 'admin' ? 'Run residential analysis for all barangays' : 'Best family neighborhoods in Panabo'];
+      case 'industrial_suitability':   return ['Which barangays have the lowest flood risk for industrial use?', 'What permits are needed for industrial construction?', 'Are there industrial zones near the port?', role === 'admin' ? 'Run industrial analysis for all barangays' : 'Top industrial zones in Panabo'];
+      case 'agricultural_suitability': return ['Which barangays fall under SAFDZ restrictions?', 'Best soil types for banana cultivation?', 'Which agricultural zones allow aquaculture?', role === 'admin' ? 'Run agricultural analysis for all barangays' : 'Top farming barangays in Panabo'];
+      case 'reforestation':            return ['Which barangays are inside watershed zones?', 'What native trees grow best near the coast?', 'Show me mangrove reforestation priority areas', role === 'admin' ? 'Generate a reforestation plan' : 'Where are DENR priority reforestation sites?'];
+      case 'environmental_assessment': return ['Which barangays have storm surge risk?', 'Show all SAFDZ restricted areas', 'Which areas are safest from flooding?', role === 'admin' ? 'Export an environmental assessment report' : 'Best areas to avoid flood risk?'];
+      case 'zoning_compliance':        return ['What uses are allowed in agricultural zones?', 'Which barangays have mixed-use zoning?', 'What permits are needed for commercial construction?', role === 'admin' ? 'Review compliance for all urban barangays' : 'How do I verify zoning for my land?'];
+      default:
+        return role === 'admin'
+          ? ['Run a commercial analysis for all 40 barangays', 'Which zones have critical flood exposure?', 'Generate a city-wide comparative report', 'Which barangays need reforestation most urgently?']
+          : ['Where can I build a business in Panabo City?', 'Best barangays for residential development', 'Top reforestation sites in Panabo', 'Which barangays are at high flood risk?'];
+    }
+  }, [role, nlpData.intent, mapContext?.barangay, activeConv?.messages?.length]);
   const lastMsg = activeConv?.messages.slice(-1)[0];
   const detectedIntent = lastMsg?.role === 'user' ? 'land_suitability' : null;
 
@@ -462,20 +733,45 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
                 </div>
               )}
               <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{
-                  padding: '10px 14px', borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                  background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
-                  color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
-                  fontSize: 13.5, lineHeight: 1.55,
-                }}>
-                  {m.content === 'Thinking...' ? (
-                    <div className="row" style={{ gap: 4 }}>
-                      {[0, 150, 300].map(d => (
-                        <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'hsl(var(--muted-foreground))', display: 'inline-block', animation: `bounce 1.2s ${d}ms ease-in-out infinite` }}/>
+                {m.content === 'Thinking...' ? (
+                  /* ── Typing indicator ── */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: '12px 18px',
+                      borderRadius: '12px 12px 12px 4px',
+                      background: 'hsl(var(--muted))',
+                      border: '1px solid hsl(var(--border))',
+                      width: 'fit-content',
+                    }}>
+                      {[0, 180, 360].map(d => (
+                        <span key={d} style={{
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: 'hsl(var(--brand))',
+                          display: 'inline-block',
+                          animation: `bounce 1.5s ${d}ms ease-in-out infinite`,
+                        }}/>
                       ))}
                     </div>
-                  ) : m.content}
-                </div>
+                    <span style={{
+                      fontSize: 10.5, color: 'hsl(var(--muted-foreground))',
+                      paddingLeft: 4, animation: 'typing-pulse 2s ease-in-out infinite',
+                    }}>
+                      TerraSpec AI is typing…
+                    </span>
+                  </div>
+                ) : (
+                  /* ── Regular message bubble ── */
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                    background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+                    color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
+                    fontSize: 13.5, lineHeight: 1.55,
+                  }}>
+                    {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                  </div>
+                )}
                 {m.role === 'assistant' && m.zones?.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -516,6 +812,49 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
                     )}
                   </div>
                 )}
+
+                {/* Live Calculation Card */}
+                {m.role === 'assistant' && m.live_calculation && (
+                  <LiveCalcCard data={m.live_calculation} go={go}/>
+                )}
+
+                {/* Follow-up suggestions — only on last assistant message */}
+                {m.role === 'assistant' && m.followups?.length > 0 && i === [...(activeConv?.messages ?? [])].map((x, idx) => x.role === 'assistant' ? idx : -1).filter(x => x >= 0).at(-1) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 2 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>
+                      Follow-up suggestions
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {m.followups.map((q, qi) => (
+                        <button
+                          key={qi}
+                          onClick={() => { if (!isLoading) sendChatPrompt(q); }}
+                          disabled={isLoading}
+                          style={{
+                            background: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 8,
+                            padding: '7px 11px',
+                            fontSize: 12,
+                            cursor: isLoading ? 'default' : 'pointer',
+                            color: 'hsl(var(--foreground))',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            opacity: isLoading ? 0.5 : 1,
+                            transition: 'border-color 0.15s, background 0.15s',
+                          }}
+                          onMouseEnter={e => { if (!isLoading) { e.currentTarget.style.borderColor = 'hsl(var(--brand))'; e.currentTarget.style.background = 'hsl(var(--brand) / 0.05)'; }}}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'hsl(var(--border))'; e.currentTarget.style.background = 'hsl(var(--card))'; }}
+                        >
+                          <span style={{ color: 'hsl(var(--brand))', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>→</span>
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -532,13 +871,33 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
         </div>
 
         <div style={{ padding: '10px 18px 16px', borderTop: '1px solid hsl(var(--border))' }}>
+          {/* Context Chip */}
+          {mapContext?.barangay && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, padding: '5px 10px', background: 'hsl(var(--brand) / 0.08)', border: '1px solid hsl(var(--brand) / 0.25)', borderRadius: 8, fontSize: 12 }}>
+              <Icon name="pin" size={11} style={{ color: 'hsl(var(--brand))', flexShrink: 0 }}/>
+              <span style={{ color: 'hsl(var(--muted-foreground))' }}>Viewing:</span>
+              <span style={{ fontWeight: 600, color: 'hsl(var(--foreground))' }}>{mapContext.barangay}</span>
+              {mapContext.zone && (
+                <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 4, background: 'hsl(var(--brand) / 0.15)', color: 'hsl(var(--brand))', fontWeight: 600 }}>{mapContext.zone}</span>
+              )}
+              {mapContext.score && (
+                <span style={{ fontSize: 10.5, color: 'hsl(var(--muted-foreground))' }}>{mapContext.score}%</span>
+              )}
+              <span style={{ flex: 1 }}/>
+              <button
+                onClick={() => setMapContext?.(null)}
+                title="Clear context"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', padding: '0 2px', lineHeight: 1, fontSize: 14 }}
+              >×</button>
+            </div>
+          )}
           <div className="row" style={{ gap: 8 }}>
             <textarea
               rows={2}
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendChatPrompt(chatInput); } }}
-              placeholder="Ask about land suitability, zoning, or reforestation…"
+              placeholder={mapContext?.barangay ? `Ask about ${mapContext.barangay}…` : 'Ask about land suitability, zoning, or reforestation…'}
               className="input"
               style={{ flex: 1, height: 'auto', padding: '10px 12px', resize: 'none', lineHeight: 1.5 }}
             />
@@ -554,27 +913,68 @@ export function ChatScreen({ initialConvId, go, role = 'public' } = {}) {
             <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>NLP Inspector</div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+
+            {/* Detected Intent */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Detected Intent</div>
-              <span className={`badge${detectedIntent ? ' badge-brand' : ''}`}>{detectedIntent || 'none'}</span>
+              {nlpData.intent ? (
+                <span className="badge badge-brand" style={{ fontSize: 11, textTransform: 'lowercase', letterSpacing: '0.02em' }}>
+                  {nlpData.intent.replace(/_/g, ' ')}
+                </span>
+              ) : (
+                <span className="badge" style={{ fontSize: 11 }}>none</span>
+              )}
             </div>
+
+            {/* Extracted Entities */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Entities</div>
-              <div className="stack" style={{ gap: 5 }}>
-                {['PCL-00184', 'Poblacion', 'R-1'].map(e => (
-                  <div key={e} className="row" style={{ gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'hsl(var(--brand))', flexShrink: 0 }}/>
-                    <span style={{ fontSize: 12 }}>{e}</span>
-                  </div>
-                ))}
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>
+                Entities {nlpData.entities.length > 0 && <span style={{ fontWeight: 400, opacity: 0.6 }}>({nlpData.entities.length})</span>}
               </div>
+              {nlpData.entities.length === 0 ? (
+                <div className="muted" style={{ fontSize: 11.5 }}>Send a message to extract entities.</div>
+              ) : (
+                <div className="stack" style={{ gap: 5 }}>
+                  {nlpData.entities.map((e, i) => {
+                    const dotColor = {
+                      barangay: 'hsl(var(--brand))',
+                      zone:     '#3b82f6',
+                      parcel:   '#8b5cf6',
+                      species:  '#0d9488',
+                      hazard:   'hsl(var(--destructive))',
+                    }[e.type] ?? 'hsl(var(--muted-foreground))';
+                    return (
+                      <div key={i} className="row" style={{ gap: 6, alignItems: 'center' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }}/>
+                        <span style={{ fontSize: 12, flex: 1 }}>{e.value}</span>
+                        <span style={{ fontSize: 10, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.type}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Context Window */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Context Window</div>
-              <div style={{ fontSize: 11.5, color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>
-                {activeConv?.messages.length} messages · Panabo City · Suitability analysis enabled
+              <div style={{ fontSize: 11.5, color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
+                <div>{activeConv?.messages.length ?? 0} messages in history</div>
+                <div>Locale · {mapContext?.barangay ? <span style={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}>{mapContext.barangay}</span> : 'Panabo City'}</div>
+                <div>Model · Gemini 2.5 Flash</div>
+                {mapContext?.barangay && (
+                  <div style={{ marginTop: 4, padding: '3px 7px', borderRadius: 5, background: 'hsl(var(--brand) / 0.1)', color: 'hsl(var(--brand))', fontWeight: 500, fontSize: 11 }}>
+                    Map context active
+                  </div>
+                )}
+                {nlpData.intent && (
+                  <div style={{ marginTop: 4, color: 'hsl(var(--brand))', fontWeight: 500 }}>
+                    {nlpData.intent.replace(/_/g, ' ')} enabled
+                  </div>
+                )}
               </div>
             </div>
+
           </div>
         </div>
       )}
