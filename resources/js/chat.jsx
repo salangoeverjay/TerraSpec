@@ -302,8 +302,8 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         body: JSON.stringify({
           prompt: message,
           context: {
-            selection:   mapContext?.barangay ?? 'Panabo City',
-            suitability: mapContext?.score    ?? null,
+            selection:   mapContext?.selection ?? mapContext?.barangay ?? 'Panabo City',
+            ...(mapContext?.score != null && { suitability: mapContext.score }),
             zone:        mapContext?.zone     ?? null,
           },
         }),

@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Map, MapControls, MapMarker, MarkerContent,
-  MarkerPopup, MarkerTooltip, useMap,
+  MapPopup, MarkerTooltip, useMap,
 } from '../../components/ui/map';
-import { PANABO, BARANGAY_COORDS } from './data.js';
+import { PANABO, BARANGAY_COORDS, ZONING_LEGEND, fetchSuitabilitySummary, findBarangayAt, normalizeName } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
 
 function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) {
@@ -66,7 +66,7 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
     const selection = parcel
       ? `Parcel ${parcel.id}, ${parcel.barangay}, zone ${parcel.zone}. Area: ${parcel.area} sqm. Soil: ${parcel.soil}. Slope: ${parcel.slope}. Flood: ${parcel.flood}. Road: ${parcel.road_m}m. Suitability: ${parcel.score}%.`
       : nearestBarangay && selectedPoint
-      ? `Barangay ${nearestBarangay}. Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E. Suitability: ${selectedPoint.score}%.`
+      ? `Barangay ${nearestBarangay}. Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E.${selectedPoint.zoning ? ` Zoning: ${selectedPoint.zoning.label}.` : ''}${selectedPoint.scores ? ` Suitability: ${Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, l]) => `${l} ${selectedPoint.scores[k].pct}%`).join(', ')}.` : ''}`.slice(0, 255)
       : nearestBarangay
       ? `Barangay ${nearestBarangay}, Panabo City.`
       : 'Panabo City map view';
@@ -204,35 +204,47 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
   );
 }
 
-const REFORESTATION_ZONES_DATA = {
-  type: 'FeatureCollection',
-  features: [
-    { name: 'Kauswagan Reforestation Zone', box: [[125.578, 7.305], [125.592, 7.316]] },
-    { name: 'Mabunao Reforestation Zone',   box: [[125.569, 7.250], [125.583, 7.262]] },
-  ].map(({ name, box: [[w, s], [e, n]] }) => ({
-    type: 'Feature',
-    properties: { name },
-    geometry: { type: 'Polygon', coordinates: [[[w,s],[e,s],[e,n],[w,n],[w,s]]] },
-  })),
-};
+// Reforestation suitability per barangay (stored AHP-WLC results) on the PSA barangay boundaries
+const REFO_LEGEND = [
+  { label: 'Highly Suitable',     hex: '#15803d' },
+  { label: 'Moderately Suitable', hex: '#86efac' },
+];
 
 function ReforestationLayer({ visible, hiddenRefoZones }) {
   const ctx = useMap();
   useMemo(() => {
     if (!ctx?.map) return;
+    let mounted = true;
     const map = ctx.map;
-    if (map.getSource('reforestation-zones')) return;
-    try {
-      map.addSource('reforestation-zones', { type: 'geojson', data: REFORESTATION_ZONES_DATA });
-      map.addLayer({
-        id: 'reforestation-fill', type: 'fill', source: 'reforestation-zones',
-        paint: { 'fill-color': '#16a34a', 'fill-opacity': 0.28 },
-      });
-      map.addLayer({
-        id: 'reforestation-line', type: 'line', source: 'reforestation-zones',
-        paint: { 'line-color': '#15803d', 'line-width': 2, 'line-opacity': 0.9, 'line-dasharray': [4, 3] },
-      });
-    } catch (e) { console.warn('ReforestationLayer error', e); }
+    Promise.all([
+      fetch('/data/panabo_barangays.geojson').then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); }),
+      fetchSuitabilitySummary(),
+    ])
+      .then(([boundaries, summary]) => {
+        if (!mounted) return;
+        const byName = Object.fromEntries(summary.map(z => [normalizeName(z.unit_name), z]));
+        const features = boundaries.features
+          .map(f => {
+            const zone = byName[normalizeName(f.properties.name)];
+            const result = zone?.scores?.reforestation;
+            return result && REFO_LEGEND.some(l => l.label === result.level)
+              ? { ...f, properties: { name: zone.unit_name, level: result.level, pct: result.pct } }
+              : null;
+          })
+          .filter(Boolean);
+        const data = { type: 'FeatureCollection', features };
+        try {
+          if (map.getSource('reforestation-zones')) { map.getSource('reforestation-zones').setData(data); return; }
+          map.addSource('reforestation-zones', { type: 'geojson', data });
+          const color = ['match', ['get', 'level'], ...REFO_LEGEND.flatMap(l => [l.label, l.hex]), '#888888'];
+          map.addLayer({ id: 'reforestation-fill', type: 'fill', source: 'reforestation-zones',
+            layout: { visibility: 'none' }, paint: { 'fill-color': color, 'fill-opacity': 0.4 } });
+          map.addLayer({ id: 'reforestation-line', type: 'line', source: 'reforestation-zones',
+            layout: { visibility: 'none' }, paint: { 'line-color': '#14532d', 'line-width': 1.5, 'line-opacity': 0.9, 'line-dasharray': [4, 3] } });
+        } catch (e) { console.warn('ReforestationLayer error', e); }
+      })
+      .catch(e => console.warn('ReforestationLayer data error', e));
+    return () => { mounted = false; };
   }, [ctx]);
 
   useMemo(() => {
@@ -246,9 +258,8 @@ function ReforestationLayer({ visible, hiddenRefoZones }) {
 
   useMemo(() => {
     if (!ctx?.map) return;
-    const allNames = REFORESTATION_ZONES_DATA.features.map(f => f.properties.name);
-    const shown = allNames.filter(n => !hiddenRefoZones.has(n));
-    const filter = shown.length === allNames.length ? null : ['in', ['get', 'name'], ['literal', shown]];
+    const shown = REFO_LEGEND.map(l => l.label).filter(l => !hiddenRefoZones.has(l));
+    const filter = shown.length === REFO_LEGEND.length ? null : ['in', ['get', 'level'], ['literal', shown]];
     try {
       if (ctx.map.getLayer('reforestation-fill')) ctx.map.setFilter('reforestation-fill', filter);
       if (ctx.map.getLayer('reforestation-line')) ctx.map.setFilter('reforestation-line', filter);
@@ -259,87 +270,78 @@ function ReforestationLayer({ visible, hiddenRefoZones }) {
 }
 
 const LANDSLIDE_LEGEND = [
-  { label: 'High',     hex: '#16a34a', val: 'Green'  },
-  { label: 'Moderate', hex: '#f59e0b', val: 'Yellow' },
+  { label: 'High',     hex: '#16a34a', val: 'High'     },
+  { label: 'Moderate', hex: '#f59e0b', val: 'Moderate' },
 ];
 
-const DUMMY_FLOOD_DATA = {
-  type: 'FeatureCollection',
-  features: [
-    { level: 'Very High', box: [[125.607, 7.290], [125.628, 7.308]] },
-    { level: 'Very High', box: [[125.625, 7.262], [125.647, 7.278]] },
-    { level: 'High',      box: [[125.638, 7.308], [125.660, 7.328]] },
-    { level: 'High',      box: [[125.660, 7.278], [125.683, 7.298]] },
-    { level: 'Moderate',  box: [[125.667, 7.328], [125.690, 7.348]] },
-    { level: 'Moderate',  box: [[125.688, 7.298], [125.712, 7.318]] },
-  ].map(({ level, box: [[w, s], [e, n]] }) => ({
-    type: 'Feature',
-    properties: { hazard: level },
-    geometry: { type: 'Polygon', coordinates: [[[w,s],[e,s],[e,n],[w,n],[w,s]]] },
-  })),
+const ZONING_COLOR = ['match', ['get', 'zone'], ...ZONING_LEGEND.flatMap(z => [z.id, z.hex]), '#888888'];
+
+// Raster basemaps drawn under the TerraSpec layers. "carto" shows the default vector style only.
+const BASEMAPS = {
+  osm: {
+    label: 'Street',
+    title: 'OpenStreetMap',
+    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+    attribution: '© OpenStreetMap contributors',
+    maxzoom: 19,
+  },
+  satellite: {
+    label: 'Satellite',
+    title: 'Esri World Imagery',
+    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+    maxzoom: 19,
+  },
+  carto: { label: 'Light', title: 'CARTO light / dark (follows the app theme)' },
 };
 
-// Fallback sample data for landslide hazard when the real file is not present
-const DUMMY_LANDSLIDE_DATA = {
-  type: 'FeatureCollection',
-  features: [
-    { box: [[125.66, 7.29], [125.68, 7.305]], hazard: 'Green' },
-    { box: [[125.695, 7.30], [125.712, 7.317]], hazard: 'Yellow' },
-  ].map(({ box: [[w, s], [e, n]], hazard }) => ({
-    type: 'Feature',
-    properties: { hazard },
-    geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] },
-  })),
-};
+const TERRASPEC_LAYERS = ['zoning-fill', 'zoning-line', 'reforestation-fill', 'reforestation-line', 'landslide-fill', 'landslide-line', 'flood-fill', 'flood-line'];
 
-const DUMMY_ZONES_DATA = {
-  type: 'FeatureCollection',
-  features: [
-    // R-1 Residential
-    { z: 'R-1', box: [[125.6780, 7.2970], [125.6940, 7.3120]] },
-    { z: 'R-1', box: [[125.6820, 7.3120], [125.6970, 7.3250]] },
-    { z: 'R-1', box: [[125.6620, 7.2990], [125.6800, 7.3210]] },
-    { z: 'R-1', box: [[125.6820, 7.3240], [125.6990, 7.3410]] },
-    { z: 'R-1', box: [[125.6890, 7.3380], [125.7060, 7.3570]] },
-    // C-1 Commercial
-    { z: 'C-1', box: [[125.6790, 7.3040], [125.6920, 7.3150]] },
-    { z: 'C-1', box: [[125.7020, 7.2900], [125.7190, 7.3080]] },
-    { z: 'C-1', box: [[125.7100, 7.3070], [125.7230, 7.3190]] },
-    // I-1 Industrial
-    { z: 'I-1', box: [[125.6780, 7.2820], [125.6970, 7.2990]] },
-    { z: 'I-1', box: [[125.6490, 7.2730], [125.6710, 7.2930]] },
-    { z: 'I-1', box: [[125.7060, 7.3150], [125.7240, 7.3360]] },
-  ].map(({ z, box: [[w, s], [e, n]] }) => ({
-    type: 'Feature',
-    properties: { zone: z },
-    geometry: { type: 'Polygon', coordinates: [[[w,s],[e,s],[e,n],[w,n],[w,s]]] },
-  })),
-};
+function BasemapLayer({ basemap }) {
+  const ctx = useMap();
+  useMemo(() => {
+    if (!ctx?.map) return;
+    const map = ctx.map;
+    const apply = () => {
+      try {
+        const below = TERRASPEC_LAYERS.find(id => map.getLayer(id));
+        for (const [key, def] of Object.entries(BASEMAPS)) {
+          if (!def.tiles) continue;
+          const id = `basemap-${key}`;
+          if (!map.getSource(id)) {
+            map.addSource(id, { type: 'raster', tiles: def.tiles, tileSize: 256, maxzoom: def.maxzoom, attribution: def.attribution });
+            map.addLayer({ id, type: 'raster', source: id, layout: { visibility: 'none' } }, below);
+          }
+          map.setLayoutProperty(id, 'visibility', key === basemap ? 'visible' : 'none');
+        }
+      } catch (e) { console.warn('BasemapLayer error', e); }
+    };
+    if (map.isStyleLoaded()) apply(); else map.once('load', apply);
+  }, [ctx, basemap]);
+  return null;
+}
 
 function ZoningLayer({ visible, hiddenZones }) {
   const ctx = useMap();
   useMemo(() => {
     if (!ctx?.map) return;
+    let mounted = true;
     const map = ctx.map;
-    if (map.getSource('zoning-dummy')) return;
-    try {
-      map.addSource('zoning-dummy', { type: 'geojson', data: DUMMY_ZONES_DATA });
-      map.addLayer({
-        id: 'zoning-fill', type: 'fill', source: 'zoning-dummy',
-        paint: {
-          'fill-color': ['match', ['get', 'zone'], 'R-1', '#f97316', 'C-1', '#3b82f6', 'I-1', '#7c3aed', '#888888'],
-          'fill-opacity': 0.28,
-        },
-      });
-      map.addLayer({
-        id: 'zoning-line', type: 'line', source: 'zoning-dummy',
-        paint: {
-          'line-color': ['match', ['get', 'zone'], 'R-1', '#ea6d0a', 'C-1', '#1d4ed8', 'I-1', '#5b21b6', '#444444'],
-          'line-width': 1.5,
-          'line-opacity': 0.8,
-        },
-      });
-    } catch (e) { console.warn('ZoningLayer error', e); }
+    fetch('/data/zoning_2020.geojson')
+      .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+      .then(data => {
+        if (!mounted) return;
+        try {
+          if (map.getSource('zoning')) { map.getSource('zoning').setData(data); return; }
+          map.addSource('zoning', { type: 'geojson', data });
+          map.addLayer({ id: 'zoning-fill', type: 'fill', source: 'zoning',
+            paint: { 'fill-color': ZONING_COLOR, 'fill-opacity': 0.45 } });
+          map.addLayer({ id: 'zoning-line', type: 'line', source: 'zoning',
+            paint: { 'line-color': ZONING_COLOR, 'line-width': 0.6, 'line-opacity': 0.9 } });
+        } catch (e) { console.warn('ZoningLayer error', e); }
+      })
+      .catch(e => console.warn('ZoningLayer data error', e));
+    return () => { mounted = false; };
   }, [ctx]);
 
   useMemo(() => {
@@ -353,8 +355,8 @@ function ZoningLayer({ visible, hiddenZones }) {
 
   useMemo(() => {
     if (!ctx?.map) return;
-    const shown = ['R-1', 'C-1', 'I-1'].filter(z => !hiddenZones.has(z));
-    const filter = shown.length === 3 ? null : ['in', ['get', 'zone'], ['literal', shown]];
+    const shown = ZONING_LEGEND.map(z => z.id).filter(id => !hiddenZones.has(id));
+    const filter = shown.length === ZONING_LEGEND.length ? null : ['in', ['get', 'zone'], ['literal', shown]];
     try {
       if (ctx.map.getLayer('zoning-fill')) ctx.map.setFilter('zoning-fill', filter);
       if (ctx.map.getLayer('zoning-line')) ctx.map.setFilter('zoning-line', filter);
@@ -370,23 +372,20 @@ function LandslideLayer({ visible, hiddenLandslide }) {
     if (!ctx?.map) return;
     let mounted = true;
     const map = ctx.map;
-      fetch('/data/landslide_hazard_panabo_final.geojson')
+      fetch('/data/landslide_hazard_2020.geojson')
         .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
-        .catch(() => {
-          // fallback to bundled sample data when the file is missing
-          return DUMMY_LANDSLIDE_DATA;
-        })
         .then(data => {
           if (!mounted) return;
           try {
             if (map.getSource('landslide-hazard')) { map.getSource('landslide-hazard').setData(data); return; }
             map.addSource('landslide-hazard', { type: 'geojson', data });
             map.addLayer({ id: 'landslide-fill', type: 'fill', source: 'landslide-hazard',
-              paint: { 'fill-color': ['match', ['get', 'hazard'], 'Green', '#16a34a', 'Yellow', '#f59e0b', '#888'], 'fill-opacity': 0.65 } });
+              paint: { 'fill-color': ['match', ['get', 'hazard'], 'High', '#16a34a', 'Moderate', '#f59e0b', '#888'], 'fill-opacity': 0.65 } });
             map.addLayer({ id: 'landslide-line', type: 'line', source: 'landslide-hazard',
-              paint: { 'line-color': ['match', ['get', 'hazard'], 'Green', '#136c2e', 'Yellow', '#b45309', '#444'], 'line-width': 2.5 } });
+              paint: { 'line-color': ['match', ['get', 'hazard'], 'High', '#136c2e', 'Moderate', '#b45309', '#444'], 'line-width': 2.5 } });
           } catch (e) { console.warn('LandslideLayer error', e); }
-        });
+        })
+        .catch(e => console.warn('LandslideLayer data error', e));
     return () => { mounted = false; };
   }, [ctx]);
 
@@ -418,15 +417,23 @@ function FloodLayer({ visible, hiddenFlood }) {
   const FLOOD_LEVELS = ['Very High', 'High', 'Moderate'];
   useMemo(() => {
     if (!ctx?.map) return;
+    let mounted = true;
     const map = ctx.map;
-    if (map.getSource('flood-zones')) return;
-    try {
-      map.addSource('flood-zones', { type: 'geojson', data: DUMMY_FLOOD_DATA });
-      map.addLayer({ id: 'flood-fill', type: 'fill', source: 'flood-zones',
-        paint: { 'fill-color': ['match', ['get', 'hazard'], 'Very High', '#341648', 'High', '#6b3e81', 'Moderate', '#c074f2', '#888'], 'fill-opacity': 0.35 } });
-      map.addLayer({ id: 'flood-line', type: 'line', source: 'flood-zones',
-        paint: { 'line-color': ['match', ['get', 'hazard'], 'Very High', '#200f2c', 'High', '#4a2860', 'Moderate', '#9050c9', '#444'], 'line-width': 1.5, 'line-opacity': 0.8 } });
-    } catch (e) { console.warn('FloodLayer error', e); }
+    fetch('/data/flood_hazard_2020.geojson')
+      .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+      .then(data => {
+        if (!mounted) return;
+        try {
+          if (map.getSource('flood-zones')) { map.getSource('flood-zones').setData(data); return; }
+          map.addSource('flood-zones', { type: 'geojson', data });
+          map.addLayer({ id: 'flood-fill', type: 'fill', source: 'flood-zones',
+            paint: { 'fill-color': ['match', ['get', 'hazard'], 'Very High', '#341648', 'High', '#6b3e81', 'Moderate', '#c074f2', '#888'], 'fill-opacity': 0.35 } });
+          map.addLayer({ id: 'flood-line', type: 'line', source: 'flood-zones',
+            paint: { 'line-color': ['match', ['get', 'hazard'], 'Very High', '#200f2c', 'High', '#4a2860', 'Moderate', '#9050c9', '#444'], 'line-width': 1.5, 'line-opacity': 0.8 } });
+        } catch (e) { console.warn('FloodLayer error', e); }
+      })
+      .catch(e => console.warn('FloodLayer data error', e));
+    return () => { mounted = false; };
   }, [ctx]);
 
   useMemo(() => {
@@ -471,25 +478,63 @@ function FlyToHighlight({ zones }) {
   return null;
 }
 
-export function MapScreen({ initial, search, setSearch, highlightZones = [], setMapContext }) {
+const USE_LABELS = {
+  commercial: 'Commercial', residential: 'Residential', industrial: 'Industrial',
+  agricultural: 'Agricultural', reforestation: 'Reforestation',
+};
+
+// Chat context for a barangay: real zoning class (if a point was clicked) and stored suitability results.
+function buildMapContext(barangay, zoning, summary) {
+  const scores = summary.find(z => z.unit_name === barangay)?.scores ?? null;
+  const parts = scores
+    ? Object.entries(USE_LABELS).filter(([k]) => scores[k]).map(([k, l]) => `${l} ${scores[k].pct}% (${scores[k].level})`)
+    : [];
+  return {
+    barangay,
+    zone: zoning?.label ?? null,
+    score: null,
+    scores,
+    selection: [
+      `Barangay ${barangay}`,
+      zoning ? `zoning ${zoning.label}` : null,
+      parts.length ? `suitability: ${parts.join(', ')}` : null,
+    ].filter(Boolean).join('; ').slice(0, 255),
+  };
+}
+
+export function MapScreen({ go, initial, barangay, search, setSearch, highlightZones = [], setMapContext }) {
   const mapRef = useRef(null);
+
+  // Opened from a barangay profile ("Show on map"): fly to that barangay
+  useEffect(() => {
+    const coords = barangay ? BARANGAY_COORDS[barangay] : null;
+    if (!coords) return;
+    const timer = setTimeout(() => mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1000 }), 600);
+    return () => clearTimeout(timer);
+  }, [barangay]);
   const [selected, setSelected] = useState(initial?.parcel || null);
 
-  // When a parcel is selected from the right panel, sync to app-level chat context
+  const [summary, setSummary] = useState([]);
+  useEffect(() => {
+    fetchSuitabilitySummary().then(setSummary).catch(e => console.warn('Suitability summary error', e));
+  }, []);
+
+  // When a barangay is selected (e.g. from a dashboard link), sync to app-level chat context
   useEffect(() => {
     if (!setMapContext || !selected) return;
-    const parcel  = PANABO.parcels.find(p => p.id === selected);
-    const ranking = (PANABO.barangayRankings ?? []).find(r => r.barangay === (parcel?.barangay ?? selected));
-    setMapContext({
-      barangay: parcel?.barangay ?? selected,
-      zone:     parcel?.zone     ?? ranking?.zone  ?? null,
-      score:    parcel?.score    ?? ranking?.score ?? null,
-    });
-  }, [selected, setMapContext]);
+    setMapContext(buildMapContext(selected, null, summary));
+  }, [selected, setMapContext, summary]);
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => { setShowSearch(!!search); }, [search]);
   const [layers, setLayers] = useState({ zoning: true, reforestation: false, landslide: true, flood: true });
+  const [basemap, setBasemap] = useState(() => {
+    try { return localStorage.getItem('terraspec-basemap') || 'osm'; } catch { return 'osm'; }
+  });
+  function chooseBasemap(key) {
+    setBasemap(key);
+    try { localStorage.setItem('terraspec-basemap', key); } catch {}
+  }
   const [hiddenZones, setHiddenZones] = useState(new Set());
   function toggleZone(id) { setHiddenZones(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
   const [hiddenRefoZones, setHiddenRefoZones] = useState(new Set());
@@ -501,48 +546,30 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
   const [selectedPoint, setSelectedPoint]     = useState(null);
   const [nearestBarangay, setNearestBarangay] = useState(null);
 
-  const factorScores = useMemo(() => ({ soil: 0.8, water: 0.7, road: 0.6, slope: 0.9, flood: 0.95, landUse: 0.7 }), []);
-  const weights = useMemo(() => ({ soil: 0.25, water: 0.2, road: 0.2, slope: 0.15, flood: 0.1, landUse: 0.1 }), []);
-
-  function computeSuitabilityAt(coords) {
-    const [lng, lat] = coords;
-    const noise = (Math.sin(lng * 13 + lat * 7) + 1) * 0.05;
-    const f = {
-      soil:    Math.max(0, Math.min(1, factorScores.soil    + noise * 0.5)),
-      water:   Math.max(0, Math.min(1, factorScores.water   + noise * 0.6)),
-      road:    Math.max(0, Math.min(1, factorScores.road    + noise * 0.4)),
-      slope:   Math.max(0, Math.min(1, factorScores.slope   - noise * 0.3)),
-      flood:   Math.max(0, Math.min(1, factorScores.flood   - noise * 0.2)),
-      landUse: Math.max(0, Math.min(1, factorScores.landUse + noise * 0.2)),
-    };
-    const w = weights;
-    return Math.round((w.soil*f.soil + w.water*f.water + w.road*f.road + w.slope*f.slope + w.flood*f.flood + w.landUse*f.landUse) * 100);
-  }
+  const summaryRef = useRef(summary);
+  summaryRef.current = summary;
 
   function MapClickHandler() {
     const ctx = useMap();
     useMemo(() => {
       if (!ctx?.map) return;
-      const handler = e => {
+      const handler = async e => {
         const [lng, lat] = [e.lngLat?.lng ?? 0, e.lngLat?.lat ?? 0];
-        setSelectedPoint({ coords: [lng, lat], score: computeSuitabilityAt([lng, lat]) });
 
-        // Find nearest barangay and push to app-level context (powers the AI chat chip)
-        if (setMapContext) {
-          let nearest = null, minDist = Infinity;
-          for (const [name, [bLng, bLat]] of Object.entries(BARANGAY_COORDS)) {
-            const d = Math.hypot(lng - bLng, lat - bLat);
-            if (d < minDist) { minDist = d; nearest = name; }
-          }
-          if (nearest) {
-            const ranking = (PANABO.barangayRankings ?? []).find(r => r.barangay === nearest);
-            setNearestBarangay(nearest);
-            setMapContext({
-              barangay: nearest,
-              zone:     ranking?.zone  ?? null,
-              score:    ranking?.score ?? null,
-            });
-          }
+        // Zoning class under the click, from the rendered Integrated Zoning Map layer
+        const zoningFeature = ctx.map.getLayer('zoning-fill')
+          ? ctx.map.queryRenderedFeatures(e.point, { layers: ['zoning-fill'] })[0]
+          : null;
+        const zoning = zoningFeature ? ZONING_LEGEND.find(z => z.id === zoningFeature.properties.zone) ?? null : null;
+
+        // Barangay containing the click (PSA boundaries)
+        const barangay = await findBarangayAt(lng, lat).catch(() => null);
+        const scores = summaryRef.current.find(z => z.unit_name === barangay)?.scores ?? null;
+
+        setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores });
+        setNearestBarangay(barangay);
+        if (setMapContext && barangay) {
+          setMapContext(buildMapContext(barangay, zoning, summaryRef.current));
         }
       };
       ctx.map.on('click', handler);
@@ -553,7 +580,7 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
 
 
   const parcel = PANABO.parcels.find(p => p.id === selected);
-  const zoneInfo = PANABO.zones.find(z => z.id === parcel?.zone);
+  const zoneInfo = ZONING_LEGEND.find(z => z.id === parcel?.zone);
 
   const { filteredParcels, filteredBarangays } = useMemo(() => {
     if (!search) return { filteredParcels: [], filteredBarangays: [] };
@@ -574,6 +601,7 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
       <div style={{ position: 'absolute', inset: 0 }}>
         <Map ref={mapRef} center={[125.6847, 7.307]} zoom={12.5} minZoom={10} maxZoom={18} className="h-full w-full">
           <MapControls showCompass showFullscreen position="top-right"/>
+          <BasemapLayer basemap={basemap}/>
           <MapClickHandler/>
           <ZoningLayer visible={layers.zoning} hiddenZones={hiddenZones}/>
           <ReforestationLayer visible={layers.reforestation} hiddenRefoZones={hiddenRefoZones}/>
@@ -624,17 +652,51 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
               <MarkerContent>
                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'white', border: '2px solid hsl(var(--foreground))', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}/>
               </MarkerContent>
-              <MarkerPopup>
+            </MapMarker>
+          )}
+          {/* Details open immediately at the clicked point */}
+          {selectedPoint && (
+            <MapPopup
+              key={selectedPoint.coords.join(',')}
+              longitude={selectedPoint.coords[0]}
+              latitude={selectedPoint.coords[1]}
+              closeButton
+              onClose={() => setSelectedPoint(null)}
+            >
                 <div className="card" style={{ minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
                   <CardBody>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>Point Selection</div>
-                    <div className="muted mono" style={{ fontSize: 11, marginBottom: 8 }}>{selectedPoint.coords[1].toFixed(5)}, {selectedPoint.coords[0].toFixed(5)}</div>
-                    <ScoreRing value={selectedPoint.score} size={60}/>
-                    <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>Computed suitability</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{selectedPoint.barangay ?? 'Outside Panabo City'}</div>
+                    <div className="muted mono" style={{ fontSize: 11, marginBottom: 6 }}>{selectedPoint.coords[1].toFixed(5)}, {selectedPoint.coords[0].toFixed(5)}</div>
+                    {selectedPoint.zoning && (
+                      <div className="row" style={{ gap: 6, fontSize: 11.5, marginBottom: 6 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: 2, background: selectedPoint.zoning.hex, flexShrink: 0 }}/>
+                        <span>Zoning: {selectedPoint.zoning.label}</span>
+                      </div>
+                    )}
+                    {selectedPoint.scores ? (
+                      <>
+                        <div className="muted" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Barangay suitability (AHP-WLC)</div>
+                        {Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, label]) => (
+                          <div key={k} className="row-between" style={{ fontSize: 11.5, gap: 10 }}>
+                            <span>{label}</span>
+                            <span className="mono" style={{ color: LEVEL_COLOR[selectedPoint.scores[k].level] ?? 'hsl(var(--muted-foreground))' }}>{selectedPoint.scores[k].pct}%</span>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="muted" style={{ fontSize: 11.5 }}>No suitability results for this location.</div>
+                    )}
+                    {selectedPoint.barangay && go && (
+                      <button
+                        onClick={() => go('barangays', { barangay: selectedPoint.barangay })}
+                        style={{ marginTop: 8, width: '100%', fontSize: 11.5, padding: '4px 8px', borderRadius: 6, border: '1px solid hsl(var(--border))', background: 'hsl(var(--background))', color: 'hsl(var(--brand))', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        View barangay profile
+                      </button>
+                    )}
                   </CardBody>
                 </div>
-              </MarkerPopup>
-            </MapMarker>
+            </MapPopup>
           )}
         </Map>
       </div>
@@ -724,6 +786,25 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
             </div>
           </CardHeader>
           <CardBody style={{ padding: '10px 14px', maxHeight: '60vh', overflowY: 'auto' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Basemap</div>
+            <div className="row" style={{ gap: 4, marginBottom: 12 }}>
+              {Object.entries(BASEMAPS).map(([key, def]) => (
+                <button
+                  key={key}
+                  onClick={() => chooseBasemap(key)}
+                  title={def.title}
+                  style={{
+                    flex: 1, fontSize: 11, padding: '4px 6px', borderRadius: 6, cursor: 'pointer',
+                    border: '1px solid hsl(var(--border))',
+                    background: basemap === key ? 'hsl(var(--brand))' : 'hsl(var(--background))',
+                    color: basemap === key ? 'white' : 'hsl(var(--foreground))',
+                    fontWeight: basemap === key ? 600 : 400,
+                  }}
+                >
+                  {def.label}
+                </button>
+              ))}
+            </div>
             <div className="stack" style={{ gap: 7, marginBottom: 12 }}>
               {[['zoning','Zoning ordinance'],['reforestation','Reforestation'],['landslide','Landslide Hazard'],['flood','Flood Hazard']].map(([k, label]) => (
                 <label key={k} className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
@@ -760,11 +841,7 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
                 );
               })}
               <div style={{ fontSize: 10, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6, marginBottom: 2 }}>Zoning <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· click to toggle</span></div>
-              {[
-                { id: 'R-1', label: 'General Residential', hex: '#f97316' },
-                { id: 'C-1', label: 'Commercial',          hex: '#3b82f6' },
-                { id: 'I-1', label: 'Industrial',          hex: '#7c3aed' },
-              ].map(z => {
+              {ZONING_LEGEND.map(z => {
                 const hidden = hiddenZones.has(z.id);
                 return (
                   <div key={z.id} className="row" style={{ gap: 7, cursor: 'pointer', userSelect: 'none', opacity: hidden ? 0.35 : 1, transition: 'opacity .15s' }} onClick={() => toggleZone(z.id)} title={hidden ? `Show ${z.id}` : `Hide ${z.id}`}>
@@ -775,13 +852,14 @@ export function MapScreen({ initial, search, setSearch, highlightZones = [], set
                 );
               })}
               <div style={{ fontSize: 10, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6, marginBottom: 2 }}>Reforestation <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· click to toggle</span></div>
-              {REFORESTATION_ZONES_DATA.features.map(f => {
-                const name = f.properties.name;
-                const hidden = hiddenRefoZones.has(name);
+              {REFO_LEGEND.map(item => {
+                const hidden = hiddenRefoZones.has(item.label);
+                const count = summary.filter(z => z.scores?.reforestation?.level === item.label).length;
                 return (
-                  <div key={name} className="row" style={{ gap: 7, cursor: 'pointer', userSelect: 'none', opacity: hidden ? 0.35 : 1, transition: 'opacity .15s' }} onClick={() => toggleRefoZone(name)} title={hidden ? `Show ${name}` : `Hide ${name}`}>
-                    <span style={{ width: 12, height: 9, borderRadius: 2, background: '#16a34a', flexShrink: 0, filter: hidden ? 'grayscale(1)' : 'none', transition: 'filter .15s' }}/>
-                    <span style={{ fontSize: 11.5, textDecoration: hidden ? 'line-through' : 'none' }}>{name.replace(' Reforestation Zone', '')}</span>
+                  <div key={item.label} className="row" style={{ gap: 7, cursor: 'pointer', userSelect: 'none', opacity: hidden ? 0.35 : 1, transition: 'opacity .15s' }} onClick={() => toggleRefoZone(item.label)} title={hidden ? `Show ${item.label}` : `Hide ${item.label}`}>
+                    <span style={{ width: 12, height: 9, borderRadius: 2, background: item.hex, flexShrink: 0, filter: hidden ? 'grayscale(1)' : 'none', transition: 'filter .15s' }}/>
+                    <span style={{ fontSize: 11.5, textDecoration: hidden ? 'line-through' : 'none' }}>{item.label}</span>
+                    <span className="muted mono" style={{ fontSize: 10, marginLeft: 'auto' }}>{count} brgy</span>
                   </div>
                 );
               })}

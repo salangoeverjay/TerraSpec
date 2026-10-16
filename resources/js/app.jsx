@@ -1,6 +1,67 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Icon, Logo, Btn, Inp } from './components.jsx';
+import { apiJson, UNAUTHENTICATED_EVENT } from './http.js';
+
+// Required after first login (or after an admin resets the password) before any LGU access.
+function ChangePasswordModal({ user, onChanged, onCancel }) {
+  const [current, setCurrent]   = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm]   = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiJson('/api/lgu/password', {
+        method: 'POST',
+        body: { current_password: current, password, password_confirmation: confirm },
+      });
+      onChanged(data);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  const field = (label, value, set, autoComplete) => (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 5 }}>{label}</label>
+      <input className="input" style={{ width: '100%', boxSizing: 'border-box' }} type="password" value={value} onChange={e => set(e.target.value)} autoComplete={autoComplete}/>
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}>
+      <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '28px 28px', width: 360, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Set a new password</div>
+        <div className="muted" style={{ fontSize: 12, marginBottom: 16 }}>
+          {user?.email} is using a temporary password. Choose your own before continuing:
+          at least 10 characters with upper- and lowercase letters and a number.
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {field('Current password', current, setCurrent, 'current-password')}
+          {field('New password', password, setPassword, 'new-password')}
+          {field('Confirm new password', confirm, setConfirm, 'new-password')}
+          {error && (
+            <div style={{ fontSize: 12, color: 'hsl(var(--destructive))', background: 'hsl(var(--destructive) / 0.08)', border: '1px solid hsl(var(--destructive) / 0.2)', borderRadius: 6, padding: '8px 10px' }}>
+              {error}
+            </div>
+          )}
+          <div className="row" style={{ gap: 8, marginTop: 4 }}>
+            <Btn type="button" variant="outline" style={{ flex: 1 }} onClick={onCancel}>Log out</Btn>
+            <Btn type="submit" variant="brand" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Saving…' : 'Save password'}
+            </Btn>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function LoginModal({ onSuccess, onClose }) {
   const [email, setEmail]       = useState('');
@@ -17,32 +78,10 @@ function LoginModal({ onSuccess, onClose }) {
     setError('');
 
     try {
-      await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
-
-      const res = await fetch('/api/lgu/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-XSRF-TOKEN': decodeURIComponent(
-            document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? ''
-          ),
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message ?? 'Invalid email or password.');
-        setLoading(false);
-        return;
-      }
-
+      const data = await apiJson('/api/lgu/login', { method: 'POST', body: { email, password } });
       onSuccess(data);
-    } catch {
-      setError('Connection error. Please try again.');
+    } catch (e) {
+      setError(e.status ? e.message : 'Connection error. Please try again.');
       setLoading(false);
     }
   }
@@ -95,12 +134,14 @@ import { EnvironmentalScreen } from './environmental.jsx';
 import { ReforestationScreen } from './reforestation.jsx';
 import { ReportsScreen } from './reports.jsx';
 import { AdminScreen } from './admin.jsx';
+import { BarangayProfileScreen } from './barangay-profile.jsx';
 import { LandingPage } from './landing.jsx';
 
 const NAV = [
   { id: 'dashboard',     label: 'Dashboard',    icon: 'home',          section: 'main' },
   { id: 'map',           label: 'Map Viewer',   icon: 'map',           section: 'main' },
   { id: 'suitability',   label: 'Suitability',  icon: 'sliders',       section: 'analysis' },
+  { id: 'barangays',     label: 'Barangay Profiles', icon: 'list',    section: 'analysis' },
   { id: 'environmental', label: 'Environmental', icon: 'shield',        section: 'analysis' },
   { id: 'reforestation', label: 'Reforestation', icon: 'leaf',         section: 'analysis' },
   { id: 'chat',          label: 'AI Assistant', icon: 'messageSquare', section: 'tools' },
@@ -113,34 +154,51 @@ function App() {
     try { return sessionStorage.getItem('terraspec-screen') || 'landing'; } catch { return 'landing'; }
   });
   const [screenProps, setScreenProps] = useState({});
-  const [role, setRole]               = useState(() => {
-    try { return sessionStorage.getItem('terraspec-role') || 'public'; } catch { return 'public'; }
-  });
-  const [lguUser, setLguUser]         = useState(() => {
-    try {
-      const u = sessionStorage.getItem('terraspec-user');
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
-  });
+  // LGU access comes from the server session (GET /api/lgu/me), never from browser storage
+  const [role, setRole]               = useState('public');
+  const [lguUser, setLguUser]         = useState(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [dark, setDark]               = useState(false);
   const [showLogin, setShowLogin]     = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [search, setSearch]           = useState('');
   const [mapContext, setMapContext]    = useState(null); // { barangay, zone, score }
 
-  function handleLoginSuccess(user) {
+  function applySession(user) {
     setLguUser(user);
-    setRole('admin');
-    setShowLogin(false);
+    setMustChangePassword(!!user.must_change_password);
+    setRole(user.must_change_password ? 'public' : 'admin');
+  }
+
+  function clearSession() {
+    setLguUser(null);
+    setMustChangePassword(false);
+    setRole('public');
+    setScreen(s => (s === 'admin' ? 'dashboard' : s));
+  }
+
+  useEffect(() => {
     try {
-      sessionStorage.setItem('terraspec-role', 'admin');
-      sessionStorage.setItem('terraspec-user', JSON.stringify(user));
+      sessionStorage.removeItem('terraspec-role');
+      sessionStorage.removeItem('terraspec-user');
     } catch {}
+    apiJson('/api/lgu/me')
+      .then(me => { if (me.authenticated) applySession(me); })
+      .catch(() => {});
+    const onUnauthenticated = () => clearSession();
+    window.addEventListener(UNAUTHENTICATED_EVENT, onUnauthenticated);
+    return () => window.removeEventListener(UNAUTHENTICATED_EVENT, onUnauthenticated);
+  }, []);
+
+  function handleLoginSuccess(user) {
+    applySession(user);
+    setShowLogin(false);
   }
 
   function handleLogout() {
-    fetch('/api/lgu/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    apiJson('/api/lgu/logout', { method: 'POST' }).catch(() => {});
     setLguUser(null);
+    setMustChangePassword(false);
     setRole('public');
     try {
       sessionStorage.removeItem('terraspec-role');
@@ -171,6 +229,7 @@ function App() {
     chat:          ChatScreen,
     reports:       ReportsScreen,
     admin:         AdminScreen,
+    barangays:     BarangayProfileScreen,
   };
   const Screen = screens[screen] || DashboardScreen;
 
@@ -186,6 +245,13 @@ function App() {
         <LoginModal
           onSuccess={handleLoginSuccess}
           onClose={() => setShowLogin(false)}
+        />
+      )}
+      {mustChangePassword && lguUser && (
+        <ChangePasswordModal
+          user={lguUser}
+          onChanged={applySession}
+          onCancel={handleLogout}
         />
       )}
       {/* Topbar */}

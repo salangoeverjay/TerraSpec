@@ -10,7 +10,10 @@ use App\Models\ZoneUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class AdminController extends Controller
 {
@@ -30,15 +33,16 @@ class AdminController extends Controller
     {
         $zone = ZoneUnit::findOrFail($id);
         $data = $request->validate([
-            'unit_name'       => 'required|string|max:100',
-            'unit_type'       => 'required|in:Urban,Rural',
-            'total_area_ha'   => 'required|numeric|min:0',
+            'unit_name' => 'required|string|max:100',
+            'unit_type' => 'required|in:Urban,Rural',
+            'total_area_ha' => 'required|numeric|min:0',
             'settlement_tier' => 'required|in:CBD,Minor_Growth,Emerging,Satellite',
-            'elevation_min'   => 'required|integer|min:0',
-            'elevation_max'   => 'required|integer|min:0',
-            'salinity_level'  => 'required|in:None,Low,Med,High',
+            'elevation_min' => 'required|integer|min:0',
+            'elevation_max' => 'required|integer|min:0',
+            'salinity_level' => 'required|in:None,Low,Med,High',
         ]);
         $zone->update($data);
+
         return response()->json(['message' => 'Zone updated.', 'data' => $zone]);
     }
 
@@ -51,20 +55,20 @@ class AdminController extends Controller
     public function updateAllCriteria(Request $request): JsonResponse
     {
         $rows = $request->validate([
-            '*.criteria_id'          => 'required|integer|exists:suitability_criteria,criteria_id',
-            '*.commercial_weight'    => 'required|numeric|min:0|max:1',
-            '*.residential_weight'   => 'required|numeric|min:0|max:1',
-            '*.industrial_weight'    => 'required|numeric|min:0|max:1',
-            '*.agricultural_weight'  => 'required|numeric|min:0|max:1',
+            '*.criteria_id' => 'required|integer|exists:suitability_criteria,criteria_id',
+            '*.commercial_weight' => 'required|numeric|min:0|max:1',
+            '*.residential_weight' => 'required|numeric|min:0|max:1',
+            '*.industrial_weight' => 'required|numeric|min:0|max:1',
+            '*.agricultural_weight' => 'required|numeric|min:0|max:1',
             '*.reforestation_weight' => 'required|numeric|min:0|max:1',
         ]);
 
         foreach ($rows as $row) {
             SuitabilityCriteria::where('criteria_id', $row['criteria_id'])->update([
-                'commercial_weight'    => $row['commercial_weight'],
-                'residential_weight'   => $row['residential_weight'],
-                'industrial_weight'    => $row['industrial_weight'],
-                'agricultural_weight'  => $row['agricultural_weight'],
+                'commercial_weight' => $row['commercial_weight'],
+                'residential_weight' => $row['residential_weight'],
+                'industrial_weight' => $row['industrial_weight'],
+                'agricultural_weight' => $row['agricultural_weight'],
                 'reforestation_weight' => $row['reforestation_weight'],
             ]);
         }
@@ -83,8 +87,9 @@ class AdminController extends Controller
         $data = $request->validate([
             'restriction_name' => 'required|string|max:100',
             'restriction_type' => 'required|string|max:50',
-            'description'      => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
+
         return response()->json(['message' => 'Restriction added.', 'data' => EnvironmentalRestriction::create($data)], 201);
     }
 
@@ -94,8 +99,9 @@ class AdminController extends Controller
         $r->update($request->validate([
             'restriction_name' => 'required|string|max:100',
             'restriction_type' => 'required|string|max:50',
-            'description'      => 'nullable|string',
+            'description' => 'nullable|string',
         ]));
+
         return response()->json(['message' => 'Restriction updated.', 'data' => $r]);
     }
 
@@ -104,6 +110,7 @@ class AdminController extends Controller
         EnvironmentalRestriction::findOrFail($id);
         DB::table('zone_restrictions')->where('restriction_id', $id)->delete();
         EnvironmentalRestriction::destroy($id);
+
         return response()->json(['message' => 'Restriction deleted.']);
     }
 
@@ -116,14 +123,15 @@ class AdminController extends Controller
     public function storeSpecies(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'common_name'       => 'required|string|max:100',
-            'scientific_name'   => 'required|string|max:150',
-            'soil_preference'   => 'required|string|max:100',
-            'elevation_range'   => 'required|string|max:50',
+            'common_name' => 'required|string|max:100',
+            'scientific_name' => 'required|string|max:150',
+            'soil_preference' => 'required|string|max:100',
+            'elevation_range' => 'required|string|max:50',
             'temperature_range' => 'required|string|max:50',
-            'salinity_level'    => 'required|in:None,Low,Med,High',
+            'salinity_level' => 'required|in:None,Low,Med,High',
             'suitability_notes' => 'nullable|string',
         ]);
+
         return response()->json(['message' => 'Species added.', 'data' => TreeSpecies::create($data)], 201);
     }
 
@@ -131,20 +139,22 @@ class AdminController extends Controller
     {
         $s = TreeSpecies::findOrFail($id);
         $s->update($request->validate([
-            'common_name'       => 'required|string|max:100',
-            'scientific_name'   => 'required|string|max:150',
-            'soil_preference'   => 'required|string|max:100',
-            'elevation_range'   => 'required|string|max:50',
+            'common_name' => 'required|string|max:100',
+            'scientific_name' => 'required|string|max:150',
+            'soil_preference' => 'required|string|max:100',
+            'elevation_range' => 'required|string|max:50',
             'temperature_range' => 'required|string|max:50',
-            'salinity_level'    => 'required|in:None,Low,Med,High',
+            'salinity_level' => 'required|in:None,Low,Med,High',
             'suitability_notes' => 'nullable|string',
         ]));
+
         return response()->json(['message' => 'Species updated.', 'data' => $s]);
     }
 
     public function deleteSpecies(int $id): JsonResponse
     {
         TreeSpecies::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Species deleted.']);
     }
 
@@ -152,28 +162,80 @@ class AdminController extends Controller
     public function users(): JsonResponse
     {
         return response()->json(
-            User::select(['id', 'name', 'email', 'role', 'created_at'])->orderBy('name')->get()
+            User::select(['id', 'name', 'email', 'role', 'must_change_password', 'created_at'])->orderBy('name')->get()
         );
+    }
+
+    // POST /api/admin/users (admin only). The account starts with a temporary password that must
+    // be changed at first login; when none is given a random one is generated and returned once.
+    public function storeUser(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'role' => 'required|in:admin,planner,viewer',
+            'password' => ['nullable', 'string', Password::min(10)->letters()->mixedCase()->numbers()],
+        ]);
+
+        $generated = empty($data['password']);
+        $temporaryPassword = $generated ? Str::password(14) : $data['password'];
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => $data['role'],
+            'password' => Hash::make($temporaryPassword),
+            'must_change_password' => true,
+        ]);
+
+        return response()->json([
+            'message' => 'User created. They must change the temporary password at first login.',
+            'data' => $user->only(['id', 'name', 'email', 'role']),
+            'temporary_password' => $generated ? $temporaryPassword : null,
+        ], 201);
     }
 
     public function updateUser(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
         $data = $request->validate([
-            'name'  => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($id)],
-            'role'  => 'required|in:admin,planner,viewer',
+            'role' => 'required|in:admin,planner,viewer',
+            'password' => ['nullable', 'string', Password::min(10)->letters()->mixedCase()->numbers()],
         ]);
-        if ($request->filled('password')) {
-            $data['password'] = bcrypt($request->input('password'));
+
+        if ($user->role === 'admin' && $data['role'] !== 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return response()->json(['message' => 'At least one administrator account must remain.'], 422);
         }
+
+        if (! empty($data['password'])) {
+            // An admin-set password is temporary: the user must choose their own at next login
+            $data['password'] = Hash::make($data['password']);
+            $data['must_change_password'] = $user->id !== $request->user()->id;
+        } else {
+            unset($data['password']);
+        }
+
         $user->update($data);
+
         return response()->json(['message' => 'User updated.', 'data' => $user->only(['id', 'name', 'email', 'role'])]);
     }
 
-    public function deleteUser(int $id): JsonResponse
+    public function deleteUser(Request $request, int $id): JsonResponse
     {
-        User::findOrFail($id)->delete();
+        $user = User::findOrFail($id);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 422);
+        }
+
+        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return response()->json(['message' => 'At least one administrator account must remain.'], 422);
+        }
+
+        $user->delete();
+
         return response()->json(['message' => 'User deleted.']);
     }
 }

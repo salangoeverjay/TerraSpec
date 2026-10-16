@@ -1,8 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
-import { PANABO } from './data.js';
+import { BARANGAY_COORDS, fetchSuitabilitySummary } from './data.js';
+
+const LEVEL_HEX = { 'Highly Suitable': 'hsl(162 47% 39%)', 'Moderately Suitable': 'hsl(38 92% 50%)', 'Low Suitability': 'hsl(0 72% 51%)' };
+
+// Real figures for the hero map: stored commercial results, restrictions and the top species match.
+function useLandingData() {
+  const [data, setData] = useState({ summary: [], restrictions: [], speciesCount: null, topSpecies: null, topRefo: null });
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetchSuitabilitySummary(),
+      fetch('/api/dashboard-stats', { headers: { Accept: 'application/json' } }).then(r => (r.ok ? r.json() : {})),
+    ])
+      .then(async ([summary, stats]) => {
+        const topRefo = [...summary]
+          .filter(z => z.scores?.reforestation)
+          .sort((a, b) => b.scores.reforestation.pct - a.scores.reforestation.pct)[0] ?? null;
+        const match = topRefo
+          ? await fetch(`/reforestation/${topRefo.zone_unit_id}/match`, { headers: { Accept: 'application/json' } }).then(r => (r.ok ? r.json() : null))
+          : null;
+        if (!active) return;
+        setData({
+          summary,
+          restrictions: stats.restrictions ?? [],
+          speciesCount: stats.species?.length ?? null,
+          topSpecies: match?.species?.[0] ?? null,
+          topRefo,
+        });
+      })
+      .catch(e => console.warn('Landing data error', e));
+    return () => { active = false; };
+  }, []);
+
+  return data;
+}
 
 export function LandingPage({ go }) {
+  const { summary, restrictions, speciesCount, topSpecies, topRefo } = useLandingData();
+  const commercial = summary.filter(z => z.scores?.commercial);
+  const topCommercial = [...commercial].sort((a, b) => b.scores.commercial.pct - a.scores.commercial.pct)[0] ?? null;
+
   return (
     <>
       <style>{`
@@ -285,32 +324,43 @@ export function LandingPage({ go }) {
                       </MarkerContent>
                       <MarkerTooltip>Panabo City, Davao del Norte</MarkerTooltip>
                     </MapMarker>
-                    {PANABO.barangayRankings.map(p => (
-                      <MapMarker key={p.barangay} longitude={125.6847 + (Math.sin(p.barangay.charCodeAt(0)) * 0.08)} latitude={7.307 + (Math.cos(p.barangay.charCodeAt(0)) * 0.06)}>
-                        <MarkerContent>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.score >= 75 ? 'hsl(162 47% 39%)' : p.score >= 50 ? 'hsl(38 92% 50%)' : 'hsl(0 72% 51%)', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}/>
-                        </MarkerContent>
-                        <MarkerTooltip>{p.barangay} · {p.score}%</MarkerTooltip>
-                      </MapMarker>
-                    ))}
+                    {commercial.map(z => {
+                      const coords = BARANGAY_COORDS[z.unit_name];
+                      if (!coords) return null;
+                      const s = z.scores.commercial;
+                      return (
+                        <MapMarker key={z.zone_unit_id} longitude={coords[0]} latitude={coords[1]}>
+                          <MarkerContent>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: LEVEL_HEX[s.level] ?? 'hsl(240 5% 65%)', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}/>
+                          </MarkerContent>
+                          <MarkerTooltip>{z.unit_name} · Commercial {s.pct}% · {s.level}</MarkerTooltip>
+                        </MapMarker>
+                      );
+                    })}
                   </Map>
                 </div>
 
-                <div className="lp-map-pill" style={{ top: 28, left: 42 }}>
-                  <div className="lp-pill-label">TOP BARANGAY</div>
-                  <div className="lp-pill-val">Poblacion · 91%</div>
-                  <div style={{ height: 4, background: 'hsl(240 6% 92%)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
-                    <div style={{ width: '91%', height: '100%', background: 'hsl(162 47% 39%)' }}/>
+                {topCommercial && (
+                  <div className="lp-map-pill" style={{ top: 28, left: 42 }}>
+                    <div className="lp-pill-label">TOP BARANGAY · COMMERCIAL</div>
+                    <div className="lp-pill-val">{topCommercial.unit_name} · {topCommercial.scores.commercial.pct}%</div>
+                    <div style={{ height: 4, background: 'hsl(240 6% 92%)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
+                      <div style={{ width: `${topCommercial.scores.commercial.pct}%`, height: '100%', background: 'hsl(162 47% 39%)' }}/>
+                    </div>
                   </div>
-                </div>
-                <div className="lp-map-pill" style={{ top: 28, right: 42, background: 'rgba(254,242,242,0.95)', borderColor: 'hsl(0 70% 60% / 0.4)' }}>
-                  <div className="lp-pill-label" style={{ color: 'hsl(0 70% 40%)' }}>⚠ ENV FLAG</div>
-                  <div className="lp-pill-val" style={{ color: 'hsl(0 70% 35%)' }}>Mangrove buffer</div>
-                </div>
-                <div className="lp-map-pill" style={{ bottom: 28, left: 42 }}>
-                  <div className="lp-pill-label">SPECIES MATCH</div>
-                  <div className="lp-pill-val">Narra · 94%</div>
-                </div>
+                )}
+                {restrictions.length > 0 && (
+                  <div className="lp-map-pill" style={{ top: 28, right: 42, background: 'rgba(254,242,242,0.95)', borderColor: 'hsl(0 70% 60% / 0.4)' }}>
+                    <div className="lp-pill-label" style={{ color: 'hsl(0 70% 40%)' }}>⚠ ENV FLAGS · {restrictions.length}</div>
+                    <div className="lp-pill-val" style={{ color: 'hsl(0 70% 35%)' }}>{restrictions[0].name}</div>
+                  </div>
+                )}
+                {topSpecies && topRefo && (
+                  <div className="lp-map-pill" style={{ bottom: 28, left: 42 }}>
+                    <div className="lp-pill-label">SPECIES MATCH · {topRefo.unit_name.toUpperCase()}</div>
+                    <div className="lp-pill-val">{topSpecies.common_name} · {topSpecies.score_pct}%</div>
+                  </div>
+                )}
 
               </div>
             </div>
@@ -321,10 +371,10 @@ export function LandingPage({ go }) {
         <section className="lp-shell" style={{ paddingBottom: 32 }}>
           <div className="lp-stats">
             {[
-              { v: '38',    em: false, k: 'Barangays mapped',      note: "Full coverage of Panabo's administrative units, 2020 onward." },
-              { v: '7',     em: false, k: 'Suitability criteria',  note: 'Road, flood, slope, soil, zoning, restriction, lot size.' },
-              { v: '94%',   em: true,  k: 'Species-site accuracy', note: 'Native trees matched against soil + topography.' },
-              { v: '0',     em: false, k: 'Paper forms',           note: 'Manual zoning review replaced by NLP + MCDA.' },
+              { v: String(summary.length || Object.keys(BARANGAY_COORDS).length), em: false, k: 'Barangays mapped', note: 'PSA 2023 boundaries with CLUP 2020–2029 data.' },
+              { v: '7',     em: false, k: 'Suitability criteria',  note: 'Flood, slope, liquefaction, population, market saturation, soil, zoning.' },
+              { v: speciesCount != null ? String(speciesCount) : '—', em: true, k: 'Native species catalogued', note: 'Matched by soil, elevation, salinity and temperature.' },
+              { v: '4',     em: false, k: 'MCDA methods compared', note: 'AHP-WLC (main), AHP-TOPSIS, EWM-WLC and EWM-TOPSIS.' },
             ].map(({ v, em, k, note }) => (
               <div key={k}>
                 <div className="lp-stat-v">{em ? <em>{v}</em> : v}</div>

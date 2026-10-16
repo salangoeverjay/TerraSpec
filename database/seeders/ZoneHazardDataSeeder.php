@@ -14,17 +14,17 @@ class ZoneHazardDataSeeder extends Seeder
         //  liq_hsa, liq_lsa, liq_msa,
         //  has_flood, has_landslide, has_storm_surge, has_drought, has_sea_level_rise]
         $hazardData = [
-            ['Santo Nino',        51.08,  54.81,    11.15,    0.00,    4.97,    0.00,   105.09, true,  false, true,  true,  true ],
-            ['Cagangohan',       141.08,   0.00,   176.32,    0.00,    0.00,    0.00,    69.07, true,  false, false, true,  true ],
+            ['Santo Nino',        51.08,  54.81,    11.15,    0.00,    4.97,    0.00,   105.09, true,  false, true,  true,  true],
+            ['Cagangohan',       141.08,   0.00,   176.32,    0.00,    0.00,    0.00,    69.07, true,  false, false, true,  true],
             ['Gredu',              0.00,  21.96,   101.74,    0.00,    0.51,    0.00,   123.18, true,  false, true,  true,  false],
-            ['J.P. Laurel',      185.56,  61.27,   264.32,    0.00,   17.26,    0.00,   261.73, true,  false, true,  true,  true ],
+            ['J.P. Laurel',      185.56,  61.27,   264.32,    0.00,   17.26,    0.00,   261.73, true,  false, true,  true,  true],
             ['New Visayas',        0.00,  22.51,   390.72,    0.00,  391.21,    0.00,    22.02, true,  false, false, true,  false],
             ['New Pandan',        55.36,   0.00,    86.49,    0.00,    0.00,    0.00,   120.84, true,  false, false, true,  false],
             ['Quezon',             0.00,   3.87,   142.20,  101.68,  247.76,    0.00,     0.00, true,  false, false, true,  false],
             ['Salvacion',          0.00, 108.99,    74.75,   19.93,  203.67,    0.00,     0.00, true,  false, false, true,  false],
             ['San Francisco',      8.84,  43.38,   141.81,    4.13,  152.76,    0.00,    45.40, true,  false, false, true,  false],
             ['San Vicente',       37.85, 401.37,    37.25,    0.00,  153.75,    0.00,   252.88, true,  false, true,  false, false],
-            ['San Pedro',        193.27,   1.72,    68.24,    0.00,    0.00,    0.00,    23.50, true,  false, true,  true,  true ],
+            ['San Pedro',        193.27,   1.72,    68.24,    0.00,    0.00,    0.00,    23.50, true,  false, true,  true,  true],
             ['A.O. Floirendo',     0.00,  22.15,  1661.19, 1697.53, 2291.40,  126.55,   962.91, true,  true,  false, true,  false],
             ['Datu Abdul Dadia',   0.00,  57.75,   530.55,    0.00,  579.73,    0.00,     8.57, true,  true,  false, true,  false],
             ['Buenavista',         0.00,   5.42,    15.56,  537.95,    0.00,  171.64,     0.00, false, true,  false, true,  false],
@@ -43,7 +43,8 @@ class ZoneHazardDataSeeder extends Seeder
             ['Malativas',          0.00,   0.00,    27.21,  911.09,    0.00,  433.06,     0.00, true,  true,  false, true,  false],
             ['Manay',            120.45,  13.77,   171.43,  938.78,    0.00,  398.91,   845.51, true,  true,  false, true,  false],
             ['Nanyo',              0.00,  45.39,   501.74,   96.97,  623.33,    0.00,    20.77, true,  true,  false, true,  false],
-            ['New Malaga',         0.00,   0.00,     0.00,    0.00,   73.92,   14.45,   388.32, true,  true,  false, true,  false],
+            // Listed as "Dalisay" in CLUP Tables PF-19 (p.80) and PF-26 (p.88)
+            ['New Malaga',        46.49,   0.00,    37.77,  447.34,    0.00,  531.60,     0.00, true,  true,  false, true,  false],
             ['New Malitbog',       0.00,  42.80,   172.92,  260.97,   73.92,   14.45,   388.32, true,  true,  false, true,  false],
             ['San Nicolas',        0.00,   9.09,     0.00,  655.38,    3.87,  261.25,   124.89, true,  true,  false, true,  false],
             ['San Roque',          0.00,   0.00,     0.00,  253.29,    0.00,    0.00,     0.00, false, true,  false, true,  false],
@@ -60,22 +61,24 @@ class ZoneHazardDataSeeder extends Seeder
 
         foreach ($hazardData as $row) {
             $zoneUnitId = $zoneMap[$row[0]] ?? null;
-            if (!$zoneUnitId) continue;
+            if (! $zoneUnitId) {
+                continue;
+            }
 
             ZoneHazardData::create([
-                'zone_unit_id'        => $zoneUnitId,
-                'flood_high_ha'       => $row[1],
-                'flood_moderate_ha'   => $row[2],
-                'flood_low_ha'        => $row[3],
-                'flood_none_ha'       => $row[4],
+                'zone_unit_id' => $zoneUnitId,
+                'flood_high_ha' => $row[1],
+                'flood_moderate_ha' => $row[2],
+                'flood_low_ha' => $row[3],
+                'flood_none_ha' => $row[4],
                 'liquefaction_hsa_ha' => $row[5],
                 'liquefaction_lsa_ha' => $row[6],
                 'liquefaction_msa_ha' => $row[7],
-                'has_flood'           => $row[8],
-                'has_landslide'       => $row[9],
-                'has_storm_surge'     => $row[10],
-                'has_drought'         => $row[11],
-                'has_sea_level_rise'  => $row[12],
+                'has_flood' => $row[8],
+                'has_landslide' => $row[9],
+                'has_storm_surge' => $row[10],
+                'has_drought' => $row[11],
+                'has_sea_level_rise' => $row[12],
             ]);
         }
     }

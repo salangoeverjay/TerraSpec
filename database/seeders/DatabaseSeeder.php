@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             LguAdminSeeder::class,
             ZoneUnitSeeder::class,
             ZoneHazardDataSeeder::class,
+            ZoneZoningDataSeeder::class,
             ZoneSoilDataSeeder::class,
             PopulationProjectionSeeder::class,
             SuitabilityCriteriaSeeder::class,
