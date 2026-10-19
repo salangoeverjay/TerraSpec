@@ -16,6 +16,7 @@ class ZoneHazardData extends Model
         'liquefaction_hsa_ha',
         'liquefaction_lsa_ha',
         'liquefaction_msa_ha',
+        'liquefaction_none_ha',
         'storm_surge_high_ha',
         'storm_surge_moderate_ha',
         'storm_surge_low_ha',
@@ -27,11 +28,11 @@ class ZoneHazardData extends Model
     ];
 
     protected $casts = [
-        'has_flood'         => 'boolean',
-        'has_landslide'     => 'boolean',
-        'has_storm_surge'   => 'boolean',
-        'has_drought'       => 'boolean',
-        'has_sea_level_rise'=> 'boolean',
+        'has_flood' => 'boolean',
+        'has_landslide' => 'boolean',
+        'has_storm_surge' => 'boolean',
+        'has_drought' => 'boolean',
+        'has_sea_level_rise' => 'boolean',
     ];
 
     public function zoneUnit(): BelongsTo

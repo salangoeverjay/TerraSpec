@@ -94,6 +94,7 @@ class BarangayProfileController extends Controller
                         'High (HSA)' => $hazard->liquefaction_hsa_ha,
                         'Moderate (MSA)' => $hazard->liquefaction_msa_ha,
                         'Low (LSA)' => $hazard->liquefaction_lsa_ha,
+                        'None' => $hazard->liquefaction_none_ha,
                     ]),
                     'storm_surge' => $this->classes('CLUP Table PF-24', [
                         'High' => $hazard->storm_surge_high_ha,

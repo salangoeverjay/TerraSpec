@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ZoneHazardData;
+use App\Models\ZoneSoilData;
 use App\Models\ZoneUnit;
 use App\Models\ZoneZoningData;
 use App\Services\SuitabilityScoreService;
@@ -167,6 +168,51 @@ it('lists all barangays for the profile page', function () {
 
 it('returns 404 for an unknown barangay profile', function () {
     $this->getJson('/barangays/999/profile')->assertNotFound();
+});
+
+it('scores flood and liquefaction as shares of each CLUP table total, not the unit area', function () {
+    // total_area_ha is 100, but the hazard tables report 200 ha for this barangay
+    $zone = makeZone('Lowland', ['GR' => [100]]);
+    $zone->hazardData->update([
+        'flood_high_ha' => 40, 'flood_moderate_ha' => 20, 'flood_low_ha' => 50, 'flood_none_ha' => 90,
+        'liquefaction_hsa_ha' => 20, 'liquefaction_msa_ha' => 40, 'liquefaction_lsa_ha' => 40, 'liquefaction_none_ha' => 100,
+    ]);
+
+    $scores = app(SuitabilityScoreService::class)->calculate($zone->fresh(), 'residential')['scores'];
+
+    // flood: 1 - (40 + 20*0.5 + 50*0.2) / 200 = 0.70; liquefaction: 1 - (20 + 40*0.5 + 40*0.2) / 200 = 0.76
+    expect($scores['flood'])->toEqualWithDelta(0.70, 0.0001)
+        ->and($scores['liquefaction'])->toEqualWithDelta(0.76, 0.0001);
+});
+
+it('falls back to the unit area when a hazard table has no area for the barangay', function () {
+    $zone = makeZone('Unrecorded', ['GR' => [100]]);
+
+    $scores = app(SuitabilityScoreService::class)->calculate($zone, 'residential')['scores'];
+
+    expect($scores['flood'])->toEqualWithDelta(1.0, 0.0001)
+        ->and($scores['liquefaction'])->toEqualWithDelta(1.0, 0.0001);
+});
+
+it('scores soil as the area-weighted average of every soil type', function () {
+    $zone = makeZone('Mixed Soil', ['GR' => [100]]);
+    ZoneSoilData::create([
+        'zone_unit_id' => $zone->zone_unit_id,
+        'cabangan_clay_loam_ha' => 60, 'camasan_sandy_clay_loam_ha' => 0,
+        'matina_clay_loam_ha' => 40, 'san_manuel_silty_clay_loam_ha' => 0,
+    ]);
+
+    $scores = app(SuitabilityScoreService::class)->calculate($zone->fresh(), 'residential')['scores'];
+
+    // (60 × 0.85 + 40 × 0.55) / 100 = 0.73
+    expect($scores['soil'])->toEqualWithDelta(0.73, 0.0001);
+});
+
+it('falls back to the dominant soil type when no soil areas are recorded', function () {
+    $zone = makeZone('No Soil Data', ['GR' => [100]]);
+
+    // makeZone uses Cabangan Clay Loam as the dominant soil type (score 0.85)
+    expect(app(SuitabilityScoreService::class)->calculate($zone, 'residential')['scores']['soil'])->toEqualWithDelta(0.85, 0.0001);
 });
 
 it('falls back to the unit type rule when a unit has no zoning data', function () {

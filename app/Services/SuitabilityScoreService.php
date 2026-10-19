@@ -50,18 +50,21 @@ class SuitabilityScoreService
 
         $constraint = $this->evaluateConstraints($zone, $analysisType);
 
-        // 1. FLOOD SCORE — weighted flood area as fraction of total, inverted
-        $floodRaw = $area > 0
-            ? (($hazard->flood_high_ha * 1.0) + ($hazard->flood_moderate_ha * 0.5) + ($hazard->flood_low_ha * 0.2)) / $area
+        // 1. FLOOD SCORE — weighted flood area as a share of the barangay total in CLUP Table PF-19
+        //    (each CLUP hazard table reports its own barangay total), inverted
+        $floodTotal = $this->tableTotal([$hazard->flood_high_ha, $hazard->flood_moderate_ha, $hazard->flood_low_ha, $hazard->flood_none_ha], $area);
+        $floodRaw = $floodTotal > 0
+            ? (($hazard->flood_high_ha * 1.0) + ($hazard->flood_moderate_ha * 0.5) + ($hazard->flood_low_ha * 0.2)) / $floodTotal
             : 0;
         $floodScore = max(0.0, min(1.0, 1 - $floodRaw));
 
         // 2. SLOPE SCORE — lookup by dominant slope class
         $slopeScore = self::SLOPE_SCORES[$zone->dominant_slope_class] ?? 0.50;
 
-        // 3. LIQUEFACTION SCORE — weighted exposure, inverted
-        $liqRaw = $area > 0
-            ? (($hazard->liquefaction_hsa_ha * 1.0) + ($hazard->liquefaction_msa_ha * 0.5) + ($hazard->liquefaction_lsa_ha * 0.2)) / $area
+        // 3. LIQUEFACTION SCORE — weighted exposure as a share of the barangay total in CLUP Table PF-26, inverted
+        $liqTotal = $this->tableTotal([$hazard->liquefaction_hsa_ha, $hazard->liquefaction_msa_ha, $hazard->liquefaction_lsa_ha, $hazard->liquefaction_none_ha], $area);
+        $liqRaw = $liqTotal > 0
+            ? (($hazard->liquefaction_hsa_ha * 1.0) + ($hazard->liquefaction_msa_ha * 0.5) + ($hazard->liquefaction_lsa_ha * 0.2)) / $liqTotal
             : 0;
         $liquefactionScore = max(0.0, min(1.0, 1 - $liqRaw));
 
@@ -71,8 +74,9 @@ class SuitabilityScoreService
         // 5. MARKET SATURATION SCORE — inverted (low saturation = high opportunity)
         $saturationScore = max(0.0, 1.0 - (float) $zone->saturation_index);
 
-        // 6. SOIL SCORE — lookup by dominant soil type
-        $soilScore = self::SOIL_SCORES[$zone->dominant_soil_type] ?? 0.50;
+        // 6. SOIL SCORE — area-weighted over every soil type in the barangay (CLUP Table PF-9);
+        //    falls back to the dominant soil type when no soil areas are recorded
+        $soilScore = $this->soilScore($zone);
 
         // 7. ZONING COMPLIANCE SCORE — share of the unconstrained zoned land whose
         //    Integrated Zoning Map class permits this use; unit_type matrix as fallback
@@ -153,6 +157,42 @@ class SuitabilityScoreService
                 'reasons' => $constraint['reasons'],
             ],
         ];
+    }
+
+    private function soilScore(ZoneUnit $zone): float
+    {
+        $soil = $zone->soilData;
+        $areas = $soil ? [
+            'Cabangan Clay Loam' => (float) $soil->cabangan_clay_loam_ha,
+            'Camasan Sandy Clay Loam' => (float) $soil->camasan_sandy_clay_loam_ha,
+            'Matina Clay Loam' => (float) $soil->matina_clay_loam_ha,
+            'San Manuel Silty Clay Loam' => (float) $soil->san_manuel_silty_clay_loam_ha,
+        ] : [];
+        $total = array_sum($areas);
+
+        if ($total <= 0) {
+            return self::SOIL_SCORES[$zone->dominant_soil_type] ?? 0.50;
+        }
+
+        $weighted = 0.0;
+        foreach ($areas as $type => $ha) {
+            $weighted += $ha * self::SOIL_SCORES[$type];
+        }
+
+        return $weighted / $total;
+    }
+
+    /**
+     * Barangay total of a CLUP hazard table (sum of its classes); falls back to the zone unit area
+     * when the table has no area recorded for the barangay.
+     *
+     * @param  array<int, mixed>  $classes
+     */
+    private function tableTotal(array $classes, float $fallbackArea): float
+    {
+        $total = array_sum(array_map('floatval', $classes));
+
+        return $total > 0 ? $total : $fallbackArea;
     }
 
     /**

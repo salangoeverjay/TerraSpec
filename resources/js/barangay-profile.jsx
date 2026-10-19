@@ -11,7 +11,7 @@ const LEVEL_VARIANT = { 'Highly Suitable': 'brand', 'Moderately Suitable': 'warn
 
 const HAZARD_COLORS = {
   flood:        { High: '#341648', Moderate: '#6b3e81', Low: '#c074f2', None: '#e5e7eb' },
-  liquefaction: { 'High (HSA)': '#b91c1c', 'Moderate (MSA)': '#f97316', 'Low (LSA)': '#fcd34d' },
+  liquefaction: { 'High (HSA)': '#b91c1c', 'Moderate (MSA)': '#f97316', 'Low (LSA)': '#fcd34d', None: '#e5e7eb' },
   storm_surge:  { High: '#1e3a8a', Moderate: '#3b82f6', Low: '#93c5fd' },
 };
 

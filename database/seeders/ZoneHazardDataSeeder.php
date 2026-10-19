@@ -59,6 +59,14 @@ class ZoneHazardDataSeeder extends Seeder
 
         $zoneMap = ZoneUnit::pluck('zone_unit_id', 'unit_name');
 
+        // "None" column of CLUP Table PF-26 (p.88-89); barangays not listed have 0 ha
+        $liquefactionNone = [
+            'Buenavista' => 387.29, 'Cagangohan' => 248.33, 'J.P. Laurel' => 232.17, 'Katualan' => 429.21,
+            'Kiotoy' => 562.29, 'Mabunao' => 1019.79, 'Malativas' => 505.24, 'New Pandan' => 21.01,
+            'San Nicolas' => 274.46, 'San Pedro' => 239.73, 'San Roque' => 253.29, 'San Vicente' => 69.85,
+            'Santa Cruz' => 1006.81, 'Santo Nino' => 6.97, 'Waterfall' => 187.78,
+        ];
+
         foreach ($hazardData as $row) {
             $zoneUnitId = $zoneMap[$row[0]] ?? null;
             if (! $zoneUnitId) {
@@ -74,6 +82,7 @@ class ZoneHazardDataSeeder extends Seeder
                 'liquefaction_hsa_ha' => $row[5],
                 'liquefaction_lsa_ha' => $row[6],
                 'liquefaction_msa_ha' => $row[7],
+                'liquefaction_none_ha' => $liquefactionNone[$row[0]] ?? 0,
                 'has_flood' => $row[8],
                 'has_landslide' => $row[9],
                 'has_storm_surge' => $row[10],
