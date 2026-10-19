@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMap } from '../../components/ui/map';
-import { ZONING_LEGEND, fetchSuitabilitySummary, normalizeName } from './data.js';
+import { ZONING_LEGEND, BARANGAY_COORDS, fetchSuitabilitySummary, normalizeName } from './data.js';
 
 // ── Legends (also used by the map layers' paint) ───────────────────────────────
 
@@ -45,7 +45,10 @@ export function hatchSwatch(hex, reverse = false) {
 
 // Bottom → top drawing order of the TerraSpec overlays (basemaps go below all of them)
 export const OVERLAY_ORDER = ['zoning', 'suitability', 'landslide', 'flood', 'query'];
-export const OVERLAY_LAYER_IDS = OVERLAY_ORDER.flatMap(id => [`${id}-fill`, `${id}-line`]);
+// Barangay boundaries and names stay above every overlay so they are never covered
+export const BOUNDARY_LAYER_ID = 'barangay-boundaries';
+export const LABEL_LAYER_ID = 'barangay-labels';
+export const OVERLAY_LAYER_IDS = [...OVERLAY_ORDER.flatMap(id => [`${id}-fill`, `${id}-line`]), BOUNDARY_LAYER_ID, LABEL_LAYER_ID];
 
 const ZONING_COLOR = ['match', ['get', 'zone'], ...ZONING_LEGEND.flatMap(z => [z.id, z.hex]), '#888888'];
 
@@ -101,7 +104,7 @@ function useOverlay({ id, load, loadKey = '', visible, filter = null, fill, line
         } else {
           beforeAdd?.(map);
           const { visible: vis, filter: f, fill: fillPaint, line: linePaint } = latest.current;
-          const above = OVERLAY_ORDER.slice(OVERLAY_ORDER.indexOf(id) + 1).map(o => `${o}-fill`).find(l => map.getLayer(l));
+          const above = [...OVERLAY_ORDER.slice(OVERLAY_ORDER.indexOf(id) + 1).map(o => `${o}-fill`), BOUNDARY_LAYER_ID, LABEL_LAYER_ID].find(l => map.getLayer(l));
           const layout = { visibility: vis ? 'visible' : 'none' };
           map.addSource(id, { type: 'geojson', data });
           map.addLayer({ id: `${id}-fill`, type: 'fill', source: id, layout, paint: fillPaint, ...(f ? { filter: f } : {}) }, above);
@@ -255,5 +258,70 @@ export function QueryBarangayLayer({ names }) {
     fill: { 'fill-color': '#db2777', 'fill-opacity': 0.06 },
     line: { 'line-color': '#db2777', 'line-width': 2.4, 'line-opacity': 0.9, 'line-dasharray': [2, 1] },
   });
+  return null;
+}
+
+const LABEL_POINTS = {
+  type: 'FeatureCollection',
+  features: Object.entries(BARANGAY_COORDS).map(([name, coordinates]) => ({
+    type: 'Feature', properties: { name }, geometry: { type: 'Point', coordinates },
+  })),
+};
+
+// Names and outlines of the 40 barangays (PSA 2023), drawn on top of every overlay
+export function BarangayLabelLayer({ visible }) {
+  const ctx = useMap();
+  const map = ctx?.map;
+  const ready = !!ctx?.isLoaded;
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+
+  useEffect(() => {
+    if (!map || !ready) return;
+    let active = true;
+    const visibility = () => (visibleRef.current ? 'visible' : 'none');
+
+    try {
+      if (!map.getSource(LABEL_LAYER_ID)) {
+        map.addSource(LABEL_LAYER_ID, { type: 'geojson', data: LABEL_POINTS });
+        map.addLayer({
+          id: LABEL_LAYER_ID, type: 'symbol', source: LABEL_LAYER_ID,
+          layout: {
+            visibility: visibility(),
+            'text-field': ['get', 'name'],
+            'text-font': ['Open Sans Bold'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 10, 10, 13, 12.5, 16, 15],
+            'text-transform': 'uppercase',
+            'text-letter-spacing': 0.04,
+            'text-max-width': 8,
+            'text-padding': 2,
+          },
+          paint: { 'text-color': '#1f2937', 'text-halo-color': '#ffffff', 'text-halo-width': 1.8, 'text-halo-blur': 0.3 },
+        });
+      }
+    } catch (e) { console.warn('barangay label error', e); }
+
+    loadJson('/data/panabo_barangays.geojson')()
+      .then(boundaries => {
+        if (!active || map.getSource(BOUNDARY_LAYER_ID)) return;
+        map.addSource(BOUNDARY_LAYER_ID, { type: 'geojson', data: boundaries });
+        map.addLayer({
+          id: BOUNDARY_LAYER_ID, type: 'line', source: BOUNDARY_LAYER_ID,
+          layout: { visibility: visibility() },
+          paint: { 'line-color': '#374151', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 15, 1.6], 'line-opacity': 0.75, 'line-dasharray': [3, 2] },
+        }, map.getLayer(LABEL_LAYER_ID) ? LABEL_LAYER_ID : undefined);
+      })
+      .catch(e => console.warn('barangay boundary error', e));
+
+    return () => { active = false; };
+  }, [map, ready]);
+
+  useEffect(() => {
+    if (!map || !ready) return;
+    for (const id of [BOUNDARY_LAYER_ID, LABEL_LAYER_ID]) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+    }
+  }, [map, ready, visible]);
+
   return null;
 }

@@ -5,7 +5,7 @@ import {
 } from '../../components/ui/map';
 import { PANABO, BARANGAY_COORDS, ZONING_LEGEND, fetchSuitabilitySummary, findBarangayAt } from './data.js';
 import {
-  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer,
+  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
@@ -388,6 +388,15 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
   const [selectedPoint, setSelectedPoint]     = useState(null);
   const [nearestBarangay, setNearestBarangay] = useState(null);
 
+  // Barangay names and boundaries on top of the map (on by default, remembered per browser)
+  const [showBarangays, setShowBarangays] = useState(() => {
+    try { return localStorage.getItem('terraspec-barangay-labels') !== 'off'; } catch { return true; }
+  });
+  function toggleBarangays(on) {
+    setShowBarangays(on);
+    try { localStorage.setItem('terraspec-barangay-labels', on ? 'on' : 'off'); } catch {}
+  }
+
   // Zoning query: filters, last result and the barangays it outlines on the map
   const [queryOpen, setQueryOpen] = useState(false);
   const [queryFilters, setQueryFilters] = useState(EMPTY_QUERY);
@@ -495,6 +504,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
           <LandslideLayer visible={layers.landslide} hiddenLandslide={hiddenLandslide}/>
           <FloodLayer visible={layers.flood} hiddenFlood={hiddenFlood}/>
           <QueryBarangayLayer names={queryNames}/>
+          <BarangayLabelLayer visible={showBarangays}/>
           {highlightZones.length > 0 && <FlyToHighlight zones={highlightZones}/>}
           {highlightZones.map((z, i) => {
             const coords = BARANGAY_COORDS[z.unit_name];
@@ -732,6 +742,10 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                   <span>{label}</span>
                 </label>
               ))}
+              <label className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
+                <input type="checkbox" checked={showBarangays} onChange={e => toggleBarangays(e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
+                <span>Barangay names</span>
+              </label>
             </div>
             <div className="separator"/>
             <div style={{ ...sectionLabel, margin: '10px 0 7px' }}>Legend · click to toggle</div>
