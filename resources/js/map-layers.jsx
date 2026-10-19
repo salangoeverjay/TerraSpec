@@ -44,7 +44,7 @@ export function hatchSwatch(hex, reverse = false) {
 }
 
 // Bottom → top drawing order of the TerraSpec overlays (basemaps go below all of them)
-export const OVERLAY_ORDER = ['zoning', 'suitability', 'landslide', 'flood'];
+export const OVERLAY_ORDER = ['zoning', 'suitability', 'landslide', 'flood', 'query'];
 export const OVERLAY_LAYER_IDS = OVERLAY_ORDER.flatMap(id => [`${id}-fill`, `${id}-line`]);
 
 const ZONING_COLOR = ['match', ['get', 'zone'], ...ZONING_LEGEND.flatMap(z => [z.id, z.hex]), '#888888'];
@@ -83,65 +83,90 @@ const hatchName = (prefix, val) => `hatch-${prefix}-${val.toLowerCase().replace(
 function useOverlay({ id, load, loadKey = '', visible, filter = null, fill, line, beforeAdd }) {
   const ctx = useMap();
   const map = ctx?.map;
+  // True once the map has loaded and its style is processed; goes false→true again after a
+  // style swap (light/dark theme), which removes custom layers, so they are re-added below.
+  const ready = !!ctx?.isLoaded;
   const latest = useRef({});
   latest.current = { visible, filter, fill, line };
+  const loaded = useRef({ key: null, data: null });
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !ready) return;
     let active = true;
+
+    const show = (data, key) => {
+      try {
+        if (map.getSource(id)) {
+          if (loaded.current.appliedKey !== key) map.getSource(id).setData(data);
+        } else {
+          beforeAdd?.(map);
+          const { visible: vis, filter: f, fill: fillPaint, line: linePaint } = latest.current;
+          const above = OVERLAY_ORDER.slice(OVERLAY_ORDER.indexOf(id) + 1).map(o => `${o}-fill`).find(l => map.getLayer(l));
+          const layout = { visibility: vis ? 'visible' : 'none' };
+          map.addSource(id, { type: 'geojson', data });
+          map.addLayer({ id: `${id}-fill`, type: 'fill', source: id, layout, paint: fillPaint, ...(f ? { filter: f } : {}) }, above);
+          map.addLayer({ id: `${id}-line`, type: 'line', source: id, layout, paint: linePaint, ...(f ? { filter: f } : {}) }, above);
+        }
+        loaded.current.appliedKey = key;
+      } catch (e) { console.warn(`${id} layer error`, e); }
+    };
+
+    // Data already loaded for this key (e.g. re-adding after a theme switch): no new download
+    if (loaded.current.key === loadKey && loaded.current.data) {
+      show(loaded.current.data, loadKey);
+      return () => { active = false; };
+    }
 
     load()
       .then(data => {
         if (!active) return;
-        const add = () => {
-          try {
-            if (map.getSource(id)) { map.getSource(id).setData(data); return; }
-            beforeAdd?.(map);
-            const { visible: vis, filter: f, fill: fillPaint, line: linePaint } = latest.current;
-            const above = OVERLAY_ORDER.slice(OVERLAY_ORDER.indexOf(id) + 1).map(o => `${o}-fill`).find(l => map.getLayer(l));
-            const layout = { visibility: vis ? 'visible' : 'none' };
-            map.addSource(id, { type: 'geojson', data });
-            map.addLayer({ id: `${id}-fill`, type: 'fill', source: id, layout, paint: fillPaint, ...(f ? { filter: f } : {}) }, above);
-            map.addLayer({ id: `${id}-line`, type: 'line', source: id, layout, paint: linePaint, ...(f ? { filter: f } : {}) }, above);
-          } catch (e) { console.warn(`${id} layer error`, e); }
-        };
-        if (map.isStyleLoaded()) add(); else map.once('load', add);
+        loaded.current = { ...loaded.current, key: loadKey, data };
+        show(data, loadKey);
       })
       .catch(e => console.warn(`${id} data error`, e));
 
     return () => { active = false; };
-  }, [map, loadKey]);
+  }, [map, ready, loadKey]);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !ready) return;
     try {
       for (const l of [`${id}-fill`, `${id}-line`]) {
         if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', visible ? 'visible' : 'none');
       }
     } catch { /* ignore */ }
-  }, [map, visible]);
+  }, [map, ready, visible]);
 
   const filterKey = JSON.stringify(filter);
   useEffect(() => {
-    if (!map) return;
+    if (!map || !ready) return;
     try {
       for (const l of [`${id}-fill`, `${id}-line`]) {
         if (map.getLayer(l)) map.setFilter(l, filter);
       }
     } catch { /* ignore */ }
-  }, [map, filterKey]);
+  }, [map, ready, filterKey]);
 
   const paintKey = JSON.stringify([fill, line]);
   useEffect(() => {
-    if (!map) return;
+    if (!map || !ready) return;
     try {
       if (map.getLayer(`${id}-fill`)) Object.entries(fill).forEach(([k, v]) => map.setPaintProperty(`${id}-fill`, k, v));
       if (map.getLayer(`${id}-line`)) Object.entries(line).forEach(([k, v]) => map.setPaintProperty(`${id}-line`, k, v));
     } catch { /* ignore */ }
-  }, [map, paintKey]);
+  }, [map, ready, paintKey]);
 }
 
-const loadJson = url => () => fetch(url).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+// GeoJSON downloads are shared and kept for the session, so returning to the map is instant
+const jsonCache = new Map();
+const loadJson = url => () => {
+  if (!jsonCache.has(url)) {
+    jsonCache.set(url, fetch(url)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .catch(e => { jsonCache.delete(url); throw e; }));
+  }
+  return jsonCache.get(url);
+};
 
 // Filter on the values whose legend entry is not hidden (hidden holds the same values)
 const inFilter = (property, all, hidden, valueOf) => {
@@ -212,6 +237,23 @@ export function SuitabilityLayer({ visible, use, hiddenLevels }) {
     filter: inFilter('level', SUITABILITY_LEGEND, hiddenLevels, l => l.label),
     fill: { 'fill-color': ['match', ['get', 'level'], ...SUITABILITY_LEGEND.flatMap(l => [l.label, l.hex]), '#9ca3af'], 'fill-opacity': 0.55 },
     line: { 'line-color': '#ffffff', 'line-width': 1.2, 'line-opacity': 0.9 },
+  });
+  return null;
+}
+
+// Outline of the barangays returned by a zoning query, drawn above every other overlay
+export function QueryBarangayLayer({ names }) {
+  const keys = names.map(normalizeName);
+  useOverlay({
+    id: 'query',
+    load: () => loadJson('/data/panabo_barangays.geojson')().then(boundaries => ({
+      type: 'FeatureCollection',
+      features: boundaries.features.map(f => ({ ...f, properties: { ...f.properties, key: normalizeName(f.properties.name) } })),
+    })),
+    visible: keys.length > 0,
+    filter: ['in', ['get', 'key'], ['literal', keys]],
+    fill: { 'fill-color': '#db2777', 'fill-opacity': 0.06 },
+    line: { 'line-color': '#db2777', 'line-width': 2.4, 'line-opacity': 0.9, 'line-dasharray': [2, 1] },
   });
   return null;
 }

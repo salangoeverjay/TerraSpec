@@ -5,6 +5,7 @@ use App\Http\Controllers\EnvironmentalController;
 use App\Http\Controllers\ReforestationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SuitabilityController;
+use App\Http\Controllers\ZoningQueryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -13,6 +14,8 @@ Route::get('/', function () {
 
 Route::get('/barangays', [BarangayProfileController::class, 'index']);
 Route::get('/barangays/{id}/profile', [BarangayProfileController::class, 'show'])->whereNumber('id');
+
+Route::get('/zoning/query', ZoningQueryController::class);
 
 Route::get('/environmental/summary', [EnvironmentalController::class, 'summary']);
 Route::get('/environmental/report', [EnvironmentalController::class, 'report']);

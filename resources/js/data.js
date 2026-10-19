@@ -135,7 +135,7 @@ export function fetchSuitabilitySummary() {
 
 let boundariesPromise = null;
 
-function loadBarangayBoundaries() {
+export function loadBarangayBoundaries() {
   if (!boundariesPromise) {
     boundariesPromise = fetch('/data/panabo_barangays.geojson')
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })

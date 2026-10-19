@@ -5,10 +5,11 @@ import {
 } from '../../components/ui/map';
 import { PANABO, BARANGAY_COORDS, ZONING_LEGEND, fetchSuitabilitySummary, findBarangayAt } from './data.js';
 import {
-  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer,
+  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
+import { ZoningQueryPanel, ZONING_QUERY_PRESETS, EMPTY_QUERY, runZoningQuery, barangayBounds } from './zoning-query.jsx';
 
 function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) {
   const [open, setOpen] = useState(false);
@@ -229,25 +230,24 @@ const BASEMAPS = {
 
 function BasemapLayer({ basemap }) {
   const ctx = useMap();
-  useMemo(() => {
-    if (!ctx?.map) return;
-    const map = ctx.map;
-    const apply = () => {
-      try {
-        const below = OVERLAY_LAYER_IDS.find(id => map.getLayer(id));
-        for (const [key, def] of Object.entries(BASEMAPS)) {
-          if (!def.tiles) continue;
-          const id = `basemap-${key}`;
-          if (!map.getSource(id)) {
-            map.addSource(id, { type: 'raster', tiles: def.tiles, tileSize: 256, maxzoom: def.maxzoom, attribution: def.attribution });
-            map.addLayer({ id, type: 'raster', source: id, layout: { visibility: 'none' } }, below);
-          }
-          map.setLayoutProperty(id, 'visibility', key === basemap ? 'visible' : 'none');
+  const map = ctx?.map;
+  // Wait for the map to be ready (also after a light/dark style swap, which removes these layers)
+  const ready = !!ctx?.isLoaded;
+  useEffect(() => {
+    if (!map || !ready) return;
+    try {
+      const below = OVERLAY_LAYER_IDS.find(id => map.getLayer(id));
+      for (const [key, def] of Object.entries(BASEMAPS)) {
+        if (!def.tiles) continue;
+        const id = `basemap-${key}`;
+        if (!map.getSource(id)) {
+          map.addSource(id, { type: 'raster', tiles: def.tiles, tileSize: 256, maxzoom: def.maxzoom, attribution: def.attribution });
+          map.addLayer({ id, type: 'raster', source: id, layout: { visibility: 'none' } }, below);
         }
-      } catch (e) { console.warn('BasemapLayer error', e); }
-    };
-    if (map.isStyleLoaded()) apply(); else map.once('load', apply);
-  }, [ctx, basemap]);
+        map.setLayoutProperty(id, 'visibility', key === basemap ? 'visible' : 'none');
+      }
+    } catch (e) { console.warn('BasemapLayer error', e); }
+  }, [map, ready, basemap]);
   return null;
 }
 
@@ -282,11 +282,26 @@ function LegendItem({ label, swatch, border, note, hidden, onClick }) {
 
 const LEVEL_COLOR = { 'Highly Suitable': '#16a34a', 'Moderately Suitable': '#f59e0b', 'Low Suitability': '#ef4444' };
 
+// Registers one map click listener for the map's lifetime; the latest callback is used on each click
+function MapClickHandler({ onMapClick }) {
+  const ctx = useMap();
+  const map = ctx?.map;
+  const callback = useRef(onMapClick);
+  callback.current = onMapClick;
+  useEffect(() => {
+    if (!map) return;
+    const handler = e => callback.current(e, map);
+    map.on('click', handler);
+    return () => map.off('click', handler);
+  }, [map]);
+  return null;
+}
+
 function FlyToHighlight({ zones }) {
   const ctx = useMap();
   const done = useRef(false);
-  useMemo(() => {
-    if (!ctx?.map || done.current || !zones.length) return;
+  useEffect(() => {
+    if (!ctx?.map || !ctx.isLoaded || done.current || !zones.length) return;
     const coords = zones.map(z => BARANGAY_COORDS[z.unit_name]).filter(Boolean);
     if (!coords.length) return;
     done.current = true;
@@ -355,7 +370,6 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
   const [suitUse, setSuitUse] = useState('reforestation');
   function chooseView(key) { setView(key); setLayers(MAP_VIEWS[key].layers); }
   function toggleLayer(key, on) { setView('custom'); setLayers(l => ({ ...l, [key]: on })); }
-  const zoningFaded = layers.flood || layers.landslide || layers.suitability;
   const [basemap, setBasemap] = useState(() => {
     try { return localStorage.getItem('terraspec-basemap') || 'osm'; } catch { return 'osm'; }
   });
@@ -374,36 +388,81 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
   const [selectedPoint, setSelectedPoint]     = useState(null);
   const [nearestBarangay, setNearestBarangay] = useState(null);
 
+  // Zoning query: filters, last result and the barangays it outlines on the map
+  const [queryOpen, setQueryOpen] = useState(false);
+  const [queryFilters, setQueryFilters] = useState(EMPTY_QUERY);
+  const [queryResult, setQueryResult] = useState(null);
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [queryError, setQueryError] = useState(null);
+  const queryNames = useMemo(() => queryResult?.by_barangay.map(b => b.barangay) ?? [], [queryResult]);
+  // Zoning is faded under other themes, but not while a query shows its hazard on top of it
+  const zoningFaded = layers.suitability || ((layers.flood || layers.landslide) && !queryResult);
+
+  async function fitBarangays(names) {
+    const bounds = names.length ? await barangayBounds(names).catch(() => null) : null;
+    if (bounds) mapRef.current?.fitBounds(bounds, { padding: { top: 60, bottom: 90, left: 250, right: 390 }, duration: 1000, maxZoom: 15 });
+  }
+
+  async function runQuery(filters = queryFilters) {
+    setQueryLoading(true);
+    setQueryError(null);
+    try {
+      const result = await runZoningQuery(filters);
+      setQueryResult(result);
+      // Show the queried zoning classes, with the hazard class the condition refers to
+      const flood = ['flood', 'hazard_free'].includes(filters.hazard);
+      const landslide = ['landslide', 'hazard_free'].includes(filters.hazard);
+      setView('custom');
+      setLayers({ zoning: true, suitability: false, flood, landslide });
+      setHiddenZones(new Set(filters.zones.length ? ZONING_LEGEND.map(z => z.id).filter(id => !filters.zones.includes(id)) : []));
+      setHiddenFlood(new Set(FLOOD_LEGEND.map(l => l.val).filter(v => v !== 'Very High')));
+      setHiddenLandslide(new Set(LANDSLIDE_LEGEND.map(l => l.val).filter(v => v !== 'High')));
+      fitBarangays(result.by_barangay.map(b => b.barangay));
+    } catch {
+      setQueryError('Could not run the zoning query.');
+    } finally {
+      setQueryLoading(false);
+    }
+  }
+
+  function runPreset(preset) {
+    const filters = { ...EMPTY_QUERY, ...preset.filters };
+    setQueryOpen(true);
+    setQueryFilters(filters);
+    runQuery(filters);
+  }
+
+  function clearQuery() {
+    setQueryFilters(EMPTY_QUERY);
+    setQueryResult(null);
+    setQueryError(null);
+    chooseView('zoning');
+    setHiddenZones(new Set());
+    setHiddenFlood(new Set());
+    setHiddenLandslide(new Set());
+  }
+
   const summaryRef = useRef(summary);
   summaryRef.current = summary;
 
-  function MapClickHandler() {
-    const ctx = useMap();
-    useMemo(() => {
-      if (!ctx?.map) return;
-      const handler = async e => {
-        const [lng, lat] = [e.lngLat?.lng ?? 0, e.lngLat?.lat ?? 0];
+  async function handleMapClick(e, map) {
+    const [lng, lat] = [e.lngLat?.lng ?? 0, e.lngLat?.lat ?? 0];
 
-        // Zoning class under the click, from the rendered Integrated Zoning Map layer
-        const zoningFeature = ctx.map.getLayer('zoning-fill')
-          ? ctx.map.queryRenderedFeatures(e.point, { layers: ['zoning-fill'] })[0]
-          : null;
-        const zoning = zoningFeature ? ZONING_LEGEND.find(z => z.id === zoningFeature.properties.zone) ?? null : null;
+    // Zoning class under the click, from the rendered Integrated Zoning Map layer
+    const zoningFeature = map.getLayer('zoning-fill')
+      ? map.queryRenderedFeatures(e.point, { layers: ['zoning-fill'] })[0]
+      : null;
+    const zoning = zoningFeature ? ZONING_LEGEND.find(z => z.id === zoningFeature.properties.zone) ?? null : null;
 
-        // Barangay containing the click (PSA boundaries)
-        const barangay = await findBarangayAt(lng, lat).catch(() => null);
-        const scores = summaryRef.current.find(z => z.unit_name === barangay)?.scores ?? null;
+    // Barangay containing the click (PSA boundaries)
+    const barangay = await findBarangayAt(lng, lat).catch(() => null);
+    const scores = summaryRef.current.find(z => z.unit_name === barangay)?.scores ?? null;
 
-        setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores });
-        setNearestBarangay(barangay);
-        if (setMapContext && barangay) {
-          setMapContext(buildMapContext(barangay, zoning, summaryRef.current));
-        }
-      };
-      ctx.map.on('click', handler);
-      return () => ctx.map.off('click', handler);
-    }, [ctx]);
-    return null;
+    setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores });
+    setNearestBarangay(barangay);
+    if (setMapContext && barangay) {
+      setMapContext(buildMapContext(barangay, zoning, summaryRef.current));
+    }
   }
 
 
@@ -430,11 +489,12 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
         <Map ref={mapRef} center={[125.6847, 7.307]} zoom={12.5} minZoom={10} maxZoom={18} className="h-full w-full">
           <MapControls showCompass showFullscreen position="top-right"/>
           <BasemapLayer basemap={basemap}/>
-          <MapClickHandler/>
+          <MapClickHandler onMapClick={handleMapClick}/>
           <ZoningLayer visible={layers.zoning} hiddenZones={hiddenZones} faded={zoningFaded}/>
           <SuitabilityLayer visible={layers.suitability} use={suitUse} hiddenLevels={hiddenLevels}/>
           <LandslideLayer visible={layers.landslide} hiddenLandslide={hiddenLandslide}/>
           <FloodLayer visible={layers.flood} hiddenFlood={hiddenFlood}/>
+          <QueryBarangayLayer names={queryNames}/>
           {highlightZones.length > 0 && <FlyToHighlight zones={highlightZones}/>}
           {highlightZones.map((z, i) => {
             const coords = BARANGAY_COORDS[z.unit_name];
@@ -595,14 +655,35 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
         </div>
       )}
 
-      {/* Quick filter chips – bottom center of map */}
+      {/* Zoning query: open the panel or run a preset query – bottom center of map */}
       <div style={{ position: 'absolute', bottom: 52, left: '50%', transform: 'translateX(-50%)', zIndex: 11 }}>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {['Residential','Commercial','Mangrove','Flagged'].map(t => (
-            <button key={t} className="chip" style={{ background: 'hsl(var(--background))', fontSize: 12 }}>{t}</button>
+          <button className="chip" onClick={() => setQueryOpen(o => !o)} style={{ background: 'hsl(var(--brand))', color: 'white', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Icon name="filter" size={12}/> Zoning query
+          </button>
+          {ZONING_QUERY_PRESETS.map(preset => (
+            <button key={preset.label} className="chip" onClick={() => runPreset(preset)} style={{ background: 'hsl(var(--background))', fontSize: 12 }}>{preset.label}</button>
           ))}
         </div>
       </div>
+
+      {queryOpen && (
+        <div style={{ position: 'absolute', top: 16, right: 56, bottom: 96, width: 320, zIndex: 12, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
+          <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+            <ZoningQueryPanel
+              filters={queryFilters}
+              setFilters={setQueryFilters}
+              result={queryResult}
+              loading={queryLoading}
+              error={queryError}
+              onRun={() => runQuery()}
+              onClear={clearQuery}
+              onClose={() => setQueryOpen(false)}
+              onFocusBarangay={name => fitBarangays([name])}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Layers panel – left; anchored from bottom so legends stay visible */}
       <div style={{ position: 'absolute', left: 16, bottom: 110, width: 210, zIndex: 10 }}>
