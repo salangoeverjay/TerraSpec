@@ -319,6 +319,8 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         const msgs = c.messages.filter(m => m.content !== 'Thinking...').concat({
           role:             'assistant',
           content:          payload.answer || 'Gemini returned an empty response.',
+          model:            payload.model || null,
+          fallbackUsed:     !!payload.fallback_used,
           zones:            payload.recommended_zones ?? [],
           live_calculation: payload.live_calculation || null,
           followups:        buildFollowups(intent, entities),
@@ -334,7 +336,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
       const text = err instanceof Error ? err.message : 'The assistant could not answer right now.';
       setChatError(text);
       updateActive(c => ({
-        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: 'Could not reach Gemini 2.5 Flash. Check the API key and try again.' }),
+        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: text }),
       }));
     } finally {
       setIsLoading(false); setChatInput('');
@@ -777,6 +779,11 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                     fontSize: 13.5, lineHeight: 1.55,
                   }}>
                     {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                  </div>
+                )}
+                {m.role === 'assistant' && m.model && (
+                  <div className="muted mono" style={{ fontSize: 10.5 }} title={m.fallbackUsed ? 'The main model was busy or out of quota, so a backup model answered.' : undefined}>
+                    Answered by {m.model}{m.fallbackUsed ? ' (backup model)' : ''}
                   </div>
                 )}
                 {m.role === 'assistant' && m.zones?.length > 0 && (

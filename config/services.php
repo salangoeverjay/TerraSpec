@@ -38,6 +38,17 @@ return [
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        // Tried in order when the main model is out of quota, overloaded or no longer offered
+        'fallback_models' => env('GEMINI_FALLBACK_MODELS', 'gemini-3.5-flash,gemini-3.8-flash'),
+    ],
+
+    // Only used by `php artisan chatbot:benchmark` to compare other providers with Gemini
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
     ],
 
 ];

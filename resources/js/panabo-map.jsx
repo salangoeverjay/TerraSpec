@@ -85,8 +85,9 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.message || 'Error');
       setMessages(m => m.filter(x => x.content !== 'Thinking...').concat({ role: 'assistant', content: data.answer || 'No response.' }));
-    } catch {
-      setMessages(m => m.filter(x => x.content !== 'Thinking...').concat({ role: 'assistant', content: 'Could not reach the AI. Try again.' }));
+    } catch (err) {
+      const reason = err instanceof Error && err.message !== 'Error' ? err.message : 'Could not reach the AI. Try again.';
+      setMessages(m => m.filter(x => x.content !== 'Thinking...').concat({ role: 'assistant', content: reason }));
     } finally {
       setLoading(false);
     }
