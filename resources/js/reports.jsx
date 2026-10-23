@@ -11,6 +11,11 @@ const REPORT_TYPES = [
   'Hazard Assessment',
 ];
 
+const LAND_USES = {
+  commercial: 'Commercial', residential: 'Residential', industrial: 'Industrial',
+  agricultural: 'Agricultural', reforestation: 'Reforestation',
+};
+
 const SECTIONS = [
   'Executive Summary',
   'MCDA Scores',
@@ -29,7 +34,9 @@ function statusVariant(status) {
 
 export function ReportsScreen({ role }) {
   const [type, setType]         = useState(REPORT_TYPES[0]);
-  const [barangay, setBarangay] = useState('Poblacion');
+  const [barangay, setBarangay] = useState('');
+  const [landUse, setLandUse]   = useState('commercial');
+  const [error, setError]       = useState('');
   const [sections, setSections] = useState(new Set(SECTIONS));
   const [filter, setFilter]     = useState('');
   const [generating, setGenerating] = useState(false);
@@ -45,7 +52,9 @@ export function ReportsScreen({ role }) {
       .catch(() => {});
   }, []);
 
-  const barangayOptions = type === 'Reforestation Plan' ? studyArea.barangays : PANABO.barangays;
+  // Reforestation (plans and scores) is only assessed in the study area
+  const reforestationOnly = type === 'Reforestation Plan' || landUse === 'reforestation';
+  const barangayOptions = reforestationOnly ? studyArea.barangays : PANABO.barangays;
 
   // Keep the selected barangay valid for the chosen report type
   useEffect(() => {
@@ -54,37 +63,44 @@ export function ReportsScreen({ role }) {
     }
   }, [type, barangayOptions, barangay]);
 
-  useEffect(() => {
-    fetch('/api/reports')
+  function loadArchive() {
+    return fetch('/api/reports', { headers: { Accept: 'application/json' } })
       .then(r => r.json())
       .then(json => setArchive(Array.isArray(json) ? json : []))
       .catch(() => setArchive([]))
       .finally(() => setArchiveLoading(false));
-  }, []);
+  }
 
-  function generateReport() {
-    const isComparative = type === 'Comparative Analysis';
-    const params = new URLSearchParams({
-      type,
-      barangay: isComparative ? 'All Barangays' : barangay,
-    });
-    [...sections].forEach(s => params.append('sections[]', s));
+  // Staff see who generated each report; the public archive shows CPDO
+  useEffect(() => { loadArchive(); }, [role]);
+
+  // Downloads the PDF with the staff session; validation or permission errors are shown as text
+  async function generateReport(params = { type, barangay, landUse, sections: [...sections] }) {
+    const query = new URLSearchParams({ type: params.type });
+    if (params.type !== 'Comparative Analysis') query.set('barangay', params.barangay);
+    if (params.type !== 'Reforestation Plan' && params.landUse) query.set('land_use', params.landUse);
+    (params.sections ?? []).forEach(sec => query.append('sections[]', sec));
+
     setGenerating(true);
-    const url = `/reports/generate?${params.toString()}`;
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Refresh archive after a short delay so the new record appears
-    setTimeout(() => {
-      fetch('/api/reports')
-        .then(r => r.json())
-        .then(json => setArchive(Array.isArray(json) ? json : []))
-        .catch(() => {});
+    setError('');
+    try {
+      const res = await fetch(`/api/reports/generate?${query}`, { headers: { Accept: 'application/json, application/pdf' } });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const firstError = Object.values(body.errors ?? {}).flat()[0];
+        throw new Error(firstError ?? body.message ?? `Could not generate the report (HTTP ${res.status}).`);
+      }
+      const blob = await res.blob();
+      const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'terraspec-report.pdf';
+      const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+      link.click();
+      URL.revokeObjectURL(link.href);
+      loadArchive();
+    } catch (e) {
+      setError(e.message);
+    } finally {
       setGenerating(false);
-    }, 4000);
+    }
   }
 
   function toggleSection(s) {
@@ -123,6 +139,14 @@ export function ReportsScreen({ role }) {
                     <select className="input" value={type} onChange={e => setType(e.target.value)}>
                       {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
                     </select>
+                    {type !== 'Reforestation Plan' && (
+                      <>
+                        <label className="label" style={{ marginTop: 10 }}>Land use</label>
+                        <select className="input" value={landUse} onChange={e => setLandUse(e.target.value)}>
+                          {Object.entries(LAND_USES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                        </select>
+                      </>
+                    )}
                   </div>
                   <div>
                     <label className="label">Barangay</label>
@@ -132,7 +156,7 @@ export function ReportsScreen({ role }) {
                         : barangayOptions.map(b => <option key={b} value={b}>{b}</option>)
                       }
                     </select>
-                    {type === 'Reforestation Plan' && studyArea.note && (
+                    {reforestationOnly && studyArea.note && (
                       <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{studyArea.note}</div>
                     )}
                   </div>
@@ -153,10 +177,11 @@ export function ReportsScreen({ role }) {
                   </div>
                 </div>
                 <div className="row" style={{ gap: 8 }}>
-                  <Btn variant="brand" icon="download" disabled={generating} onClick={generateReport}>
+                  <Btn variant="brand" icon="download" disabled={generating || (type !== 'Comparative Analysis' && !barangay)} onClick={() => generateReport()}>
                     {generating ? 'Generating…' : 'Generate PDF'}
                   </Btn>
                 </div>
+                {error && <div style={{ marginTop: 10, fontSize: 12.5, color: 'hsl(var(--destructive))' }}>{error}</div>}
               </CardBody>
             </Card>
           </div>
@@ -166,6 +191,7 @@ export function ReportsScreen({ role }) {
             <CardBody>
               <div style={{ background: 'hsl(var(--muted))', borderRadius: 8, padding: 14, fontSize: 12.5, lineHeight: 1.8, minHeight: 180 }}>
                 <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>{type}</div>
+                {type !== 'Reforestation Plan' && <div className="muted">Land use: <strong style={{ color: 'hsl(var(--foreground))' }}>{LAND_USES[landUse]}</strong></div>}
                 <div className="muted">Barangay: <strong style={{ color: 'hsl(var(--foreground))' }}>{type === 'Comparative Analysis' ? 'All Barangays' : barangay}</strong></div>
                 <div className="muted">Date: {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                 <div className="muted">Prepared by: CPDO, Panabo City</div>
@@ -174,7 +200,7 @@ export function ReportsScreen({ role }) {
                   Sections: {[...sections].join(' · ') || '—'}
                 </div>
                 <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-                  This report presents AHP-WLC suitability results and environmental data for {type === 'Comparative Analysis' ? 'all 40 barangays' : `Barangay ${barangay}`}, Panabo City.
+                  This report presents AHP-WLC suitability results and environmental data for {type === 'Comparative Analysis' ? (reforestationOnly ? 'the reforestation study area' : 'all 40 barangays') : `Barangay ${barangay}`}, Panabo City.
                 </div>
               </div>
             </CardBody>
@@ -187,7 +213,7 @@ export function ReportsScreen({ role }) {
               <Icon name="lock" size={36} style={{ color: 'hsl(var(--muted-foreground))' }}/>
               <div style={{ fontSize: 15, fontWeight: 600 }}>Report Generation is Restricted</div>
               <p className="muted" style={{ fontSize: 13, maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
-                Only LGU Admin accounts can generate, configure, and export official land analysis reports. Switch to LGU Admin to access the Report Builder.
+                Only signed-in CPDO staff (administrators and planners) can generate official land analysis reports. Sign in with LGU Admin to use the Report Builder.
               </p>
             </div>
           </CardBody>
@@ -226,15 +252,25 @@ export function ReportsScreen({ role }) {
               {filtered.map(r => (
                 <tr key={r.id}>
                   <td><span className="mono muted" style={{ fontSize: 11.5 }}>RPT-{String(r.id).padStart(4, '0')}</span></td>
-                  <td>{r.report_type}</td>
+                  <td>
+                    {r.report_type}
+                    {r.analysis_type && r.report_type !== 'Reforestation Plan' && <div className="muted" style={{ fontSize: 11 }}>{LAND_USES[r.analysis_type] ?? r.analysis_type}</div>}
+                  </td>
                   <td><span style={{ fontWeight: 500 }}>{r.barangay}</span></td>
                   <td>{r.created_at}</td>
                   <td><Badge variant={statusVariant(r.status)}>{r.status}</Badge></td>
                   <td>{r.generated_by}</td>
                   <td>
-                    <div className="row" style={{ gap: 4 }}>
-                      <Btn sz="xs" variant="ghost" icon="download"/>
-                    </div>
+                    {role === 'admin' && (
+                      <div className="row" style={{ gap: 4 }} title="Generate this report again with current data">
+                        <Btn sz="xs" variant="ghost" icon="download" disabled={generating} onClick={() => generateReport({
+                          type: r.report_type,
+                          barangay: r.barangay === 'All Barangays' ? '' : r.barangay,
+                          landUse: r.analysis_type ?? 'commercial',
+                          sections: SECTIONS,
+                        })}/>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

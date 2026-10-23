@@ -9,7 +9,6 @@ use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/chatbot', ChatbotController::class);
-Route::get('/reports', [ReportController::class, 'archive']);
 Route::get('/dashboard-stats', DashboardStatsController::class);
 
 // LGU login and admin API: session cookies + CSRF protection (web middleware), checked on the server.
@@ -19,8 +18,13 @@ Route::middleware('web')->group(function () {
     Route::get('/lgu/me', [LguAuthController::class, 'me']);
     Route::post('/lgu/password', [LguAuthController::class, 'changePassword'])->middleware('auth');
 
+    // Report archive is public (staff names only for signed-in staff); generating needs staff
+    Route::get('/reports', [ReportController::class, 'archive']);
+
     // CPDO staff (admin and planner) manage the planning data and AHP weights
     Route::middleware('role:admin,planner')->group(function () {
+        Route::get('/reports/generate', [ReportController::class, 'generate']);
+
         Route::prefix('admin/ahp')->group(function () {
             Route::post('/compute', [AhpController::class, 'compute']);
             Route::post('/apply', [AhpController::class, 'apply']);

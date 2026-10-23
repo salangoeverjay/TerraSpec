@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ReforestationSite;
+use App\Models\User;
 use App\Models\ZoneHazardData;
 use App\Models\ZoneUnit;
 use App\Models\ZoneZoningData;
@@ -112,7 +113,7 @@ describe('reforestation study area', function () {
     it('refuses species, plans and reports for barangays outside the study area', function () {
         $this->getJson("/reforestation/{$this->inland->zone_unit_id}/match")->assertStatus(422);
         $this->getJson("/reforestation/{$this->inland->zone_unit_id}/report")->assertStatus(422);
-        $this->getJson('/reports/generate?type=Reforestation%20Plan&barangay=Inland')->assertStatus(422);
+        $this->actingAs(User::factory()->admin()->create())->getJson('/api/reports/generate?type=Reforestation%20Plan&barangay=Inland')->assertStatus(422);
         $this->getJson("/reforestation/{$this->coast->zone_unit_id}/match")->assertOk();
     });
 

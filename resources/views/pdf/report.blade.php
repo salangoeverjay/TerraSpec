@@ -296,7 +296,7 @@
 </div>
 @endif
 <div class="section">
-  <div class="section-title">City-Wide Suitability Rankings — Commercial Analysis (All 40 Barangays)</div>
+  <div class="section-title">City-Wide Suitability Rankings — {{ ucfirst($analysis_type ?? 'commercial') }} Analysis ({{ $ranking_scope ?? 'All 40 Barangays' }})</div>
   <table class="ranking-table">
     <thead>
       <tr><th>Rank</th><th>Barangay</th><th>Type</th><th>Score</th><th>Classification</th></tr>

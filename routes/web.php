@@ -3,7 +3,6 @@
 use App\Http\Controllers\BarangayProfileController;
 use App\Http\Controllers\EnvironmentalController;
 use App\Http\Controllers\ReforestationController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SuitabilityController;
 use App\Http\Controllers\ZoningQueryController;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +18,6 @@ Route::get('/zoning/query', ZoningQueryController::class);
 
 Route::get('/environmental/summary', [EnvironmentalController::class, 'summary']);
 Route::get('/environmental/report', [EnvironmentalController::class, 'report']);
-Route::get('/reports/generate', [ReportController::class, 'generate']);
 
 Route::prefix('reforestation')->group(function () {
     Route::get('/', [ReforestationController::class, 'index']);
