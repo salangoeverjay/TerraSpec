@@ -96,3 +96,49 @@ it('seeds the 13 mangrove sites from the converted KML', function () {
         ->and(ReforestationSite::where('status', 'rehabilitated')->pluck('year')->sort()->values()->all())->toBe([2020, 2021, 2022, 2022, 2023])
         ->and(ReforestationSite::with('zoneUnit')->get()->pluck('zoneUnit.unit_name')->unique()->sort()->values()->all())->toBe(['J.P. Laurel', 'San Pedro']);
 });
+
+describe('reforestation study area', function () {
+    beforeEach(function () {
+        $this->coast = coastalZone('Coastal', ['MG' => 20, 'PA' => 80]);
+        $this->inland = coastalZone('Inland', ['PA' => 100], 'None');
+        ReforestationSite::factory()->create(['zone_unit_id' => $this->coast->zone_unit_id]);
+    });
+
+    it('lists only barangays with verified sites on the reforestation page', function () {
+        $response = $this->getJson('/reforestation')->assertOk();
+
+        expect(collect($response->json('zones'))->pluck('unit_name')->all())->toBe(['Coastal'])
+            ->and($response->json('study_area.barangays'))->toBe(['Coastal']);
+    });
+
+    it('refuses species, plans and reports for barangays outside the study area', function () {
+        $this->getJson("/reforestation/{$this->inland->zone_unit_id}/match")->assertStatus(422);
+        $this->getJson("/reforestation/{$this->inland->zone_unit_id}/report")->assertStatus(422);
+        $this->getJson('/reports/generate?type=Reforestation%20Plan&barangay=Inland')->assertStatus(422);
+        $this->getJson("/reforestation/{$this->coast->zone_unit_id}/match")->assertOk();
+    });
+
+    it('limits the reforestation analysis to the study area but keeps every barangay for other land uses', function () {
+        $reforestation = $this->getJson('/suitability/compare?analysis_type=reforestation')->assertOk();
+        $agricultural = $this->getJson('/suitability/compare?analysis_type=agricultural')->assertOk();
+
+        expect(collect($reforestation->json('data.units'))->pluck('unit_name')->all())->toBe(['Coastal'])
+            ->and($reforestation->json('study_area.barangays'))->toBe(['Coastal'])
+            ->and($agricultural->json('data.units'))->toHaveCount(2)
+            ->and($agricultural->json('study_area'))->toBeNull();
+
+        $this->getJson("/suitability/breakdown?analysis_type=reforestation&zone_unit_id={$this->inland->zone_unit_id}")->assertStatus(422);
+        $this->getJson("/suitability/breakdown?analysis_type=agricultural&zone_unit_id={$this->inland->zone_unit_id}")->assertOk();
+    });
+
+    it('marks reforestation as not assessed in profiles outside the study area', function () {
+        $this->getJson("/barangays/{$this->inland->zone_unit_id}/profile")
+            ->assertOk()
+            ->assertJsonPath('data.suitability.reforestation.outside_study_area', true)
+            ->assertJsonPath('data.suitability.agricultural.level', fn ($level) => is_string($level));
+
+        $this->getJson("/barangays/{$this->coast->zone_unit_id}/profile")
+            ->assertOk()
+            ->assertJsonMissingPath('data.suitability.reforestation.outside_study_area');
+    });
+});

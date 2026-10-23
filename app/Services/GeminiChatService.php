@@ -17,6 +17,7 @@ class GeminiChatService
         private TerraSpecContextService $context,
         private SuitabilityScoreService $scorer,
         private KnowledgeBaseService $knowledge,
+        private ReforestationStudyArea $studyArea,
     ) {}
 
     public const ALL_MODELS_BUSY_REPLY = 'The AI assistant has reached its usage limit for now. Please try again later. The map, suitability analysis and reports still work without it.';
@@ -62,6 +63,7 @@ class GeminiChatService
         return SuitabilityAnalysis::with('zoneUnit')
             ->whereIn('zone_unit_id', $mentionedIds)
             ->where('analysis_type', $type)
+            ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
             ->orderByDesc('total_score')
             ->get()
             ->take(5)
@@ -104,6 +106,12 @@ class GeminiChatService
         }
 
         $type = $this->detectAnalysisType($prompt);
+
+        // Reforestation is only assessed in the study area (barangays with verified sites)
+        if (! $this->studyArea->includes($type, $matched->zone_unit_id)) {
+            return null;
+        }
+
         $result = $this->scorer->calculate($matched, $type);
 
         return [

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ZoneUnit;
+use App\Services\ReforestationStudyArea;
 use App\Services\SuitabilityScoreService;
 use Illuminate\Http\JsonResponse;
 
@@ -14,7 +15,10 @@ class BarangayProfileController extends Controller
 {
     private const ANALYSIS_TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
-    public function __construct(private SuitabilityScoreService $scorer) {}
+    public function __construct(
+        private SuitabilityScoreService $scorer,
+        private ReforestationStudyArea $studyArea,
+    ) {}
 
     // GET /barangays
     public function index(): JsonResponse
@@ -44,6 +48,13 @@ class BarangayProfileController extends Controller
 
         $suitability = [];
         foreach (self::ANALYSIS_TYPES as $type) {
+            // Reforestation is assessed only in the study area (barangays with verified sites)
+            if (! $this->studyArea->includes($type, $zone->zone_unit_id)) {
+                $suitability[$type] = ['outside_study_area' => true, 'note' => $this->studyArea->description()];
+
+                continue;
+            }
+
             $result = $this->scorer->calculate($zone, $type);
             $suitability[$type] = [
                 'pct' => $result['total_pct'],

@@ -8,6 +8,13 @@ use Illuminate\Support\Collection;
 
 class SuitabilityScoreService
 {
+    private ReforestationStudyArea $studyArea;
+
+    public function __construct(?ReforestationStudyArea $studyArea = null)
+    {
+        $this->studyArea = $studyArea ?? new ReforestationStudyArea;
+    }
+
     // Maximum population density in Panabo City (Gredu, 2020 census)
     private const MAX_POP_DENSITY = 14910.0;
 
@@ -284,7 +291,10 @@ class SuitabilityScoreService
 
     public function calculateAll(string $analysisType, ?string $useSubtype = null): Collection
     {
-        $zones = ZoneUnit::with(['hazardData', 'soilData', 'zoningData'])->get();
+        // Reforestation is assessed only in the study area (barangays with verified sites)
+        $zones = ZoneUnit::with(['hazardData', 'soilData', 'zoningData'])
+            ->when($this->studyArea->appliesTo($analysisType), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
+            ->get();
         $results = $zones->map(function (ZoneUnit $zone) use ($analysisType, $useSubtype) {
             return $this->calculate($zone, $analysisType, $useSubtype);
         });

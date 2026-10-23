@@ -49,7 +49,7 @@ export function SensitivityAnalysis({ analysisType, typeLabel }) {
       <CardHeader>
         <div className="row-between">
           <span className="card-title">Weight Sensitivity (AHP-WLC) — {typeLabel}</span>
-          {data && (
+          {data && data.eligible_units > 0 && (
             <Badge variant={data.robust_at_10 ? 'brand' : 'destructive'}>
               {data.robust_at_10 ? 'Robust at ±10%' : 'Sensitive at ±10%'}
             </Badge>
@@ -61,6 +61,8 @@ export function SensitivityAnalysis({ analysisType, typeLabel }) {
         <CardBody><div style={{ color: 'hsl(var(--destructive))', fontSize: 13 }}>{error}</div></CardBody>
       ) : loading || !data ? (
         <CardBody><div className="muted" style={{ fontSize: 13 }}>Perturbing weights ±10% and ±20%…</div></CardBody>
+      ) : data.eligible_units === 0 ? (
+        <CardBody><div className="muted" style={{ fontSize: 13 }}>No barangay passes the constraint step for this land use, so there is no score to test.</div></CardBody>
       ) : (
         <>
           <CardBody>

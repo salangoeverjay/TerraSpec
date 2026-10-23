@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\ZoneUnit;
 use App\Services\ReforestationService;
 use App\Services\ReforestationSiteValidationService;
+use App\Services\ReforestationStudyArea;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class ReforestationController extends Controller
 {
-    public function __construct(private ReforestationService $service) {}
+    public function __construct(
+        private ReforestationService $service,
+        private ReforestationStudyArea $studyArea,
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -27,9 +31,12 @@ class ReforestationController extends Controller
             'elevation_min',
             'elevation_max',
             'salinity_level',
-        ])->orderBy('unit_name')->get();
+        ])->whereIn('zone_unit_id', $this->studyArea->zoneIds())->orderBy('unit_name')->get();
 
-        return response()->json(['zones' => $zones]);
+        return response()->json([
+            'zones' => $zones,
+            'study_area' => ['barangays' => $this->studyArea->names(), 'note' => $this->studyArea->description()],
+        ]);
     }
 
     // GET /reforestation/sites
@@ -40,7 +47,7 @@ class ReforestationController extends Controller
 
     public function getMatches(int $id): JsonResponse
     {
-        $zone = ZoneUnit::findOrFail($id);
+        $zone = $this->studyAreaZone($id);
 
         $species = $this->service->matchSpecies($zone);
         $restrictions = $this->service->checkRestrictions($zone);
@@ -58,7 +65,7 @@ class ReforestationController extends Controller
 
     public function report(int $id): JsonResponse
     {
-        $zone = ZoneUnit::with(['hazardData', 'soilData'])->findOrFail($id);
+        $zone = $this->studyAreaZone($id, ['hazardData', 'soilData']);
 
         $species = $this->service->matchSpecies($zone);
         $restrictions = $this->service->checkRestrictions($zone);
@@ -88,7 +95,7 @@ class ReforestationController extends Controller
 
     public function pdf(int $id): Response
     {
-        $zone = ZoneUnit::with(['hazardData', 'soilData'])->findOrFail($id);
+        $zone = $this->studyAreaZone($id, ['hazardData', 'soilData']);
 
         $species = $this->service->matchSpecies($zone);
         $restrictions = $this->service->checkRestrictions($zone);
@@ -119,5 +126,23 @@ class ReforestationController extends Controller
         $filename = 'reforestation-plan-'.str($zone->unit_name)->slug().'-'.now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * A barangay of the reforestation study area; others are refused (their data is not verified).
+     *
+     * @param  array<int, string>  $with
+     */
+    private function studyAreaZone(int $id, array $with = []): ZoneUnit
+    {
+        $zone = ZoneUnit::with($with)->findOrFail($id);
+
+        abort_unless(
+            $this->studyArea->contains($zone->zone_unit_id),
+            422,
+            "{$zone->unit_name} is outside the reforestation study area. ".$this->studyArea->description(),
+        );
+
+        return $zone;
     }
 }

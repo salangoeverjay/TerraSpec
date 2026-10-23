@@ -11,6 +11,8 @@ class TerraSpecContextService
 {
     private const TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
+    public function __construct(private ReforestationStudyArea $studyArea) {}
+
     public function build(): string
     {
         $sections = [
@@ -53,6 +55,7 @@ class TerraSpecContextService
             $rows = SuitabilityAnalysis::with('zoneUnit')
                 ->whereIn('analysis_id', $latestIds)
                 ->where('analysis_type', $type)
+                ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
                 ->orderByDesc('total_score')
                 ->get()
                 ->values();
@@ -64,6 +67,9 @@ class TerraSpecContextService
             $avg = round($rows->avg('total_score') * 100, 1);
             $label = strtoupper($type)." SUITABILITY (avg: {$avg}%)";
             $lines[] = "=== {$label} ===";
+            if ($this->studyArea->appliesTo($type)) {
+                $lines[] = $this->studyArea->description();
+            }
 
             foreach ($rows as $i => $row) {
                 $rank = $i + 1;
@@ -199,6 +205,7 @@ class TerraSpecContextService
     private function buildZoneElevationSalinity(): string
     {
         $zones = ZoneUnit::whereNotNull('elevation_min')
+            ->whereIn('zone_unit_id', $this->studyArea->zoneIds())
             ->orderBy('unit_name')
             ->get(['unit_name', 'unit_type', 'elevation_min', 'elevation_max', 'salinity_level']);
 
@@ -206,7 +213,7 @@ class TerraSpecContextService
             return '';
         }
 
-        $lines = ['=== BARANGAY ELEVATION & SALINITY (for tree species matching) ==='];
+        $lines = ['=== BARANGAY ELEVATION & SALINITY (for tree species matching, reforestation study area only) ==='];
 
         foreach ($zones as $z) {
             $lines[] = "{$z->unit_name} ({$z->unit_type}): elevation {$z->elevation_min}–{$z->elevation_max}m, salinity {$z->salinity_level}";

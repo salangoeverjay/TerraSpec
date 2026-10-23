@@ -36,6 +36,8 @@ export const MAP_VIEWS = {
   flood:       { label: 'Flood',       layers: { zoning: true,  suitability: false, landslide: false, flood: true } },
   landslide:   { label: 'Landslide',   layers: { zoning: true,  suitability: false, landslide: true,  flood: false } },
   suitability: { label: 'Suitability', layers: { zoning: false, suitability: true,  landslide: false, flood: false } },
+  // Reforestation study area only: its barangays and the mangrove sites, nothing else
+  reforestation: { label: 'Reforestation', layers: { zoning: false, suitability: false, landslide: false, flood: false } },
 };
 
 // CSS swatch matching a hatched map fill
@@ -264,17 +266,21 @@ export function QueryBarangayLayer({ names }) {
 const LABEL_POINTS = {
   type: 'FeatureCollection',
   features: Object.entries(BARANGAY_COORDS).map(([name, coordinates]) => ({
-    type: 'Feature', properties: { name }, geometry: { type: 'Point', coordinates },
+    type: 'Feature', properties: { name, key: normalizeName(name) }, geometry: { type: 'Point', coordinates },
   })),
 };
 
-// Names and outlines of the 40 barangays (PSA 2023), drawn on top of every overlay
-export function BarangayLabelLayer({ visible }) {
+// Names and outlines of the barangays (PSA 2023), drawn on top of every overlay.
+// `only` limits them to some barangays (e.g. the reforestation study area); null shows all 40.
+export function BarangayLabelLayer({ visible, only = null }) {
   const ctx = useMap();
   const map = ctx?.map;
   const ready = !!ctx?.isLoaded;
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
+  const onlyFilter = only ? ['in', ['get', 'key'], ['literal', only.map(normalizeName)]] : null;
+  const filterRef = useRef(onlyFilter);
+  filterRef.current = onlyFilter;
 
   useEffect(() => {
     if (!map || !ready) return;
@@ -297,6 +303,7 @@ export function BarangayLabelLayer({ visible }) {
             'text-padding': 2,
           },
           paint: { 'text-color': '#1f2937', 'text-halo-color': '#ffffff', 'text-halo-width': 1.8, 'text-halo-blur': 0.3 },
+          ...(filterRef.current ? { filter: filterRef.current } : {}),
         });
       }
     } catch (e) { console.warn('barangay label error', e); }
@@ -304,11 +311,15 @@ export function BarangayLabelLayer({ visible }) {
     loadJson('/data/panabo_barangays.geojson')()
       .then(boundaries => {
         if (!active || map.getSource(BOUNDARY_LAYER_ID)) return;
-        map.addSource(BOUNDARY_LAYER_ID, { type: 'geojson', data: boundaries });
+        map.addSource(BOUNDARY_LAYER_ID, {
+          type: 'geojson',
+          data: { ...boundaries, features: boundaries.features.map(ft => ({ ...ft, properties: { ...ft.properties, key: normalizeName(ft.properties.name) } })) },
+        });
         map.addLayer({
           id: BOUNDARY_LAYER_ID, type: 'line', source: BOUNDARY_LAYER_ID,
           layout: { visibility: visibility() },
           paint: { 'line-color': '#374151', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 15, 1.6], 'line-opacity': 0.75, 'line-dasharray': [3, 2] },
+          ...(filterRef.current ? { filter: filterRef.current } : {}),
         }, map.getLayer(LABEL_LAYER_ID) ? LABEL_LAYER_ID : undefined);
       })
       .catch(e => console.warn('barangay boundary error', e));
@@ -322,6 +333,14 @@ export function BarangayLabelLayer({ visible }) {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
     }
   }, [map, ready, visible]);
+
+  const filterKey = JSON.stringify(onlyFilter);
+  useEffect(() => {
+    if (!map || !ready) return;
+    for (const id of [BOUNDARY_LAYER_ID, LABEL_LAYER_ID]) {
+      if (map.getLayer(id)) map.setFilter(id, onlyFilter);
+    }
+  }, [map, ready, filterKey]);
 
   return null;
 }

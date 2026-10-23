@@ -22,6 +22,14 @@ function rhoLabel(rho) {
 }
 
 function Summary({ methods, agreement }) {
+  if (agreement.eligible_units < 2) {
+    return (
+      <p style={{ fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>
+        {agreement.eligible_units === 0 ? "No barangay" : "Only one barangay"} passes the constraint step for this land use,
+        so the four methods cannot be compared (rank agreement needs at least two barangays).
+      </p>
+    );
+  }
   const others = Object.keys(methods).filter(k => k !== 'ahp_wlc');
   const sorted = [...others].sort((a, b) => agreement.spearman.ahp_wlc[b] - agreement.spearman.ahp_wlc[a]);
   const best = sorted[0];

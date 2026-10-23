@@ -224,6 +224,7 @@ export function SuitabilityScreen() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [checkedIds, setCheckedIds]     = useState(new Set());
+  const [studyArea, setStudyArea]       = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -234,6 +235,7 @@ export function SuitabilityScreen() {
       .then(json => {
         setRankings(json.data ?? []);
         setAvgScore(json.avg_score ?? 0);
+        setStudyArea(json.study_area ?? null);
       })
       .catch(() => setError('Could not load rankings.'))
       .finally(() => setLoading(false));
@@ -379,7 +381,7 @@ export function SuitabilityScreen() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Suitability Analysis</h1>
-          <p className="page-subtitle">AHP-WLC land suitability scoring, compared with AHP-TOPSIS, EWM-WLC and EWM-TOPSIS · 40 zone units · Panabo City</p>
+          <p className="page-subtitle">AHP-WLC land suitability scoring, compared with AHP-TOPSIS, EWM-WLC and EWM-TOPSIS · {studyArea ? `${studyArea.barangays.length} barangays (reforestation study area)` : '40 zone units'} · Panabo City</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <Btn variant="outline" icon="download" onClick={exportPDF} disabled={loading || rankings.length === 0}>
@@ -410,6 +412,12 @@ export function SuitabilityScreen() {
           </button>
         ))}
       </div>
+
+      {studyArea && (
+        <div style={{ marginBottom: 20, padding: '10px 14px', borderRadius: 10, border: '1px solid hsl(var(--brand) / 0.35)', background: 'hsl(var(--brand) / 0.06)', fontSize: 12.5, lineHeight: 1.5 }}>
+          <strong>{studyArea.note}</strong>{rankings.length > 0 && rankings.every(r => r.total_pct === 0) && " Their land is mostly mangrove or built-up zones, so the terrestrial AHP-WLC model excludes them."} See the Reforestation page for the mangrove sites and their validation.
+        </div>
+      )}
 
       <div className="grid grid-3" style={{ marginBottom: 20 }}>
         {/* Score ring — average for selected type */}

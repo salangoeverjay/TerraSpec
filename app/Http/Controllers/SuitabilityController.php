@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SuitabilityAnalysis;
 use App\Models\ZoneUnit;
+use App\Services\ReforestationStudyArea;
 use App\Services\SuitabilityComparisonService;
 use App\Services\SuitabilityScoreService;
 use App\Services\SuitabilitySensitivityService;
@@ -12,7 +13,10 @@ use Illuminate\Http\Request;
 
 class SuitabilityController extends Controller
 {
-    public function __construct(private SuitabilityScoreService $scorer) {}
+    public function __construct(
+        private SuitabilityScoreService $scorer,
+        private ReforestationStudyArea $studyArea,
+    ) {}
 
     // GET /suitability/compare?analysis_type=residential
     // Runs AHP-WLC, AHP-TOPSIS, EWM-WLC and EWM-TOPSIS on the same data (not persisted).
@@ -25,6 +29,7 @@ class SuitabilityController extends Controller
         return response()->json([
             'data' => $comparison->compare($validated['analysis_type']),
             'methods' => SuitabilityComparisonService::METHODS,
+            'study_area' => $this->studyAreaNote($validated['analysis_type']),
         ]);
     }
 
@@ -38,6 +43,7 @@ class SuitabilityController extends Controller
 
         return response()->json([
             'data' => $sensitivity->analyze($validated['analysis_type']),
+            'study_area' => $this->studyAreaNote($validated['analysis_type']),
         ]);
     }
 
@@ -52,6 +58,11 @@ class SuitabilityController extends Controller
         ]);
 
         $zone = ZoneUnit::findOrFail($validated['zone_unit_id']);
+
+        if (! $this->studyArea->includes($validated['analysis_type'], $zone->zone_unit_id)) {
+            return $this->outsideStudyArea($zone);
+        }
+
         $result = $this->scorer->calculate($zone, $validated['analysis_type']);
 
         return response()->json([
@@ -95,6 +106,9 @@ class SuitabilityController extends Controller
         $zones = ZoneUnit::orderBy('unit_name')->get()->map(function (ZoneUnit $zone) use ($analyses) {
             $scores = [];
             foreach ($analyses as $type => $rows) {
+                if (! $this->studyArea->includes($type, $zone->zone_unit_id)) {
+                    continue;
+                }
                 $row = $rows->firstWhere('zone_unit_id', $zone->zone_unit_id);
                 if ($row) {
                     $scores[$type] = ['pct' => $row['pct'], 'level' => $row['level'], 'rank' => $row['rank']];
@@ -119,6 +133,7 @@ class SuitabilityController extends Controller
 
         $rows = SuitabilityAnalysis::with('zoneUnit')
             ->where('analysis_type', $type)
+            ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
             ->orderByDesc('total_score')
             ->get()
             ->values()
@@ -148,6 +163,7 @@ class SuitabilityController extends Controller
             'analysis_type' => $type,
             'count' => $rows->count(),
             'avg_score' => round($avg * 100, 1),
+            'study_area' => $this->studyAreaNote($type),
             'data' => $rows,
         ]);
     }
@@ -197,6 +213,11 @@ class SuitabilityController extends Controller
 
         if (! empty($validated['zone_unit_id'])) {
             $zone = ZoneUnit::with(['hazardData', 'soilData'])->findOrFail($validated['zone_unit_id']);
+
+            if (! $this->studyArea->includes($type, $zone->zone_unit_id)) {
+                return $this->outsideStudyArea($zone);
+            }
+
             $result = $this->scorer->calculate($zone, $type, $subtype);
             $saved = $this->persistAnalysis($result, $userId);
 
@@ -415,5 +436,24 @@ class SuitabilityController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Which barangays a land use is assessed in: all of them, except reforestation (study area only).
+     *
+     * @return array{barangays: array<int, string>, note: string}|null
+     */
+    private function studyAreaNote(string $analysisType): ?array
+    {
+        return $this->studyArea->appliesTo($analysisType)
+            ? ['barangays' => $this->studyArea->names(), 'note' => $this->studyArea->description()]
+            : null;
+    }
+
+    private function outsideStudyArea(ZoneUnit $zone): JsonResponse
+    {
+        return response()->json([
+            'message' => "{$zone->unit_name} is outside the reforestation study area. ".$this->studyArea->description(),
+        ], 422);
     }
 }

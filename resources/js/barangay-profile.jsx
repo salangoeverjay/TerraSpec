@@ -255,6 +255,14 @@ export function BarangayProfileScreen({ go, barangay }) {
                       <tbody>
                         {Object.entries(USE_LABELS).map(([k, label]) => {
                           const s = p.suitability[k];
+                          if (s.outside_study_area) {
+                            return (
+                              <tr key={k}>
+                                <td>{label}</td>
+                                <td colSpan={3} className="muted" style={{ fontSize: 11.5 }} title={s.note}>Not assessed: outside the reforestation study area</td>
+                              </tr>
+                            );
+                          }
                           return (
                             <tr key={k}>
                               <td>{label}</td>

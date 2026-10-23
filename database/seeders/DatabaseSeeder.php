@@ -16,11 +16,11 @@ class DatabaseSeeder extends Seeder
             ZoneSoilDataSeeder::class,
             PopulationProjectionSeeder::class,
             SuitabilityCriteriaSeeder::class,
+            ReforestationSiteSeeder::class,
             SuitabilityAnalysisSeeder::class,
             ZoneUnitElevationSalinitySeeder::class,
             TreeSpeciesSeeder::class,
             EnvironmentalRestrictionSeeder::class,
-            ReforestationSiteSeeder::class,
         ]);
     }
 }

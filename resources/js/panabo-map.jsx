@@ -369,7 +369,28 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
   const [view, setView] = useState('zoning');
   const [layers, setLayers] = useState(MAP_VIEWS.zoning.layers);
   const [suitUse, setSuitUse] = useState('reforestation');
-  function chooseView(key) { setView(key); setLayers(MAP_VIEWS[key].layers); }
+  function chooseView(key) {
+    setView(key);
+    setLayers(MAP_VIEWS[key].layers);
+    if (key === 'reforestation') zoomToStudyArea();
+  }
+
+  // Reforestation study area: barangays with verified reforestation or mangrove sites
+  const [studyArea, setStudyArea] = useState({ barangays: [], note: '' });
+  useEffect(() => {
+    fetch('/reforestation', { headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(json => setStudyArea(json.study_area ?? { barangays: [], note: '' }))
+      .catch(() => {});
+  }, []);
+  const reforestationView = view === 'reforestation';
+
+  async function zoomToStudyArea() {
+    const bounds = studyArea.barangays.length ? await barangayBounds(studyArea.barangays).catch(() => null) : null;
+    // Union with the mangrove sites, most of which lie seaward of the barangay boundaries
+    const [[w, s2], [e, n]] = bounds ?? [[125.6772, 7.2548], [125.7012, 7.2940]];
+    mapRef.current?.fitBounds([[Math.min(w, 125.6772), Math.min(s2, 7.2548)], [Math.max(e, 125.7012), Math.max(n, 7.2940)]], { padding: { top: 60, bottom: 90, left: 250, right: 60 }, duration: 1000 });
+  }
   function toggleLayer(key, on) { setView('custom'); setLayers(l => ({ ...l, [key]: on })); }
   const [basemap, setBasemap] = useState(() => {
     try { return localStorage.getItem('terraspec-basemap') || 'osm'; } catch { return 'osm'; }
@@ -525,8 +546,8 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
           <LandslideLayer visible={layers.landslide} hiddenLandslide={hiddenLandslide}/>
           <FloodLayer visible={layers.flood} hiddenFlood={hiddenFlood}/>
           <QueryBarangayLayer names={queryNames}/>
-          <MangroveSitesLayer visible={showMangrove} hiddenStatuses={hiddenMangrove}/>
-          <BarangayLabelLayer visible={showBarangays}/>
+          <MangroveSitesLayer visible={showMangrove || reforestationView} hiddenStatuses={hiddenMangrove}/>
+          <BarangayLabelLayer visible={showBarangays || reforestationView} only={reforestationView ? studyArea.barangays : null}/>
           {highlightZones.length > 0 && <FlyToHighlight zones={highlightZones}/>}
           {highlightZones.map((z, i) => {
             const coords = BARANGAY_COORDS[z.unit_name];
@@ -818,7 +839,10 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                   ))}
                 </LegendGroup>
               )}
-              {showMangrove && (
+              {reforestationView && studyArea.note && (
+                <div className="muted" style={{ fontSize: 11, lineHeight: 1.45, marginBottom: 4 }}>{studyArea.note}</div>
+              )}
+              {(showMangrove || reforestationView) && (
                 <LegendGroup title="Mangrove reforestation sites">
                   {MANGROVE_LEGEND.map(item => (
                     <LegendItem key={item.val} label={item.label} swatch={item.hex} hidden={hiddenMangrove.has(item.val)} onClick={() => toggleMangroveStatus(item.val)}/>
@@ -835,7 +859,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                   ))}
                 </LegendGroup>
               )}
-              {!Object.values(layers).some(Boolean) && <div className="muted" style={{ fontSize: 11.5 }}>No layers shown. Pick a view above.</div>}
+              {!Object.values(layers).some(Boolean) && !reforestationView && <div className="muted" style={{ fontSize: 11.5 }}>No layers shown. Pick a view above.</div>}
             </div>
           </CardBody>
         </Card>

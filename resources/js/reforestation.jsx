@@ -150,12 +150,13 @@ export function ReforestationScreen() {
   const [loading,      setLoading]      = useState(false);
   const [zonesLoading, setZonesLoading] = useState(true);
   const [error,        setError]        = useState(null);
+  const [studyArea,    setStudyArea]    = useState(null);
 
   // Load zone list once
   useEffect(() => {
     fetch('/reforestation')
       .then(r => r.json())
-      .then(json => setZones(json.zones ?? []))
+      .then(json => { setZones(json.zones ?? []); setStudyArea(json.study_area ?? null); })
       .catch(() => setError('Could not load zone list.'))
       .finally(() => setZonesLoading(false));
   }, []);
@@ -212,6 +213,9 @@ export function ReforestationScreen() {
           <p className="page-subtitle">
             Species suitability and site recommendations · Panabo City
           </p>
+          {studyArea && (
+            <p className="muted" style={{ fontSize: 12, marginTop: 4, maxWidth: 760 }}>{studyArea.note}</p>
+          )}
         </div>
         <Btn variant="outline" icon="download" onClick={exportReport} disabled={!selectedId || exporting}>
           {exporting ? 'Generating PDF…' : 'Export PDF'}

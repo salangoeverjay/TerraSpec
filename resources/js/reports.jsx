@@ -35,6 +35,24 @@ export function ReportsScreen({ role }) {
   const [generating, setGenerating] = useState(false);
   const [archive, setArchive]   = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(true);
+  // Reforestation plans only cover the study area (barangays with verified reforestation or mangrove sites)
+  const [studyArea, setStudyArea] = useState({ barangays: [], note: '' });
+
+  useEffect(() => {
+    fetch('/reforestation', { headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(json => setStudyArea(json.study_area ?? { barangays: [], note: '' }))
+      .catch(() => {});
+  }, []);
+
+  const barangayOptions = type === 'Reforestation Plan' ? studyArea.barangays : PANABO.barangays;
+
+  // Keep the selected barangay valid for the chosen report type
+  useEffect(() => {
+    if (type !== 'Comparative Analysis' && barangayOptions.length > 0 && !barangayOptions.includes(barangay)) {
+      setBarangay(barangayOptions[0]);
+    }
+  }, [type, barangayOptions, barangay]);
 
   useEffect(() => {
     fetch('/api/reports')
@@ -111,9 +129,12 @@ export function ReportsScreen({ role }) {
                     <select className="input" value={barangay} onChange={e => setBarangay(e.target.value)}>
                       {type === 'Comparative Analysis'
                         ? <option value="All Barangays">All Barangays (City-wide)</option>
-                        : PANABO.barangays.map(b => <option key={b} value={b}>{b}</option>)
+                        : barangayOptions.map(b => <option key={b} value={b}>{b}</option>)
                       }
                     </select>
+                    {type === 'Reforestation Plan' && studyArea.note && (
+                      <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{studyArea.note}</div>
+                    )}
                   </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
