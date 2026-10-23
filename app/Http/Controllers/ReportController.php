@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use App\Models\ZoneUnit;
 use App\Services\GeminiChatService;
+use App\Services\MangroveRecommendationService;
 use App\Services\ReforestationService;
 use App\Services\ReforestationStudyArea;
 use App\Services\SuitabilityScoreService;
@@ -21,6 +22,7 @@ class ReportController extends Controller
         private ReforestationService $reforestation,
         private GeminiChatService $gemini,
         private ReforestationStudyArea $studyArea,
+        private MangroveRecommendationService $mangroves,
     ) {}
 
     public function generate(Request $request): Response
@@ -81,9 +83,9 @@ class ReportController extends Controller
         }
 
         if ($type === 'Reforestation Plan' && $zone) {
-            $species = $this->reforestation->matchSpecies($zone);
-            $data['species'] = $species;
-            $data['top_species'] = array_slice($species, 0, 3);
+            $mangrove = $this->mangroves->forZone($zone);
+            $data['mangrove'] = $mangrove;
+            $data['species'] = $mangrove['species'];
         }
 
         if ($isComparative) {

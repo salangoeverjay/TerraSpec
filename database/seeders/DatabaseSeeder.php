@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             SuitabilityAnalysisSeeder::class,
             ZoneUnitElevationSalinitySeeder::class,
             TreeSpeciesSeeder::class,
+            MangroveSpeciesSeeder::class,
             EnvironmentalRestrictionSeeder::class,
         ]);
     }

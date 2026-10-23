@@ -51,7 +51,7 @@ it('summarises the sites by status and barangay', function () {
         ->and($response->json('data.summary.by_barangay.0.barangay'))->toBe('Coastal');
 });
 
-it('agrees with the actual sites when they are in the mangrove zone and mangrove species are recommended', function () {
+it('agrees with the actual sites when they are in the mangrove zone or seaward of it', function () {
     $zone = coastalZone('Coastal', ['MG' => 60, 'GR' => 40]);
     ReforestationSite::factory()->create([
         'zone_unit_id' => $zone->zone_unit_id, 'area_ha' => 2,
@@ -61,12 +61,11 @@ it('agrees with the actual sites when they are in the mangrove zone and mangrove
     $data = $this->getJson('/reforestation/sites')->assertOk()->json('data');
 
     expect($data['checks']['zoning']['agreement'])->toEqual(1)
-        ->and($data['checks']['species']['agreement'])->toEqual(1)
-        ->and($data['sites'][0]['top_species'][0]['mangrove'])->toBeTrue()
+        ->and($data['checks'])->toHaveKeys(['zoning', 'terrestrial'])->not->toHaveKey('species')
         ->and($data['checks']['terrestrial']['agreement'])->toBeNull();
 });
 
-it('flags sites inside other land-use zones and barangays without mangrove species', function () {
+it('flags sites inside other land-use zones', function () {
     $coast = coastalZone('Coastal', ['MG' => 60, 'GR' => 40]);
     $inland = coastalZone('Inland', ['PA' => 100], 'None');
     ReforestationSite::factory()->create(['zone_unit_id' => $coast->zone_unit_id, 'area_ha' => 1, 'mangrove_zone_share' => 1, 'other_zone_share' => 0, 'unzoned_share' => 0]);
@@ -74,8 +73,7 @@ it('flags sites inside other land-use zones and barangays without mangrove speci
 
     $checks = $this->getJson('/reforestation/sites')->assertOk()->json('data.checks');
 
-    expect($checks['zoning']['agreement'])->toEqual(0.25)
-        ->and($checks['species']['agreement'])->toEqual(0.25);
+    expect($checks['zoning']['agreement'])->toEqual(0.25);
 });
 
 it('lists the sites of a barangay in its profile', function () {

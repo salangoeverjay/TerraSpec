@@ -260,7 +260,7 @@ export function DashboardScreen({ go }) {
         <Card>
           <CardHeader>
             <div className="row-between">
-              <span className="card-title">Top Tree Species</span>
+              <span className="card-title">Mangrove Species</span>
               <Btn sz="sm" variant="outline" onClick={() => go('reforestation')}>View All</Btn>
             </div>
           </CardHeader>
@@ -271,9 +271,9 @@ export function DashboardScreen({ go }) {
               <div key={s.species_id} className="row-between" style={{ padding: '9px 18px', borderBottom: i < topSpecies.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.common_name}</div>
-                  <div className="muted" style={{ fontSize: 11.5 }}>{s.soil_preference?.split('/')[0].trim()}</div>
+                  <div className="muted" style={{ fontSize: 11.5, fontStyle: 'italic' }}>{s.scientific_name}</div>
                 </div>
-                <Badge variant={s.salinity_level === 'High' ? 'brand' : s.salinity_level === 'Med' ? 'warn' : ''}>{s.salinity_level}</Badge>
+                <Badge variant={['Vulnerable', 'Near threatened'].includes(s.iucn_status) ? 'warn' : 'brand'} style={{ whiteSpace: 'nowrap' }}>{['Vulnerable', 'Near threatened'].includes(s.iucn_status) ? s.iucn_status : s.tidal_zone}</Badge>
               </div>
             ))}
           </CardBody>

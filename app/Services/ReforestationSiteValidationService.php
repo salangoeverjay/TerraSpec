@@ -8,16 +8,12 @@ use Illuminate\Support\Collection;
 
 /**
  * Compares TerraSpec's reforestation results with the actual mangrove reforestation sites:
- * zoning agreement, species agreement and how the terrestrial AHP-WLC model treats the sites.
+ * zoning agreement and how the terrestrial AHP-WLC model treats the sites.
  */
 class ReforestationSiteValidationService
 {
-    /** Species that grow in saline or brackish intertidal areas (mangroves and nipa). */
-    private const MANGROVE_SALINITY = ['High', 'Med'];
-
     public function __construct(
         private SuitabilityScoreService $scorer,
-        private ReforestationService $reforestation,
     ) {}
 
     /**
@@ -53,26 +49,18 @@ class ReforestationSiteValidationService
     }
 
     /**
-     * Terrestrial AHP-WLC result and the top species TerraSpec recommends for the barangay.
+     * Terrestrial AHP-WLC result for the barangay.
      *
      * @return array<string, mixed>
      */
     private function assessBarangay(ZoneUnit $zone): array
     {
         $result = $this->scorer->calculate($zone, 'reforestation');
-        $topSpecies = collect($this->reforestation->matchSpecies($zone))->take(3);
 
         return [
             'terrestrial_pct' => $result['total_pct'],
             'terrestrial_level' => $result['suitability_level'],
             'terrestrial_excluded' => (bool) ($result['constraint']['excluded'] ?? false),
-            'top_species' => $topSpecies->map(fn (array $s) => [
-                'name' => $s['common_name'],
-                'scientific_name' => $s['scientific_name'],
-                'score_pct' => $s['score_pct'],
-                'mangrove' => in_array($s['salinity_level'], self::MANGROVE_SALINITY, true),
-            ])->values()->all(),
-            'species_agrees' => $topSpecies->contains(fn (array $s) => in_array($s['salinity_level'], self::MANGROVE_SALINITY, true)),
         ];
     }
 
@@ -111,7 +99,6 @@ class ReforestationSiteValidationService
         $share = fn (callable $test) => round($rows->filter($test)->sum('area_ha') / $total, 4);
 
         $zoning = $share(fn (array $r) => $r['zoning_agrees']);
-        $species = $share(fn (array $r) => $r['species_agrees']);
         $excluded = $share(fn (array $r) => $r['terrestrial_excluded']);
         $inMangroveZone = round($rows->sum(fn (array $r) => $r['area_ha'] * $r['mangrove_zone_share']) / $total, 4);
         $seaward = round($rows->sum(fn (array $r) => $r['area_ha'] * $r['unzoned_share']) / $total, 4);
@@ -122,16 +109,11 @@ class ReforestationSiteValidationService
                 'agreement' => $zoning,
                 'detail' => sprintf('%.0f%% of the site area is in the Mangrove sub-zone and %.0f%% is seaward of the zoning map (intertidal); %.0f%% falls in other land-use zones.', $inMangroveZone * 100, $seaward * 100, max(1 - $inMangroveZone - $seaward, 0) * 100),
             ],
-            'species' => [
-                'label' => 'Species agreement',
-                'agreement' => $species,
-                'detail' => sprintf('For %.0f%% of the site area, a mangrove species (Bakawan, Pagatpat or Nipa) is among the top three species TerraSpec recommends for the barangay.', $species * 100),
-            ],
             'terrestrial' => [
                 'label' => 'Terrestrial AHP-WLC model',
                 'agreement' => null,
                 'excluded_share' => $excluded,
-                'detail' => sprintf('%.0f%% of the site area is in barangays the terrestrial reforestation model excludes, because their land is mostly mangrove or built-up zones. This is by design (mangroves are assessed separately), so the AHP-WLC score cannot rank mangrove sites: a separate mangrove suitability layer is needed for that.', $excluded * 100),
+                'detail' => sprintf('%.0f%% of the site area is in barangays the terrestrial reforestation model excludes, because their land is mostly mangrove or built-up zones. This is by design (mangroves are assessed separately), so the AHP-WLC score cannot rank mangrove sites; mangrove species are recommended by tidal zone instead.', $excluded * 100),
             ],
         ];
     }

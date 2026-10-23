@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\EnvironmentalRestriction;
+use App\Models\MangroveSpecies;
 use App\Models\SuitabilityAnalysis;
-use App\Models\TreeSpecies;
 use App\Models\ZoneUnit;
 
 class TerraSpecContextService
@@ -185,19 +185,22 @@ class TerraSpecContextService
 
     private function buildTreeSpecies(): string
     {
-        $species = TreeSpecies::all();
+        $species = MangroveSpecies::orderBy('list_order')->get();
 
         if ($species->isEmpty()) {
             return '';
         }
 
-        $lines = ['=== TREE SPECIES FOR REFORESTATION ==='];
+        // The reforestation study covers mangrove sites, so only mangroves and associates are recommended
+        $lines = ['=== MANGROVE SPECIES FOR REFORESTATION (true mangroves and associates only; source: '.$species->first()->source.') ==='];
 
-        foreach ($species as $s) {
-            $lines[] = "{$s->common_name} ({$s->scientific_name})";
-            $lines[] = "  Soil: {$s->soil_preference} | Elevation: {$s->elevation_range}m | Salinity: {$s->salinity_level} | Temp: {$s->temperature_range}°C";
-            $lines[] = "  Notes: {$s->suitability_notes}";
+        foreach (MangroveSpecies::TIDAL_ZONES as $zone => $label) {
+            foreach ($species->where('tidal_zone', $zone) as $s) {
+                $type = MangroveSpecies::CATEGORIES[$s->category] ?? $s->category;
+                $lines[] = "{$s->local_name} ({$s->scientific_name}, {$s->family}) — {$type}, IUCN {$s->iucn_status}, {$s->habit}; zone: {$label}. {$s->zone_note}";
+            }
         }
+        $lines[] = 'Tidal zones follow general Philippine mangrove zonation; the tidal position of each site has not been surveyed, so do not assign species to a specific site.';
 
         return implode("\n", $lines);
     }

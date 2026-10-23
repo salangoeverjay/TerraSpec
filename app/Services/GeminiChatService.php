@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\MangroveSpecies;
 use App\Models\SuitabilityAnalysis;
-use App\Models\TreeSpecies;
 use App\Models\ZoneUnit;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
@@ -311,10 +311,12 @@ class GeminiChatService
         $restrictionCount = isset($ctx['restrictions']) ? count($ctx['restrictions']) : 0;
         $lines[] = "Environmental Restrictions: {$restrictionCount}";
 
-        if (! empty($ctx['top_species'])) {
-            $sp = collect($ctx['top_species'])->take(3)
-                ->map(fn ($s) => "{$s['common_name']} ({$s['score_pct']}%)")->implode(', ');
-            $lines[] = "Top Matched Species: {$sp}";
+        if (! empty($ctx['mangrove']['zones'])) {
+            foreach ($ctx['mangrove']['zones'] as $group) {
+                $names = collect($group['species'])->map(fn ($s) => "{$s['local_name']} ({$s['scientific_name']})")->implode(', ');
+                $lines[] = "Mangrove species, {$group['label']}: {$names}";
+            }
+            $lines[] = 'Site tidal zones are not yet surveyed; do not assign species to specific sites.';
         }
 
         if (! empty($ctx['rankings'])) {
@@ -392,7 +394,7 @@ PROMPT;
         }
 
         // 4. Tree species
-        $species = TreeSpecies::pluck('common_name')->all();
+        $species = MangroveSpecies::pluck('local_name')->all();
         foreach ($species as $sp) {
             if (stripos($text, $sp) !== false && ! isset($seen[$sp])) {
                 $entities[] = ['type' => 'species', 'value' => $sp];
