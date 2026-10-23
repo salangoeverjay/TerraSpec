@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Report extends Model
 {
     protected $fillable = [
-        'report_type', 'barangay', 'zone_unit_id',
+        'report_type', 'analysis_type', 'barangay', 'zone_unit_id',
         'generated_by', 'status', 'sections',
     ];
 

@@ -140,6 +140,34 @@ function LiveCalcCard({ data, go }) {
   );
 }
 
+// Runs the same AI map-filter extraction as "Ask the map" and opens Map Viewer with the result applied
+function ShowOnMapButton({ question, go }) {
+  const [state, setState] = useState('idle');
+  async function show() {
+    setState('loading');
+    try {
+      const res = await fetch('/api/map/interpret', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.data?.understood) throw new Error(body.message ?? 'not a map question');
+      go('map', { askResult: body.data });
+    } catch {
+      setState('failed');
+    }
+  }
+  return (
+    <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+      <button onClick={show} disabled={state === 'loading'} className="chip" style={{ fontSize: 12, fontWeight: 600, color: 'hsl(var(--brand))', borderColor: 'hsl(var(--brand) / 0.45)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <Icon name="map" size={12}/> {state === 'loading' ? 'Reading the question…' : 'Show on map'}
+      </button>
+      {state === 'failed' && <span className="muted" style={{ fontSize: 11.5 }}>Could not turn this into map filters. Try the Ask the map bar in Map Viewer.</span>}
+    </div>
+  );
+}
+
 export function ChatScreen({ initialConvId, go, role = 'public', mapContext, setMapContext } = {}) {
   const [conversations, setConversations] = useState(() => loadConversations(role));
   const [activeId, setActiveId] = useState(() => {
@@ -302,8 +330,8 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         body: JSON.stringify({
           prompt: message,
           context: {
-            selection:   mapContext?.barangay ?? 'Panabo City',
-            suitability: mapContext?.score    ?? null,
+            selection:   mapContext?.selection ?? mapContext?.barangay ?? 'Panabo City',
+            ...(mapContext?.score != null && { suitability: mapContext.score }),
             zone:        mapContext?.zone     ?? null,
           },
         }),
@@ -319,6 +347,10 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         const msgs = c.messages.filter(m => m.content !== 'Thinking...').concat({
           role:             'assistant',
           content:          payload.answer || 'Gemini returned an empty response.',
+          model:            payload.model || null,
+          question:         message,
+          mapIntent:        ['zoning_compliance', 'environmental_assessment'].includes(intent),
+          fallbackUsed:     !!payload.fallback_used,
           zones:            payload.recommended_zones ?? [],
           live_calculation: payload.live_calculation || null,
           followups:        buildFollowups(intent, entities),
@@ -334,7 +366,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
       const text = err instanceof Error ? err.message : 'The assistant could not answer right now.';
       setChatError(text);
       updateActive(c => ({
-        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: 'Could not reach Gemini 2.5 Flash. Check the API key and try again.' }),
+        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: text }),
       }));
     } finally {
       setIsLoading(false); setChatInput('');
@@ -777,6 +809,14 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                     fontSize: 13.5, lineHeight: 1.55,
                   }}>
                     {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                  </div>
+                )}
+                {m.role === 'assistant' && m.mapIntent && m.question && go && (
+                  <ShowOnMapButton question={m.question} go={go}/>
+                )}
+                {m.role === 'assistant' && m.model && (
+                  <div className="muted mono" style={{ fontSize: 10.5 }} title={m.fallbackUsed ? 'The main model was busy or out of quota, so a backup model answered.' : undefined}>
+                    Answered by {m.model}{m.fallbackUsed ? ' (backup model)' : ''}
                   </div>
                 )}
                 {m.role === 'assistant' && m.zones?.length > 0 && (

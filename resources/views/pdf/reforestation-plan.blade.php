@@ -51,7 +51,7 @@
 {{-- Header --}}
 <div class="header">
   <div class="header-left">
-    <h1>TerraSpec — Reforestation Plan</h1>
+    <h1>TerraSpec — Mangrove Reforestation Plan</h1>
     <p>Panabo City, Davao del Norte · City Planning and Development Office</p>
   </div>
   <div class="header-right">
@@ -76,16 +76,16 @@
     <div class="meta-box-value">{{ number_format($zone['total_area_ha'], 1) }} ha</div>
   </div>
   <div class="meta-box">
-    <div class="meta-box-label">Species Matched</div>
-    <div class="meta-box-value">{{ $summary['total_species_matched'] }}</div>
+    <div class="meta-box-label">Mangrove Sites</div>
+    <div class="meta-box-value">{{ $sites->count() }} · {{ number_format($sites->sum('area_ha'), 2) }} ha</div>
   </div>
   <div class="meta-box">
-    <div class="meta-box-label">Avg Match Score</div>
-    <div class="meta-box-value">{{ $summary['avg_score_pct'] }}%</div>
+    <div class="meta-box-label">Mangrove Species</div>
+    <div class="meta-box-value">{{ count($mangrove['species']) }}</div>
   </div>
   <div class="meta-box">
     <div class="meta-box-label">Restrictions</div>
-    <div class="meta-box-value" style="{{ $summary['restriction_count'] > 0 ? 'color:#b91c1c' : '' }}">{{ $summary['restriction_count'] }}</div>
+    <div class="meta-box-value" style="{{ count($restrictions) > 0 ? 'color:#b91c1c' : '' }}">{{ count($restrictions) }}</div>
   </div>
 </div>
 
@@ -93,7 +93,7 @@
 <div class="section">
   <div class="section-title">Zone Parameters</div>
   <table class="info-table">
-    <tr><td>Dominant Soil Type</td><td>{{ $zone['dominant_soil_type'] ?? '—' }}</td></tr>
+    <tr><td>Soil of adjacent land (CLUP PF-9)</td><td>{{ $zone['dominant_soil_type'] ?? '—' }} (not the tidal substrate of the sites)</td></tr>
     <tr><td>Elevation Range</td><td>{{ $zone['elevation_min'] }}–{{ $zone['elevation_max'] }} m asl</td></tr>
     <tr><td>Salinity Level</td><td>{{ $zone['salinity_level'] }}</td></tr>
     <tr><td>Dominant Slope Class</td><td>{{ $zone['dominant_slope_class'] ?? '—' }}</td></tr>
@@ -102,55 +102,68 @@
   </table>
 </div>
 
-{{-- Recommended Species --}}
+{{-- Mangrove sites --}}
+@if($sites->isNotEmpty())
 <div class="section">
-  <div class="section-title">Recommended Tree Species (AHP-WLC Matched)</div>
-  @if(count($allSpecies) > 0)
+  <div class="section-title">Mangrove Reforestation Sites</div>
   <table class="species-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Common Name</th>
-        <th>Scientific Name</th>
-        <th>Match Score</th>
-        <th>Soil</th>
-        <th>Elevation</th>
-        <th>Salinity</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Site</th><th>Status</th><th>Year / adopter</th><th>Area</th><th>In Mangrove sub-zone</th></tr></thead>
     <tbody>
-      @foreach($allSpecies as $sp)
+      @foreach($sites as $site)
       <tr>
-        <td><span class="rank-badge">{{ $sp['rank'] }}</span></td>
-        <td style="font-weight:600">{{ $sp['common_name'] }}</td>
-        <td style="font-style:italic;color:#6b7280">{{ $sp['scientific_name'] }}</td>
-        <td>
-          <span class="{{ $sp['score_pct'] >= 80 ? 'score-high' : ($sp['score_pct'] >= 55 ? 'score-mid' : 'score-low') }}">
-            {{ $sp['score_pct'] }}%
-          </span>
-          <br>
-          <div class="bar-wrap"><div class="bar-fill" style="width:{{ $sp['score_pct'] }}%"></div></div>
-        </td>
-        <td>{{ $sp['soil_preference'] }}</td>
-        <td>{{ $sp['elevation_range'] }} m</td>
-        <td>{{ $sp['salinity_level'] }}</td>
+        <td style="font-weight:600">{{ $site->name }}</td>
+        <td>{{ ucfirst($site->status) }}</td>
+        <td>{{ $site->year ?? $site->adopter ?? '—' }}</td>
+        <td>{{ number_format($site->area_ha, 2) }} ha</td>
+        <td>{{ round($site->mangrove_zone_share * 100) }}%</td>
       </tr>
-      @if(!empty($sp['suitability_notes']))
-      <tr>
-        <td></td>
-        <td colspan="6" style="color:#6b7280;font-size:10px;padding-top:2px;padding-bottom:8px">
-          {{ $sp['suitability_notes'] }}
-        </td>
-      </tr>
-      @endif
       @endforeach
     </tbody>
   </table>
-  @else
-  <p style="color:#6b7280">No species matched for this zone's conditions.</p>
-  @endif
+</div>
+@endif
+
+{{-- Mangrove species by tidal zone --}}
+<div class="section">
+  <div class="section-title">Recommended Mangrove Species by Tidal Zone</div>
+  <p style="font-size:10px;color:#6b7280;margin-bottom:8px">
+    True mangroves and mangrove associates only. Plant each species in its tidal zone; the zone of each site must be confirmed in the field.
+  </p>
+  @foreach($mangrove['zones'] as $group)
+  <div style="font-size:10.5px;font-weight:700;color:#166534;margin:8px 0 4px">{{ $group['label'] }}</div>
+  <table class="species-table">
+    <thead><tr><th>Local name</th><th>Scientific name</th><th>Family</th><th>Type</th><th>IUCN status</th><th>Habit</th><th>Planting note</th></tr></thead>
+    <tbody>
+      @foreach($group['species'] as $sp)
+      <tr>
+        <td style="font-weight:600">{{ $sp['local_name'] }}</td>
+        <td style="font-style:italic;color:#6b7280">{{ $sp['scientific_name'] }}</td>
+        <td>{{ $sp['family'] }}</td>
+        <td>{{ $sp['category_label'] }}</td>
+        <td style="{{ in_array($sp['iucn_status'], ['Vulnerable', 'Near threatened']) ? 'color:#b45309;font-weight:700' : '' }}">{{ $sp['iucn_status'] }}</td>
+        <td>{{ $sp['habit'] }}</td>
+        <td style="color:#6b7280;font-size:9.5px">{{ $sp['zone_note'] }}</td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
+  @endforeach
+  <p style="font-size:9.5px;color:#6b7280;margin-top:6px">Species: {{ $mangrove['source'] }}. {{ $mangrove['zonation_note'] }}</p>
 </div>
 
+<div class="section">
+  <div class="section-title">Planting Rules</div>
+  <ul style="font-size:10.5px;line-height:1.6;padding-left:16px">
+    @foreach($mangrove['planting_rules'] as $rule)<li>{{ $rule }}</li>@endforeach
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-title">Site Data Still Needed</div>
+  <ul style="font-size:10.5px;line-height:1.6;padding-left:16px">
+    @foreach($mangrove['site_data_needed'] as $item)<li>{{ $item }}</li>@endforeach
+  </ul>
+</div>
 {{-- Environmental Restrictions --}}
 <div class="section">
   <div class="section-title">Environmental Restrictions</div>
@@ -169,7 +182,7 @@
 
 {{-- Footer --}}
 <div class="footer">
-  <div>TerraSpec DSS · Panabo City CLUP 2020–2029 · Data Source: DENR-MGB XI, BSWM 2019</div>
+  <div>TerraSpec DSS · Panabo City CLUP 2020–2029 · Sources: CLUP 2020–2029, Pototan et al. 2017</div>
   <div>This document is for planning purposes only. Verify with CPDO before implementation.</div>
 </div>
 

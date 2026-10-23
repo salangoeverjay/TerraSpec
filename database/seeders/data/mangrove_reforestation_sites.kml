@@ -1,0 +1,981 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Mangrove Reforestation and Rehabilitation.kml</name>
+	<atom:link rel="app" href="https://www.google.com/earth/about/versions/#earth-pro" title="Google Earth Pro 7.3.7.1327"></atom:link>
+	<Style id="inline1">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline0">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline1</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline0</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline00">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline01">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline10">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline110">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline12">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline5</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline110</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline13">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline130">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline140">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline8</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="inline15">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline00</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline200</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="inline160">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline20</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline19</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="inline170">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline10</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline13</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline18">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline19">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline2">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline20">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline200">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline30">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline60</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline4</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="inline31">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline7</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline01</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline4">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline5">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline50">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline6">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline60">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="inline7">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline70">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline50</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline18</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline8">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>2</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="inline9">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline130</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline6</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="m_ylw-pushpin">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="m_ylw-pushpin0">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl0</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin2">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="s_ylw-pushpin">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Style id="s_ylw-pushpin0">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl0">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin2">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ffffffaa</color>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ffffffaa</color>
+		</PolyStyle>
+	</Style>
+	<Folder>
+		<name>Mangrove Reforestation and Rehabilitation</name>
+		<open>1</open>
+		<Folder>
+			<name>DICT Adopted Site</name>
+			<Placemark>
+				<name>DICT_Adopted Site</name>
+				<styleUrl>#inline15</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.7004382661093,7.293185273287196,0 125.6989849796598,7.293431855809132,0 125.6992733002562,7.292336904059436,0 125.7006363094398,7.292338800035814,0 125.7004382661093,7.293185273287196,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+			<Placemark>
+				<name>DICT_P1</name>
+				<LookAt>
+					<longitude>125.7052473745276</longitude>
+					<latitude>7.287961794179483</latitude>
+					<altitude>0</altitude>
+					<heading>0.7242636839869578</heading>
+					<tilt>13.30221818318643</tilt>
+					<range>2345.800392625988</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.7004388888889,7.293186111111111,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>DICT_P2</name>
+				<LookAt>
+					<longitude>125.7052473745276</longitude>
+					<latitude>7.287961794179483</latitude>
+					<altitude>0</altitude>
+					<heading>0.7242636839869578</heading>
+					<tilt>13.30221818318643</tilt>
+					<range>2345.800392625988</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6989833333333,7.293430555555556,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>DICT_P3</name>
+				<LookAt>
+					<longitude>125.7009887927736</longitude>
+					<latitude>7.291575724375861</latitude>
+					<altitude>0</altitude>
+					<heading>0.7240423300846713</heading>
+					<tilt>15.62434711827701</tilt>
+					<range>796.5325740490512</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6992722222222,7.292336111111112,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>DICT_P4</name>
+				<LookAt>
+					<longitude>125.7014953232392</longitude>
+					<latitude>7.292104598914971</latitude>
+					<altitude>0</altitude>
+					<heading>2.59304165111157e-05</heading>
+					<tilt>3.564136053480662</tilt>
+					<range>794.5180002623737</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.7006361111111,7.292336111111112,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>HCBI_Adopted Site</name>
+			<Placemark>
+				<name>HCBI_Adopted Site</name>
+				<styleUrl>#inline30</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.6803006396636,7.259798912708849,0 125.681204851469,7.2597209829892,0 125.6814348925842,7.260515449102128,0 125.6805091913728,7.260632929039892,0 125.6803006396636,7.259798912708849,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+			<Placemark>
+				<name>HCBI_P1</name>
+				<Camera>
+					<longitude>125.6841520758128</longitude>
+					<latitude>7.25864930796657</latitude>
+					<altitude>1534.183856472774</altitude>
+					<heading>11.57710234304377</heading>
+					<tilt>0.02056485299900829</tilt>
+					<roll>11.48966353806287</roll>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</Camera>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6803,7.259799999999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>HCBI_P2</name>
+				<Camera>
+					<longitude>125.6841520758128</longitude>
+					<latitude>7.25864930796657</latitude>
+					<altitude>1534.183856472774</altitude>
+					<heading>11.57710234304377</heading>
+					<tilt>0.02056485299900829</tilt>
+					<roll>11.48966353806287</roll>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</Camera>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.680508,7.260633,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>HCBI_P3</name>
+				<Camera>
+					<longitude>125.6841520758128</longitude>
+					<latitude>7.25864930796657</latitude>
+					<altitude>1534.183856472774</altitude>
+					<heading>11.57710234304377</heading>
+					<tilt>0.02056485299900829</tilt>
+					<roll>11.48966353806287</roll>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</Camera>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.681434,7.260515,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>HCBI_P4</name>
+				<Camera>
+					<longitude>125.6841520758128</longitude>
+					<latitude>7.25864930796657</latitude>
+					<altitude>1534.183856472774</altitude>
+					<heading>11.57710234304377</heading>
+					<tilt>0.02056485299900829</tilt>
+					<roll>11.48966353806287</roll>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</Camera>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.681203,7.259718000000001,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>MCPI_Adopted Site</name>
+			<Placemark>
+				<name>MCPI_Adopted Site</name>
+				<styleUrl>#inline70</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.6809773672098,7.258853128477621,0 125.681201840503,7.259721764694445,0 125.6802998422193,7.259795981918456,0 125.6800607927377,7.258942504448005,0 125.6809773672098,7.258853128477621,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+			<Placemark>
+				<name>MCPI_P1</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6807660123587</longitude>
+					<latitude>7.260127412305447</latitude>
+					<altitude>0</altitude>
+					<heading>1.454390535969754e-05</heading>
+					<tilt>0</tilt>
+					<range>348.9006411552543</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.680061,7.258942,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>MCPI_P2</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6808686150962</longitude>
+					<latitude>7.259398386128034</latitude>
+					<altitude>0</altitude>
+					<heading>2.751273873355819e-05</heading>
+					<tilt>0</tilt>
+					<range>348.9006323486079</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6803,7.259799999999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>MCPI_P3</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6808686150962</longitude>
+					<latitude>7.259398386128034</latitude>
+					<altitude>0</altitude>
+					<heading>2.751273873355819e-05</heading>
+					<tilt>0</tilt>
+					<range>348.9006323486079</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.681203,7.259718000000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>MCPI_P4</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6808686150962</longitude>
+					<latitude>7.259398386128034</latitude>
+					<altitude>0</altitude>
+					<heading>2.751273873355819e-05</heading>
+					<tilt>0</tilt>
+					<range>348.9006323486079</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.680978,7.258854000000001,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>PMPC Adopted Site</name>
+			<Placemark>
+				<name>PMPC_Adopted Site</name>
+				<styleUrl>#inline140</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.6805106522623,7.260634167052533,0 125.6814353590003,7.260515721287527,0 125.6815662577318,7.261390483905826,0 125.6807461666896,7.261571705471376,0 125.6805106522623,7.260634167052533,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+			<Placemark>
+				<name>PMPC_P1</name>
+				<LookAt>
+					<longitude>125.681213787126</longitude>
+					<latitude>7.260556556987065</latitude>
+					<altitude>0</altitude>
+					<heading>0.6983480978145041</heading>
+					<tilt>30.00203570129252</tilt>
+					<range>453.2949332232468</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.680508,7.260633,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>PMPC_P2</name>
+				<LookAt>
+					<longitude>125.681199788498</longitude>
+					<latitude>7.260742068870484</latitude>
+					<altitude>0</altitude>
+					<heading>0.6983463262856174</heading>
+					<tilt>30.0020357028327</tilt>
+					<range>453.295016206655</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.681434,7.260515,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>PMPC_P3</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6808491457771</longitude>
+					<latitude>7.2612810440433</latitude>
+					<altitude>0</altitude>
+					<heading>5.190188156946241e-11</heading>
+					<tilt>0</tilt>
+					<range>316.3116703924076</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6815662576291,7.261388338012949,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark>
+				<name>PMPC_P4</name>
+				<LookAt>
+					<gx:TimeStamp><when>2024-06-06</when>
+</gx:TimeStamp>
+					<gx:ViewerOptions>
+						<gx:option name="historicalimagery"></gx:option>
+						<gx:option enabled="0" name="sunlight"></gx:option>
+						<gx:option enabled="0" name="streetview"></gx:option>
+					</gx:ViewerOptions>
+					<longitude>125.6808011496828</longitude>
+					<latitude>7.26144151863932</latitude>
+					<altitude>0</altitude>
+					<heading>-2.269805746309324e-06</heading>
+					<tilt>28.34317221599149</tilt>
+					<range>133.172678869136</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#m_ylw-pushpin</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>125.6807461714674,7.261569979711946,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Document>
+			<name>Mangrove Rehabilitation 2021.kmz</name>
+			<StyleMap id="msn_ylw-pushpin1">
+				<Pair>
+					<key>normal</key>
+					<styleUrl>#sn_ylw-pushpin5</styleUrl>
+				</Pair>
+				<Pair>
+					<key>highlight</key>
+					<styleUrl>#sh_ylw-pushpin4</styleUrl>
+				</Pair>
+			</StyleMap>
+			<Style id="sh_ylw-pushpin4">
+				<IconStyle>
+					<scale>1.3</scale>
+					<Icon>
+						<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+					</Icon>
+					<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+				</IconStyle>
+				<LineStyle>
+					<color>ff000000</color>
+				</LineStyle>
+				<PolyStyle>
+					<color>ff7fffaa</color>
+				</PolyStyle>
+			</Style>
+			<Style id="sn_ylw-pushpin5">
+				<IconStyle>
+					<scale>1.1</scale>
+					<Icon>
+						<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+					</Icon>
+					<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+				</IconStyle>
+				<LineStyle>
+					<color>ff000000</color>
+				</LineStyle>
+				<PolyStyle>
+					<color>ff7fffaa</color>
+				</PolyStyle>
+			</Style>
+			<Placemark>
+				<name>Mangrove Rehabilitation 2021</name>
+				<styleUrl>#msn_ylw-pushpin1</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.6779151585526,7.255946002390092,0 125.6791033825317,7.255412595363422,0 125.6795592189458,7.2559573867473,0 125.6793005076184,7.256092057060665,0 125.6792405515151,7.256367918148896,0 125.6787228767279,7.256906355237205,0 125.6779151585526,7.255946002390092,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+		</Document>
+		<Placemark>
+			<name>Mangrove Rehabilitation 2022 P1</name>
+			<styleUrl>#msn_ylw-pushpin2</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.6789588430267,7.25783322781392,0 125.6796937959087,7.259064935457103,0 125.6799073752058,7.259966314273233,0 125.6795315515306,7.259619105969809,0 125.6790702443435,7.25886525103956,0 125.6789268961987,7.257960426011132,0 125.6789588430267,7.25783322781392,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mangrove Rehabilitation 2022 P2</name>
+			<styleUrl>#inline170</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.6801244586846,7.256972718481991,0 125.680652057304,7.257779935351061,0 125.6799482779333,7.258115632270037,0 125.6801244586846,7.256972718481991,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Mangrove Rehabilitation 2023</name>
+			<styleUrl>#inline12</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.6799484726503,7.258115353390169,0 125.6806502946249,7.257781335758192,0 125.6809777817039,7.258851037906019,0 125.6800592675359,7.25894262053066,0 125.6799484726503,7.258115353390169,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Proposed MOA 1</name>
+			<styleUrl>#inline9</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.680648836994,7.257778359490827,0 125.6808860174872,7.257668618963599,0 125.6821021382391,7.258763781687835,0 125.6809774283839,7.258850415069527,0 125.680648836994,7.257778359490827,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Proposed MOA 2</name>
+			<styleUrl>#inline160</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.6809786043464,7.258850217171238,0 125.6821016814973,7.258762314792827,0 125.6821072157687,7.259532747540357,0 125.6812028728874,7.25972655317184,0 125.6809786043464,7.258850217171238,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Proposed MOA 3</name>
+			<styleUrl>#inline31</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.6812019437502,7.259725217705636,0 125.6821078178209,7.259534873140264,0 125.6819891175457,7.260398725537092,0 125.681433786448,7.26051557370004,0 125.6812019437502,7.259725217705636,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Placemark>
+			<name>Proposal MOA 3</name>
+			<styleUrl>#inline</styleUrl>
+			<Polygon>
+				<tessellate>1</tessellate>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+							125.682857873591,7.272557662323941,0 125.6836423245651,7.272259747534274,0 125.6838758997534,7.272651452637714,0 125.6828799912509,7.273148038217766,0 125.682857873591,7.272557662323941,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+		<Document>
+			<name>Mangrove Rehabilitation 2020.kmz</name>
+			<StyleMap id="msn_ylw-pushpin3">
+				<Pair>
+					<key>normal</key>
+					<styleUrl>#sn_ylw-pushpin00</styleUrl>
+				</Pair>
+				<Pair>
+					<key>highlight</key>
+					<styleUrl>#sh_ylw-pushpin1</styleUrl>
+				</Pair>
+			</StyleMap>
+			<Style id="sh_ylw-pushpin1">
+				<IconStyle>
+					<scale>1.3</scale>
+					<Icon>
+						<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+					</Icon>
+					<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+				</IconStyle>
+				<LineStyle>
+					<color>ff000000</color>
+				</LineStyle>
+				<PolyStyle>
+					<color>ff00ffaa</color>
+				</PolyStyle>
+			</Style>
+			<Style id="sn_ylw-pushpin00">
+				<IconStyle>
+					<scale>1.1</scale>
+					<Icon>
+						<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+					</Icon>
+					<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+				</IconStyle>
+				<LineStyle>
+					<color>ff000000</color>
+				</LineStyle>
+				<PolyStyle>
+					<color>ff00ffaa</color>
+				</PolyStyle>
+			</Style>
+			<Placemark>
+				<name>Mangrove Rehabilitation 2020</name>
+				<styleUrl>#msn_ylw-pushpin3</styleUrl>
+				<Polygon>
+					<tessellate>1</tessellate>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>
+								125.679243206314,7.25636691962871,0 125.6794225713123,7.256691916762868,0 125.6791225941632,7.256989757422956,0 125.6790855227666,7.257395698226282,0 125.6789243032451,7.257959998747503,0 125.6790667632992,7.25886616468626,0 125.6789610849359,7.258928504866564,0 125.678619431437,7.258409042500191,0 125.6784283137112,7.257569815051676,0 125.6787235058201,7.256907797087276,0 125.679243206314,7.25636691962871,0 
+							</coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</Placemark>
+		</Document>
+	</Folder>
+</Document>
+</kml>

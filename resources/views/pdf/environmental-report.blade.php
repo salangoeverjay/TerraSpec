@@ -79,32 +79,29 @@
 {{-- STAT SUMMARY --}}
 <div class="stat-row">
   <div class="stat-box flood">
-    <div class="stat-label">High Flood Risk Zones</div>
+    <div class="stat-label">High Flood Susceptibility</div>
     <div class="stat-value">{{ $flood_risk_count }}</div>
-    <div class="stat-sub">Zones with high flood susceptibility (CLUP Table PF-19)</div>
+    <div class="stat-sub">Barangays with High flood area (CLUP Table PF-19)</div>
   </div>
   <div class="stat-box restrict">
-    <div class="stat-label">Restricted Zones</div>
-    <div class="stat-value">{{ $restricted_count }}</div>
-    <div class="stat-sub">Zones under active environmental restriction</div>
+    <div class="stat-label">Landslide / Liquefaction</div>
+    <div class="stat-value">{{ $landslide_count }} / {{ $liquefaction_count }}</div>
+    <div class="stat-sub">Barangays with landslide area (MGB 2020) / highly susceptible liquefaction (PF-26)</div>
   </div>
   <div class="stat-box protect">
-    <div class="stat-label">Protected Zones</div>
+    <div class="stat-label">Protected Barangays</div>
     <div class="stat-value">{{ $protected_count }}</div>
-    <div class="stat-sub">Mangrove + Watershed protected areas</div>
+    <div class="stat-sub">Mangrove, forest reserve or mangrove site restriction</div>
   </div>
 </div>
 
 {{-- ENVIRONMENTAL RESTRICTIONS --}}
 <div class="section">
-  <div class="section-title">Environmental Restrictions ({{ count($restrictions) }} Active)</div>
+  <div class="section-title">Environmental Restrictions ({{ $restricted_count }} barangays restricted)</div>
   @foreach($restrictions as $r)
   <div class="restriction-box">
     <div>
-      <span class="restriction-type
-        {{ $r['restriction_type'] === 'Mangrove' ? 'type-mangrove' : ($r['restriction_type'] === 'Watershed' ? 'type-watershed' : ($r['restriction_type'] === 'SAFDZ' ? 'type-safdz' : 'type-other')) }}">
-        {{ $r['restriction_type'] }}
-      </span>
+      <span class="restriction-type {{ $r['level'] === 'protected' ? 'type-mangrove' : 'type-safdz' }}">{{ ucfirst($r['level']) }} · {{ $r['restriction_type'] }}</span>
     </div>
     <div class="restriction-name">{{ $r['restriction_name'] }}</div>
     <div class="restriction-desc">{{ $r['description'] }}</div>
@@ -115,20 +112,15 @@
     </div>
   </div>
   @endforeach
+  <div style="font-size:9.5px;color:#6b7280">Source: {{ $sources['restrictions'] }}.</div>
 </div>
 
-{{-- FLOOD RISK ZONES --}}
+{{-- HIGH FLOOD --}}
 <div class="section">
-  <div class="section-title">Flood Risk Zones — High Susceptibility Area ({{ count($flood_zones) }} Zones)</div>
+  <div class="section-title">High Flood Susceptibility ({{ count($flood_zones) }} Barangays)</div>
   <table class="data-table">
     <thead>
-      <tr>
-        <th>#</th>
-        <th>Barangay</th>
-        <th>Type</th>
-        <th>High Flood Area (ha)</th>
-        <th>Risk Level</th>
-      </tr>
+      <tr><th>#</th><th>Barangay</th><th>Type</th><th>High Flood Area</th><th>Share of Barangay (PF-19)</th></tr>
     </thead>
     <tbody>
       @foreach($flood_zones as $i => $z)
@@ -137,47 +129,50 @@
         <td style="font-weight:600">{{ $z['unit_name'] }}</td>
         <td><span class="badge {{ $z['unit_type'] === 'Urban' ? 'badge-urban' : 'badge-rural' }}">{{ $z['unit_type'] }}</span></td>
         <td style="font-weight:600;font-family:monospace">{{ number_format($z['flood_high_ha'], 2) }} ha</td>
-        <td><span class="badge {{ $z['risk_level'] === 'Critical' ? 'badge-critical' : 'badge-elevated' }}">{{ $z['risk_level'] }}</span></td>
+        <td style="font-family:monospace">{{ number_format($z['flood_high_share'] * 100, 1) }}%</td>
       </tr>
       @endforeach
     </tbody>
   </table>
 </div>
 
-{{-- HAZARD FLAGS TABLE --}}
+{{-- HAZARDS BY BARANGAY --}}
 <div class="section">
-  <div class="section-title">Restricted Zones — Active Hazard Flags ({{ count($hazard_zones) }} Zones)</div>
+  <div class="section-title">Hazards by Barangay (hectares)</div>
   <table class="data-table">
     <thead>
-      <tr>
-        <th>Barangay</th>
-        <th>Type</th>
-        <th style="text-align:center">Flood</th>
-        <th style="text-align:center">Landslide</th>
-        <th style="text-align:center">Storm Surge</th>
-        <th style="text-align:center">Drought</th>
-        <th style="text-align:center">Sea Level Rise</th>
-      </tr>
+      <tr><th>Barangay</th><th style="text-align:right">Flood (High)</th><th style="text-align:right">Flood (any)</th><th style="text-align:right">Landslide High / Moderate</th><th style="text-align:right">Liquefaction HSA</th></tr>
     </thead>
     <tbody>
-      @foreach($hazard_zones as $z)
+      @foreach($hazards as $z)
       <tr>
         <td style="font-weight:600">{{ $z['unit_name'] }}</td>
-        <td><span class="badge {{ $z['unit_type'] === 'Urban' ? 'badge-urban' : 'badge-rural' }}">{{ $z['unit_type'] }}</span></td>
-        <td style="text-align:center"><span class="{{ $z['has_flood'] ? 'flag-yes' : 'flag-no' }}">{{ $z['has_flood'] ? 'YES' : '—' }}</span></td>
-        <td style="text-align:center"><span class="{{ $z['has_landslide'] ? 'flag-yes' : 'flag-no' }}">{{ $z['has_landslide'] ? 'YES' : '—' }}</span></td>
-        <td style="text-align:center"><span class="{{ $z['has_storm_surge'] ? 'flag-yes' : 'flag-no' }}">{{ $z['has_storm_surge'] ? 'YES' : '—' }}</span></td>
-        <td style="text-align:center"><span class="{{ $z['has_drought'] ? 'flag-yes' : 'flag-no' }}">{{ $z['has_drought'] ? 'YES' : '—' }}</span></td>
-        <td style="text-align:center"><span class="{{ $z['has_sea_level_rise'] ? 'flag-yes' : 'flag-no' }}">{{ $z['has_sea_level_rise'] ? 'YES' : '—' }}</span></td>
+        <td style="text-align:right;font-family:monospace">{{ $z['flood_high_ha'] > 0 ? number_format($z['flood_high_ha'], 1) : '—' }}</td>
+        <td style="text-align:right;font-family:monospace">{{ $z['flood_any_ha'] > 0 ? number_format($z['flood_any_ha'], 1) : '—' }}</td>
+        <td style="text-align:right;font-family:monospace">{{ $z['landslide_high_ha'] + $z['landslide_moderate_ha'] > 0 ? number_format($z['landslide_high_ha'], 1).' / '.number_format($z['landslide_moderate_ha'], 1) : '—' }}</td>
+        <td style="text-align:right;font-family:monospace">{{ $z['liquefaction_hsa_ha'] > 0 ? number_format($z['liquefaction_hsa_ha'], 1) : '—' }}</td>
       </tr>
       @endforeach
     </tbody>
   </table>
+  <div style="font-size:9.5px;color:#6b7280;margin-top:6px">Flood: {{ $sources['flood'] }}. Landslide: {{ $sources['landslide'] }}. Liquefaction: {{ $sources['liquefaction'] }}. {{ $not_loaded }}</div>
 </div>
 
+{{-- SUB-WATERSHEDS --}}
+<div class="section">
+  <div class="section-title">Sub-Watersheds (CLUP Tables PF-4 and PF-5)</div>
+  @foreach($watersheds as $w)
+  <div class="restriction-box">
+    <div class="restriction-name">{{ $w['name'] }} · {{ number_format($w['area_ha'], 2) }} ha ({{ $w['share_pct'] }}%)</div>
+    <div class="zone-chips">
+      @foreach($w['barangays'] as $b)<span class="zone-chip">{{ $b }}</span>@endforeach
+    </div>
+  </div>
+  @endforeach
+</div>
 {{-- FOOTER --}}
 <div class="footer">
-  <div>TerraSpec DSS · Panabo City CLUP 2020–2029 · Data: PHIVOLCS, PAGASA, DENR-MGB XI, PSA 2020</div>
+  <div>TerraSpec DSS · Panabo City CLUP 2020–2029 · Data: CLUP 2020–2029 (PF-4, PF-5, PF-19, PF-26), MGB 2020 maps, Integrated Zoning Map, PSA 2023 boundaries</div>
   <div>{{ $report_id }} · {{ $generated_at }}</div>
 </div>
 

@@ -1,0 +1,205 @@
+{
+ "source": "MGB 2020 landslide susceptibility map (landslide_hazard_2020.geojson) within PSA 2023 barangay boundaries; areas in EPSG:32651",
+ "barangays": {
+  "aofloirendo": {
+   "name": "A. O. Floirendo",
+   "landslide_high_ha": 1.29,
+   "landslide_moderate_ha": 63.52
+  },
+  "datuabduldadia": {
+   "name": "Datu Abdul Dadia",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 14.17
+  },
+  "buenavista": {
+   "name": "Buenavista",
+   "landslide_high_ha": 279.52,
+   "landslide_moderate_ha": 398.92
+  },
+  "cacao": {
+   "name": "Cacao",
+   "landslide_high_ha": 98.08,
+   "landslide_moderate_ha": 394.21
+  },
+  "cagangohan": {
+   "name": "Cagangohan",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "consolacion": {
+   "name": "Consolacion",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 132.79
+  },
+  "dapco": {
+   "name": "Dapco",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "gredu": {
+   "name": "Gredu",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "jplaurel": {
+   "name": "J.P. Laurel",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "kasilak": {
+   "name": "Kasilak",
+   "landslide_high_ha": 4.31,
+   "landslide_moderate_ha": 22.88
+  },
+  "katipunan": {
+   "name": "Katipunan",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 73.8
+  },
+  "katualan": {
+   "name": "Katualan",
+   "landslide_high_ha": 36.61,
+   "landslide_moderate_ha": 248.56
+  },
+  "kauswagan": {
+   "name": "Kauswagan",
+   "landslide_high_ha": 11.06,
+   "landslide_moderate_ha": 121.07
+  },
+  "kiotoy": {
+   "name": "Kiotoy",
+   "landslide_high_ha": 153.56,
+   "landslide_moderate_ha": 267.04
+  },
+  "littlepanay": {
+   "name": "Little Panay",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "lowerpanaga": {
+   "name": "Lower Panaga",
+   "landslide_high_ha": 502.1,
+   "landslide_moderate_ha": 71.87
+  },
+  "mabunao": {
+   "name": "Mabunao",
+   "landslide_high_ha": 590.47,
+   "landslide_moderate_ha": 304.44
+  },
+  "maduao": {
+   "name": "Maduao",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "malativas": {
+   "name": "Malativas",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 208.57
+  },
+  "manay": {
+   "name": "Manay",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 74.44
+  },
+  "nanyo": {
+   "name": "Nanyo",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 53.54
+  },
+  "newmalaga": {
+   "name": "New Malaga",
+   "landslide_high_ha": 94.76,
+   "landslide_moderate_ha": 288.73
+  },
+  "newmalitbog": {
+   "name": "New Malitbog",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 323.63
+  },
+  "newpandan": {
+   "name": "New Pandan",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "newvisayas": {
+   "name": "New Visayas",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "quezon": {
+   "name": "Quezon",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "salvacion": {
+   "name": "Salvacion",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "sanfrancisco": {
+   "name": "San Francisco",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "sannicolas": {
+   "name": "San Nicolas",
+   "landslide_high_ha": 3.86,
+   "landslide_moderate_ha": 220.76
+  },
+  "sanroque": {
+   "name": "San Roque",
+   "landslide_high_ha": 282.09,
+   "landslide_moderate_ha": 177.36
+  },
+  "sanvicente": {
+   "name": "San Vicente",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "santacruz": {
+   "name": "Santa Cruz",
+   "landslide_high_ha": 362.45,
+   "landslide_moderate_ha": 329.3
+  },
+  "santonino": {
+   "name": "Santo Niño",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "sindaton": {
+   "name": "Sindaton",
+   "landslide_high_ha": 126.31,
+   "landslide_moderate_ha": 352.57
+  },
+  "southerndavao": {
+   "name": "Southern Davao",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  },
+  "tagpore": {
+   "name": "Tagpore",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 27.8
+  },
+  "tibungol": {
+   "name": "Tibungol",
+   "landslide_high_ha": 105.74,
+   "landslide_moderate_ha": 620.3
+  },
+  "upperlicanan": {
+   "name": "Upper Licanan",
+   "landslide_high_ha": 149.78,
+   "landslide_moderate_ha": 248.6
+  },
+  "waterfall": {
+   "name": "Waterfall",
+   "landslide_high_ha": 12.2,
+   "landslide_moderate_ha": 279.26
+  },
+  "sanpedro": {
+   "name": "San Pedro",
+   "landslide_high_ha": 0,
+   "landslide_moderate_ha": 0
+  }
+ }
+}

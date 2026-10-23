@@ -42,4 +42,28 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * CPDO administrator (manages data, weights and user accounts).
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'admin']);
+    }
+
+    /**
+     * City planner (manages data and weights, not user accounts).
+     */
+    public function planner(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'planner']);
+    }
+
+    /**
+     * Account still on a temporary password.
+     */
+    public function mustChangePassword(): static
+    {
+        return $this->state(fn (array $attributes) => ['must_change_password' => true]);
+    }
 }

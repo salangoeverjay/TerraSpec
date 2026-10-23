@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Btn, Card, CardHeader, CardBody, Badge, ScoreRing } from './components.jsx';
+import { MethodComparison } from './method-comparison.jsx';
+import { SensitivityAnalysis } from './sensitivity-analysis.jsx';
+import { ScoreBreakdown } from './score-breakdown.jsx';
 
-const ANALYSIS_TYPES = ['commercial', 'residential', 'industrial', 'reforestation'];
+const ANALYSIS_TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
 const TYPE_LABELS = {
   commercial:    'Commercial',
@@ -221,6 +224,7 @@ export function SuitabilityScreen() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [checkedIds, setCheckedIds]     = useState(new Set());
+  const [studyArea, setStudyArea]       = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -231,6 +235,7 @@ export function SuitabilityScreen() {
       .then(json => {
         setRankings(json.data ?? []);
         setAvgScore(json.avg_score ?? 0);
+        setStudyArea(json.study_area ?? null);
       })
       .catch(() => setError('Could not load rankings.'))
       .finally(() => setLoading(false));
@@ -256,7 +261,17 @@ export function SuitabilityScreen() {
       : `${checkedCount} of ${rankings.length} zones selected · avg ${displayPct}%`;
   const avgPct         = displayPct;
 
+  // Barangay whose score breakdown is shown in the weights card (last one checked)
+  const [focusId, setFocusId] = useState(null);
+  useEffect(() => {
+    if (focusId !== null && !checkedIds.has(focusId)) {
+      setFocusId(checkedIds.size > 0 ? [...checkedIds][checkedIds.size - 1] : null);
+    }
+  }, [checkedIds, focusId]);
+  const focusRow = rankings.find(r => r.zone_unit_id === focusId) ?? null;
+
   function toggleCheck(id) {
+    if (!checkedIds.has(id)) setFocusId(id);
     setCheckedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -366,7 +381,7 @@ export function SuitabilityScreen() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Suitability Analysis</h1>
-          <p className="page-subtitle">AHP-WLC land suitability scoring · 40 zone units · Panabo City</p>
+          <p className="page-subtitle">AHP-WLC land suitability scoring, compared with AHP-TOPSIS, EWM-WLC and EWM-TOPSIS · {studyArea ? `${studyArea.barangays.length} barangays (reforestation study area)` : '40 zone units'} · Panabo City</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <Btn variant="outline" icon="download" onClick={exportPDF} disabled={loading || rankings.length === 0}>
@@ -397,6 +412,12 @@ export function SuitabilityScreen() {
           </button>
         ))}
       </div>
+
+      {studyArea && (
+        <div style={{ marginBottom: 20, padding: '10px 14px', borderRadius: 10, border: '1px solid hsl(var(--brand) / 0.35)', background: 'hsl(var(--brand) / 0.06)', fontSize: 12.5, lineHeight: 1.5 }}>
+          <strong>{studyArea.note}</strong>{rankings.length > 0 && rankings.every(r => r.total_pct === 0) && " Their land is mostly mangrove or built-up zones, so the terrestrial AHP-WLC model excludes them."} See the Reforestation page for the mangrove sites and their validation.
+        </div>
+      )}
 
       <div className="grid grid-3" style={{ marginBottom: 20 }}>
         {/* Score ring — average for selected type */}
@@ -430,14 +451,50 @@ export function SuitabilityScreen() {
         <Card style={{ gridColumn: '2 / 4' }}>
           <CardHeader>
             <div className="row-between">
-              <span className="card-title">AHP Criteria Weights · {TYPE_LABELS[analysisType]}</span>
-              <Badge variant="brand">7 criteria</Badge>
+              <span className="card-title">
+                {focusRow
+                  ? `Score Breakdown · ${focusRow.unit_name} · ${TYPE_LABELS[analysisType]}`
+                  : `AHP Criteria Weights · ${TYPE_LABELS[analysisType]}`}
+              </span>
+              {focusRow
+                ? <button
+                    onClick={() => setFocusId(null)}
+                    style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', background: 'none', border: '1px solid hsl(var(--border))', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                  >
+                    Show weights only
+                  </button>
+                : <Badge variant="brand">7 criteria</Badge>}
             </div>
+            {checkedRows.length > 1 && (
+              <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {checkedRows.map(r => (
+                  <button
+                    key={r.zone_unit_id}
+                    className="chip"
+                    onClick={() => setFocusId(r.zone_unit_id)}
+                    style={{
+                      fontSize: 11, cursor: 'pointer', border: '1px solid hsl(var(--border))',
+                      background: r.zone_unit_id === focusId ? 'hsl(var(--brand))' : 'hsl(var(--background))',
+                      color: r.zone_unit_id === focusId ? 'white' : 'hsl(var(--foreground))',
+                    }}
+                  >
+                    {r.unit_name}
+                  </button>
+                ))}
+              </div>
+            )}
           </CardHeader>
           <CardBody>
-            {loading || !appliedWeights
-              ? <div className="muted" style={{ fontSize: 12.5 }}>Loading weights…</div>
-              : <CriteriaWeights weights={appliedWeights}/>
+            {focusRow
+              ? <ScoreBreakdown zoneUnitId={focusRow.zone_unit_id} analysisType={analysisType}/>
+              : loading || !appliedWeights
+                ? <div className="muted" style={{ fontSize: 12.5 }}>Loading weights…</div>
+                : <>
+                    <CriteriaWeights weights={appliedWeights}/>
+                    <div className="muted" style={{ fontSize: 11.5, marginTop: 10 }}>
+                      These weights apply to every barangay for this land use. Check a barangay in the ranking table to see how its score is built.
+                    </div>
+                  </>
             }
           </CardBody>
         </Card>
@@ -540,6 +597,10 @@ export function SuitabilityScreen() {
           )}
         </div>
       </Card>
+
+      <MethodComparison analysisType={analysisType} typeLabel={TYPE_LABELS[analysisType]}/>
+
+      <SensitivityAnalysis analysisType={analysisType} typeLabel={TYPE_LABELS[analysisType]}/>
     </div>
   );
 }
