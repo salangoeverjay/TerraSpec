@@ -141,6 +141,36 @@ class GeminiChatService
     }
 
     /**
+     * Ask Gemini for JSON that follows the given response schema (Gemini structured output).
+     * Uses the same model fallback chain as the chat; throws when no model can answer.
+     *
+     * @param  array<string, mixed>  $schema  OpenAPI-style schema (type OBJECT, properties, enum, required)
+     * @return array{data: array<string, mixed>, model: string, fallback_used: bool}
+     */
+    public function generateStructured(string $system, string $user, array $schema): array
+    {
+        $result = $this->generate($system, $user, [
+            'temperature' => 0,
+            'maxOutputTokens' => 2048,
+            'responseMimeType' => 'application/json',
+            'responseSchema' => $schema,
+        ]);
+
+        $data = json_decode($this->stripJsonFence($result['text']), true);
+
+        if (! is_array($data)) {
+            throw new RuntimeException('The AI did not return valid JSON.');
+        }
+
+        return ['data' => $data, 'model' => $result['model'], 'fallback_used' => $result['fallback_used']];
+    }
+
+    private function stripJsonFence(string $text): string
+    {
+        return trim(preg_replace('/^```(?:json)?\s*|\s*```$/', '', trim($text)));
+    }
+
+    /**
      * Main model first, then the configured fallbacks. A model that is out of quota, overloaded or
      * withdrawn is skipped (and remembered for a while, so later requests skip it at once).
      *

@@ -10,6 +10,7 @@ import {
 } from './map-layers.jsx';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
 import { ZoningQueryPanel, ZONING_QUERY_PRESETS, EMPTY_QUERY, runZoningQuery, barangayBounds } from './zoning-query.jsx';
+import { AskTheMap } from './ask-the-map.jsx';
 
 function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) {
   const [open, setOpen] = useState(false);
@@ -477,6 +478,36 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
     runQuery(filters);
   }
 
+  // Apply map filters extracted by the AI from a plain-language question (validated on the server)
+  function applyAskResult(result) {
+    if (result.view === 'suitability') {
+      setQueryResult(null);
+      chooseView('suitability');
+      if (result.land_use) setSuitUse(result.land_use);
+      return;
+    }
+    if (result.view === 'reforestation') {
+      setQueryResult(null);
+      chooseView('reforestation');
+      return;
+    }
+    if (result.action === 'query') {
+      const filters = {
+        ...EMPTY_QUERY,
+        zones: result.filters.zones,
+        barangays: result.filters.barangays.map(b => b.id),
+        hazard: result.filters.hazard,
+        minArea: result.filters.min_area_ha ?? '',
+      };
+      setQueryOpen(true);
+      setQueryFilters(filters);
+      runQuery(filters);
+      return;
+    }
+    setQueryResult(null);
+    chooseView(result.view);
+  }
+
   function clearQuery() {
     setQueryFilters(EMPTY_QUERY);
     setQueryResult(null);
@@ -659,10 +690,15 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
         </Map>
       </div>
 
+      {/* Ask the map: plain-language question -> AI-extracted map filters */}
+      <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 31, width: queryOpen ? 'min(440px, calc(100% - 780px))' : 'min(560px, calc(100% - 520px))', minWidth: 300, transition: 'width .2s', display: 'flex', justifyContent: 'center' }}>
+        <AskTheMap onResult={applyAskResult}/>
+      </div>
+
       {/* AI Recommendations banner */}
       {highlightZones.length > 0 && (
         <div style={{
-          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', top: 104, left: '50%', transform: 'translateX(-50%)',
           zIndex: 30, display: 'flex', alignItems: 'center', gap: 8,
           background: 'hsl(var(--card))', border: '1px solid hsl(var(--brand) / 0.4)',
           borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
