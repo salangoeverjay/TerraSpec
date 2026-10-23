@@ -20,6 +20,8 @@ class ZoneHazardData extends Model
         'storm_surge_high_ha',
         'storm_surge_moderate_ha',
         'storm_surge_low_ha',
+        'landslide_high_ha',
+        'landslide_moderate_ha',
         'has_flood',
         'has_landslide',
         'has_storm_surge',

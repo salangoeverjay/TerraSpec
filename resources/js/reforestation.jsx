@@ -3,7 +3,8 @@ import { Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { MangroveSitesPanel, MangroveRecommendations } from './mangrove-sites.jsx';
 
 function restrictionVariant(type) {
-  if (type === 'Mangrove' || type === 'Watershed') return 'destructive';
+  // Protected restrictions (no development) in red; regulated ones in amber
+  if (['Mangrove', 'Mangrove site', 'Forest'].includes(type)) return 'destructive';
   return 'warn';
 }
 

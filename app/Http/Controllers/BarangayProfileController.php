@@ -112,6 +112,12 @@ class BarangayProfileController extends Controller
                         'Moderate' => $hazard->storm_surge_moderate_ha,
                         'Low' => $hazard->storm_surge_low_ha,
                     ]),
+                    'landslide' => [
+                        'source' => 'MGB 2020 landslide map within the PSA 2023 barangay boundary',
+                        'high_ha' => (float) $hazard->landslide_high_ha,
+                        'moderate_ha' => (float) $hazard->landslide_moderate_ha,
+                    ],
+                    // true / false from verified data; null = no verified source loaded yet
                     'flags' => [
                         'flood' => $hazard->has_flood,
                         'landslide' => $hazard->has_landslide,

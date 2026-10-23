@@ -38,6 +38,18 @@ return [
 
     'min_available_share' => 0.05,
 
+    // Environmental restriction types and how strictly they limit development:
+    // "protected" = no development (counts as protected), "regulated" = development limited by the CLUP.
+    'restriction_types' => [
+        'Mangrove' => 'protected',
+        'Mangrove site' => 'protected',
+        'Forest' => 'protected',
+        'Buffer' => 'regulated',
+        'SAFDZ' => 'regulated',
+        'Ecological' => 'regulated',
+        'Hazard' => 'regulated',
+    ],
+
     'constraints' => [
         'commercial' => $urbanConstraints,
         'residential' => $urbanConstraints,

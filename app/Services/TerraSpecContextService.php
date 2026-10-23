@@ -139,12 +139,13 @@ class TerraSpecContextService
 
     private function buildHazardZones(): string
     {
-        $zones = ZoneUnit::with('hazardData')->get();
+        $zones = ZoneUnit::with('hazardData')->orderBy('unit_name')->get();
 
-        $floodLines = ['--- High Flood Risk Zones ---'];
-        $hazardLines = ['--- Multi-Hazard Zones ---'];
-        $hasFlood = false;
-        $hasHazard = false;
+        $lines = [
+            '=== HAZARD DATA PER BARANGAY (ha) ===',
+            'Flood: CLUP Table PF-19 (DENR-MGB XI 2020) High / Moderate / Low. Landslide: MGB 2020 landslide map within the PSA barangay boundary, High / Moderate. Liquefaction: CLUP Table PF-26 highly susceptible (HSA).',
+            'Storm surge, drought and sea level rise per barangay are not loaded in TerraSpec yet: say so instead of guessing.',
+        ];
 
         foreach ($zones as $z) {
             $h = $z->hazardData;
@@ -152,46 +153,12 @@ class TerraSpecContextService
                 continue;
             }
 
-            if ($h->flood_high_ha > 0) {
-                $hasFlood = true;
-                $ha = number_format((float) $h->flood_high_ha, 1);
-                $risk = $h->flood_high_ha >= 100 ? 'Critical' : 'Elevated';
-                $floodLines[] = "- {$z->unit_name}: {$ha} ha [{$risk}]";
-            }
-
-            $flags = [];
-            if ($h->has_flood) {
-                $flags[] = 'Flood';
-            }
-            if ($h->has_landslide) {
-                $flags[] = 'Landslide';
-            }
-            if ($h->has_storm_surge) {
-                $flags[] = 'Storm Surge';
-            }
-            if ($h->has_drought) {
-                $flags[] = 'Drought';
-            }
-            if ($h->has_sea_level_rise) {
-                $flags[] = 'Sea Level Rise';
-            }
-
-            if (! empty($flags)) {
-                $hasHazard = true;
-                $flagStr = implode(', ', $flags);
-                $hazardLines[] = "- {$z->unit_name}: {$flagStr}";
-            }
+            $f = fn ($v) => number_format((float) $v, 1);
+            $lines[] = "- {$z->unit_name}: flood {$f($h->flood_high_ha)} / {$f($h->flood_moderate_ha)} / {$f($h->flood_low_ha)}; "
+                ."landslide {$f($h->landslide_high_ha)} / {$f($h->landslide_moderate_ha)}; liquefaction HSA {$f($h->liquefaction_hsa_ha)}";
         }
 
-        $sections = ['=== HAZARD DATA ==='];
-        if ($hasFlood) {
-            $sections = array_merge($sections, $floodLines);
-        }
-        if ($hasHazard) {
-            $sections = array_merge($sections, [''], $hazardLines);
-        }
-
-        return implode("\n", $sections);
+        return implode("\n", $lines);
     }
 
     private function buildTreeSpecies(): string

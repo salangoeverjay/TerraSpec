@@ -227,12 +227,19 @@ export function BarangayProfileScreen({ go, barangay }) {
                         <HazardBlock title="Storm surge" data={p.hazards.storm_surge} colors={HAZARD_COLORS.storm_surge}/>
                         <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Hazard flags</div>
                         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-                          {Object.entries(FLAG_LABELS).map(([k, label]) => (
-                            <Badge key={k} variant={p.hazards.flags[k] ? 'destructive' : ''}>
-                              {p.hazards.flags[k] ? '⚠ ' : ''}{label}
-                            </Badge>
-                          ))}
+                          {Object.entries(FLAG_LABELS).map(([k, label]) => {
+                            const flag = p.hazards.flags[k];
+                            if (flag === null || flag === undefined) {
+                              return <span key={k} className="muted" style={{ fontSize: 11.5, border: '1px dashed hsl(var(--border))', borderRadius: 6, padding: '1px 7px' }} title="No verified per-barangay source is loaded yet">{label}: not loaded</span>;
+                            }
+                            return <Badge key={k} variant={flag ? 'destructive' : ''}>{flag ? '⚠ ' : ''}{label}</Badge>;
+                          })}
                         </div>
+                        {p.hazards.landslide && (
+                          <div className="muted" style={{ fontSize: 11.5, marginTop: 8 }}>
+                            Landslide ({p.hazards.landslide.source}): {ha(p.hazards.landslide.high_ha)} high · {ha(p.hazards.landslide.moderate_ha)} moderate
+                          </div>
+                        )}
                         <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
                           Mapped within zoned land (digitized MGB 2020 maps): {ha(p.zoning.mapped_flood_very_high_ha)} very-high flood ·{' '}
                           {ha(p.zoning.mapped_landslide_high_ha)} high landslide.

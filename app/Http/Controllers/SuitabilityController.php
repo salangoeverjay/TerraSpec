@@ -131,7 +131,15 @@ class SuitabilityController extends Controller
     {
         $type = $request->input('analysis_type', 'commercial');
 
+        // Latest stored result per barangay: repeated "Calculate" runs add rows and must not appear twice
+        $latestIds = SuitabilityAnalysis::query()
+            ->where('analysis_type', $type)
+            ->selectRaw('MAX(analysis_id) as analysis_id')
+            ->groupBy('zone_unit_id')
+            ->pluck('analysis_id');
+
         $rows = SuitabilityAnalysis::with('zoneUnit')
+            ->whereIn('analysis_id', $latestIds)
             ->where('analysis_type', $type)
             ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
             ->orderByDesc('total_score')

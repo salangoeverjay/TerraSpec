@@ -144,7 +144,7 @@ export function DashboardScreen({ go }) {
         {[
           { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: '40 barangays · Panabo City' },
           { label: 'Avg Suitability',  value: displayAvg,     icon: 'chart', sub: 'Commercial · AHP-WLC score' },
-          { label: 'Flagged Areas',    value: flaggedCount,   icon: 'alert', sub: stats?.breakdown ? `Flood ${stats.breakdown.flood} · Landslide ${stats.breakdown.landslide} · Storm ${stats.breakdown.storm_surge}` : 'Hazard-flagged zones' },
+          { label: 'High-Hazard Barangays', value: flaggedCount, icon: 'alert', sub: stats?.breakdown ? `High flood ${stats.breakdown.flood} · High landslide ${stats.breakdown.landslide}` : 'High flood or landslide' },
           { label: 'Active Reports',   value: activeReports,  icon: 'file',  sub: 'Pending / Draft / Final' },
         ].map(s => (
           <Card key={s.label}>
@@ -169,7 +169,7 @@ export function DashboardScreen({ go }) {
             </div>
           </CardHeader>
           <div style={{ height: 240, position: 'relative' }}>
-            <DashboardMap onParcelClick={(id) => go('map', { parcel: id })}/>
+            <DashboardMap onParcelClick={name => go('map', { barangay: name })}/>
           </div>
           <CardBody style={{ paddingTop: 10 }}>
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>

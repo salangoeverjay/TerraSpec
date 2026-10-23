@@ -268,7 +268,7 @@ const TAB_CONFIG = {
     searchKeys: ['restriction_name', 'restriction_type'],
     fields: [
       { key: 'restriction_name', label: 'Name',        type: 'text',     required: true },
-      { key: 'restriction_type', label: 'Type',        type: 'select',   opts: ['Mangrove','Watershed','SAFDZ','Ecological','Hazard'], required: true },
+      { key: 'restriction_type', label: 'Type',        type: 'select',   opts: ['Mangrove','Mangrove site','Forest','Buffer','SAFDZ','Ecological','Hazard'], required: true },
       { key: 'description',      label: 'Description', type: 'textarea' },
     ],
     canAdd: true, canDelete: true,
