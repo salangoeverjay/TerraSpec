@@ -20,11 +20,9 @@ Route::middleware('web')->group(function () {
     Route::get('/lgu/me', [LguAuthController::class, 'me']);
     Route::post('/lgu/password', [LguAuthController::class, 'changePassword'])->middleware('auth');
 
-    // Report archive is public (staff names only for signed-in staff); generating needs staff
-    Route::get('/reports', [ReportController::class, 'archive']);
-
-    // CPDO staff (admin and planner) manage the planning data and AHP weights
+    // CPDO staff (admin and planner) manage the planning data and AHP weights, and the reports
     Route::middleware('role:admin,planner')->group(function () {
+        Route::get('/reports', [ReportController::class, 'archive']);
         Route::get('/reports/generate', [ReportController::class, 'generate']);
 
         Route::prefix('admin/ahp')->group(function () {

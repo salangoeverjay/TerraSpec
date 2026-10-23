@@ -74,10 +74,10 @@ it('keeps reforestation reports inside the study area', function () {
     $this->get('/api/reports/generate?type=Comparative%20Analysis&land_use=reforestation')->assertOk();
 });
 
-it('shows staff names in the archive only to signed-in staff', function () {
+it('keeps the report archive for signed-in staff only', function () {
     $admin = User::factory()->admin()->create(['name' => 'Maria Planner']);
     Report::create(['report_type' => 'Suitability Summary', 'analysis_type' => 'commercial', 'barangay' => 'Inland', 'generated_by' => $admin->id, 'status' => 'Final']);
 
-    $this->getJson('/api/reports')->assertOk()->assertJsonPath('0.generated_by', 'CPDO')->assertJsonPath('0.analysis_type', 'commercial');
-    $this->actingAs($admin)->getJson('/api/reports')->assertOk()->assertJsonPath('0.generated_by', 'Maria Planner');
+    $this->getJson('/api/reports')->assertUnauthorized();
+    $this->actingAs($admin)->getJson('/api/reports')->assertOk()->assertJsonPath('0.generated_by', 'Maria Planner')->assertJsonPath('0.analysis_type', 'commercial');
 });

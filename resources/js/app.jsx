@@ -145,7 +145,7 @@ const NAV = [
   { id: 'environmental', label: 'Environmental', icon: 'shield',        section: 'analysis' },
   { id: 'reforestation', label: 'Reforestation', icon: 'leaf',         section: 'analysis' },
   { id: 'chat',          label: 'AI Assistant', icon: 'messageSquare', section: 'tools' },
-  { id: 'reports',       label: 'Reports',      icon: 'file',          section: 'tools' },
+  { id: 'reports',       label: 'Reports',      icon: 'file',          section: 'tools', adminOnly: true },
   { id: 'admin',         label: 'Admin',        icon: 'settings',      section: 'admin', adminOnly: true },
 ];
 
@@ -174,7 +174,8 @@ function App() {
     setLguUser(null);
     setMustChangePassword(false);
     setRole('public');
-    setScreen(s => (s === 'admin' ? 'dashboard' : s));
+    // Staff-only screens (Admin, Reports) close when signing out
+    setScreen(s => (NAV.find(n => n.id === s)?.adminOnly ? 'dashboard' : s));
   }
 
   useEffect(() => {
@@ -320,7 +321,7 @@ function App() {
 
       {/* Content */}
       <main className="content" style={isFullscreen ? { overflow: 'hidden', padding: 0 } : {}}>
-        {screen === 'admin' && role !== 'admin' ? (
+        {NAV.find(n => n.id === screen)?.adminOnly && role !== 'admin' ? (
           <div className="page">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16, textAlign: 'center' }}>
               <Icon name="lock" size={48} style={{ color: 'hsl(var(--muted-foreground))' }}/>

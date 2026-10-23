@@ -11,7 +11,6 @@ use App\Services\ReforestationStudyArea;
 use App\Services\SuitabilityScoreService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 
@@ -124,11 +123,9 @@ class ReportController extends Controller
         return $pdf->download("{$slug}.pdf");
     }
 
-    // GET /api/reports: public list; staff names are shown only to signed-in CPDO staff
-    public function archive(Request $request): JsonResponse
+    // GET /api/reports: report archive for signed-in CPDO staff (admin and planner)
+    public function archive(): JsonResponse
     {
-        $isStaff = in_array($request->user()?->role, ['admin', 'planner'], true);
-
         $reports = Report::with(['generatedBy'])
             ->orderByDesc('created_at')
             ->get()
@@ -138,7 +135,7 @@ class ReportController extends Controller
                 'analysis_type' => $r->analysis_type,
                 'barangay' => $r->barangay ?? 'All Barangays',
                 'status' => $r->status,
-                'generated_by' => $isStaff ? ($r->generatedBy?->name ?? 'CPDO') : 'CPDO',
+                'generated_by' => $r->generatedBy?->name ?? 'CPDO',
                 'created_at' => $r->created_at->format('Y-m-d'),
             ]);
 

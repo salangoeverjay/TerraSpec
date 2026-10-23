@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PANABO } from './data.js';
-import { Btn, Card, CardHeader, CardBody, Badge, Inp, Icon } from './components.jsx';
+import { Btn, Card, CardHeader, CardBody, Badge, Inp } from './components.jsx';
 
 const REPORT_TYPES = [
   'Suitability Summary',
@@ -127,98 +127,84 @@ export function ReportsScreen({ role }) {
         </div>
       </div>
 
-      {role === 'admin' ? (
-        <div className="grid grid-3" style={{ marginBottom: 20 }}>
-          <div style={{ gridColumn: '1 / 3' }}>
-            <Card>
-              <CardHeader><span className="card-title">Report Builder</span></CardHeader>
-              <CardBody>
-                <div className="grid grid-2" style={{ gap: 14, marginBottom: 14 }}>
-                  <div>
-                    <label className="label">Report Type</label>
-                    <select className="input" value={type} onChange={e => setType(e.target.value)}>
-                      {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                    {type !== 'Reforestation Plan' && (
-                      <>
-                        <label className="label" style={{ marginTop: 10 }}>Land use</label>
-                        <select className="input" value={landUse} onChange={e => setLandUse(e.target.value)}>
-                          {Object.entries(LAND_USES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-                        </select>
-                      </>
-                    )}
-                  </div>
-                  <div>
-                    <label className="label">Barangay</label>
-                    <select className="input" value={barangay} onChange={e => setBarangay(e.target.value)}>
-                      {type === 'Comparative Analysis'
-                        ? <option value="All Barangays">All Barangays (City-wide)</option>
-                        : barangayOptions.map(b => <option key={b} value={b}>{b}</option>)
-                      }
-                    </select>
-                    {reforestationOnly && studyArea.note && (
-                      <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{studyArea.note}</div>
-                    )}
-                  </div>
-                </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label className="label">Sections to include</label>
-                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                    {SECTIONS.map(s => (
-                      <label key={s} className="chip" style={{ cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={sections.has(s)}
-                          onChange={() => toggleSection(s)}
-                          style={{ accentColor: 'hsl(var(--brand))' }}
-                        /> {s}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="row" style={{ gap: 8 }}>
-                  <Btn variant="brand" icon="download" disabled={generating || (type !== 'Comparative Analysis' && !barangay)} onClick={() => generateReport()}>
-                    {generating ? 'Generating…' : 'Generate PDF'}
-                  </Btn>
-                </div>
-                {error && <div style={{ marginTop: 10, fontSize: 12.5, color: 'hsl(var(--destructive))' }}>{error}</div>}
-              </CardBody>
-            </Card>
-          </div>
-
+      <div className="grid grid-3" style={{ marginBottom: 20 }}>
+        <div style={{ gridColumn: '1 / 3' }}>
           <Card>
-            <CardHeader><span className="card-title">Preview</span></CardHeader>
+            <CardHeader><span className="card-title">Report Builder</span></CardHeader>
             <CardBody>
-              <div style={{ background: 'hsl(var(--muted))', borderRadius: 8, padding: 14, fontSize: 12.5, lineHeight: 1.8, minHeight: 180 }}>
-                <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>{type}</div>
-                {type !== 'Reforestation Plan' && <div className="muted">Land use: <strong style={{ color: 'hsl(var(--foreground))' }}>{LAND_USES[landUse]}</strong></div>}
-                <div className="muted">Barangay: <strong style={{ color: 'hsl(var(--foreground))' }}>{type === 'Comparative Analysis' ? 'All Barangays' : barangay}</strong></div>
-                <div className="muted">Date: {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                <div className="muted">Prepared by: CPDO, Panabo City</div>
-                <hr className="separator" style={{ margin: '10px 0' }}/>
-                <div className="muted" style={{ fontSize: 11.5 }}>
-                  Sections: {[...sections].join(' · ') || '—'}
+              <div className="grid grid-2" style={{ gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label className="label">Report Type</label>
+                  <select className="input" value={type} onChange={e => setType(e.target.value)}>
+                    {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                  {type !== 'Reforestation Plan' && (
+                    <>
+                      <label className="label" style={{ marginTop: 10 }}>Land use</label>
+                      <select className="input" value={landUse} onChange={e => setLandUse(e.target.value)}>
+                        {Object.entries(LAND_USES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                      </select>
+                    </>
+                  )}
                 </div>
-                <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-                  This report presents AHP-WLC suitability results and environmental data for {type === 'Comparative Analysis' ? (reforestationOnly ? 'the reforestation study area' : 'all 40 barangays') : `Barangay ${barangay}`}, Panabo City.
+                <div>
+                  <label className="label">Barangay</label>
+                  <select className="input" value={barangay} onChange={e => setBarangay(e.target.value)}>
+                    {type === 'Comparative Analysis'
+                      ? <option value="All Barangays">All Barangays (City-wide)</option>
+                      : barangayOptions.map(b => <option key={b} value={b}>{b}</option>)
+                    }
+                  </select>
+                  {reforestationOnly && studyArea.note && (
+                    <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{studyArea.note}</div>
+                  )}
                 </div>
               </div>
+              <div style={{ marginBottom: 14 }}>
+                <label className="label">Sections to include</label>
+                <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                  {SECTIONS.map(s => (
+                    <label key={s} className="chip" style={{ cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={sections.has(s)}
+                        onChange={() => toggleSection(s)}
+                        style={{ accentColor: 'hsl(var(--brand))' }}
+                      /> {s}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="row" style={{ gap: 8 }}>
+                <Btn variant="brand" icon="download" disabled={generating || (type !== 'Comparative Analysis' && !barangay)} onClick={() => generateReport()}>
+                  {generating ? 'Generating…' : 'Generate PDF'}
+                </Btn>
+              </div>
+              {error && <div style={{ marginTop: 10, fontSize: 12.5, color: 'hsl(var(--destructive))' }}>{error}</div>}
             </CardBody>
           </Card>
         </div>
-      ) : (
-        <Card style={{ marginBottom: 20 }}>
+
+        <Card>
+          <CardHeader><span className="card-title">Preview</span></CardHeader>
           <CardBody>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 12, textAlign: 'center' }}>
-              <Icon name="lock" size={36} style={{ color: 'hsl(var(--muted-foreground))' }}/>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Report Generation is Restricted</div>
-              <p className="muted" style={{ fontSize: 13, maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
-                Only signed-in CPDO staff (administrators and planners) can generate official land analysis reports. Sign in with LGU Admin to use the Report Builder.
-              </p>
+            <div style={{ background: 'hsl(var(--muted))', borderRadius: 8, padding: 14, fontSize: 12.5, lineHeight: 1.8, minHeight: 180 }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>{type}</div>
+              {type !== 'Reforestation Plan' && <div className="muted">Land use: <strong style={{ color: 'hsl(var(--foreground))' }}>{LAND_USES[landUse]}</strong></div>}
+              <div className="muted">Barangay: <strong style={{ color: 'hsl(var(--foreground))' }}>{type === 'Comparative Analysis' ? 'All Barangays' : barangay}</strong></div>
+              <div className="muted">Date: {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              <div className="muted">Prepared by: CPDO, Panabo City</div>
+              <hr className="separator" style={{ margin: '10px 0' }}/>
+              <div className="muted" style={{ fontSize: 11.5 }}>
+                Sections: {[...sections].join(' · ') || '—'}
+              </div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>
+                This report presents AHP-WLC suitability results and environmental data for {type === 'Comparative Analysis' ? (reforestationOnly ? 'the reforestation study area' : 'all 40 barangays') : `Barangay ${barangay}`}, Panabo City.
+              </div>
             </div>
           </CardBody>
         </Card>
-      )}
+      </div>
 
       <Card>
         <CardHeader>
