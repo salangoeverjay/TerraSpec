@@ -44,7 +44,7 @@ export function hatchSwatch(hex, reverse = false) {
 }
 
 // Bottom → top drawing order of the TerraSpec overlays (basemaps go below all of them)
-export const OVERLAY_ORDER = ['zoning', 'suitability', 'landslide', 'flood', 'query'];
+export const OVERLAY_ORDER = ['zoning', 'suitability', 'landslide', 'flood', 'mangrove', 'query'];
 // Barangay boundaries and names stay above every overlay so they are never covered
 export const BOUNDARY_LAYER_ID = 'barangay-boundaries';
 export const LABEL_LAYER_ID = 'barangay-labels';
@@ -323,5 +323,26 @@ export function BarangayLabelLayer({ visible }) {
     }
   }, [map, ready, visible]);
 
+  return null;
+}
+
+// Actual mangrove reforestation sites, coloured by status
+export const MANGROVE_LEGEND = [
+  { val: 'rehabilitated', label: 'Rehabilitated (2020–2023)', hex: '#15803d' },
+  { val: 'adopted',       label: 'Adopted site',              hex: '#0d9488' },
+  { val: 'proposed',      label: 'Proposed MOA',              hex: '#ea580c' },
+];
+
+const MANGROVE_COLOR = ['match', ['get', 'status'], ...MANGROVE_LEGEND.flatMap(l => [l.val, l.hex]), '#6b7280'];
+
+export function MangroveSitesLayer({ visible, hiddenStatuses }) {
+  useOverlay({
+    id: 'mangrove',
+    load: loadJson('/data/mangrove_sites.geojson'),
+    visible,
+    filter: inFilter('status', MANGROVE_LEGEND, hiddenStatuses, l => l.val),
+    fill: { 'fill-color': MANGROVE_COLOR, 'fill-opacity': 0.55 },
+    line: { 'line-color': MANGROVE_COLOR, 'line-width': 2, 'line-opacity': 1 },
+  });
   return null;
 }

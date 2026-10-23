@@ -35,7 +35,7 @@ class BarangayProfileController extends Controller
     // GET /barangays/{id}/profile
     public function show(int $id): JsonResponse
     {
-        $zone = ZoneUnit::with(['hazardData', 'soilData', 'zoningData', 'restrictions'])->findOrFail($id);
+        $zone = ZoneUnit::with(['hazardData', 'soilData', 'zoningData', 'restrictions', 'reforestationSites'])->findOrFail($id);
         $hazard = $zone->hazardData;
         $labels = config('suitability.constraint_labels', []);
 
@@ -121,6 +121,14 @@ class BarangayProfileController extends Controller
                     'description' => $r->description,
                 ])->values(),
                 'suitability' => $suitability,
+                'reforestation_sites' => $zone->reforestationSites->sortBy('id')->values()->map(fn ($site) => [
+                    'name' => $site->name,
+                    'status' => $site->status,
+                    'year' => $site->year,
+                    'adopter' => $site->adopter,
+                    'area_ha' => $site->area_ha,
+                    'mangrove_zone_share' => $site->mangrove_zone_share,
+                ]),
             ],
         ]);
     }

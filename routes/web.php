@@ -23,6 +23,7 @@ Route::get('/reports/generate', [ReportController::class, 'generate']);
 
 Route::prefix('reforestation')->group(function () {
     Route::get('/', [ReforestationController::class, 'index']);
+    Route::get('/sites', [ReforestationController::class, 'sites']);
     Route::get('/{id}/match', [ReforestationController::class, 'getMatches']);
     Route::get('/{id}/report', [ReforestationController::class, 'report']);
     Route::get('/{id}/pdf', [ReforestationController::class, 'pdf']);

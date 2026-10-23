@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { ZONING_LEGEND } from './data.js';
+import { MANGROVE_LEGEND } from './map-layers.jsx';
 
 const USE_LABELS = {
   commercial: 'Commercial', residential: 'Residential', industrial: 'Industrial',
@@ -296,6 +297,48 @@ export function BarangayProfileScreen({ go, barangay }) {
                   </CardBody>
                 </Card>
               </div>
+
+              {p.reforestation_sites?.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="row-between" style={{ width: '100%' }}>
+                      <span className="card-title">Mangrove reforestation sites</span>
+                      <span className="muted" style={{ fontSize: 12 }}>
+                        {p.reforestation_sites.length} sites · {ha(p.reforestation_sites.reduce((sum, s) => sum + s.area_ha, 0))}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    <table className="table" style={{ fontSize: 12 }}>
+                      <thead>
+                        <tr><th>Site</th><th>Status</th><th>Year / adopter</th><th style={{ textAlign: 'right' }}>Area</th><th style={{ textAlign: 'right' }}>In Mangrove sub-zone</th></tr>
+                      </thead>
+                      <tbody>
+                        {p.reforestation_sites.map(s => {
+                          const status = MANGROVE_LEGEND.find(l => l.val === s.status);
+                          return (
+                            <tr key={s.name}>
+                              <td>{s.name}</td>
+                              <td>
+                                <span className="row" style={{ gap: 6 }}>
+                                  <span style={{ width: 10, height: 10, borderRadius: 2, background: status?.hex, flexShrink: 0 }}/>
+                                  {status?.label.replace(/ \(.*\)/, '') ?? s.status}
+                                </span>
+                              </td>
+                              <td className="muted">{s.year ?? s.adopter ?? '—'}</td>
+                              <td className="mono" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{ha(s.area_ha)}</td>
+                              <td className="mono" style={{ textAlign: 'right' }}>{Math.round(s.mangrove_zone_share * 100)}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
+                      Source: Mangrove Reforestation and Rehabilitation (KML). Most sites lie seaward of the PSA barangay boundary, on intertidal flats, and are listed under the nearest barangay.
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
 
               <div className="muted" style={{ fontSize: 11 }}>
                 Area figures differ by source: the CLUP population table, each CLUP hazard table and the PSA barangay boundary

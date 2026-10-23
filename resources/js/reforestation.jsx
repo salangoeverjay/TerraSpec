@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
+import { MangroveSitesPanel } from './mangrove-sites.jsx';
 
 function criteriaBar(value, max, label) {
   const pct = Math.round((value / max) * 100);
@@ -295,6 +296,8 @@ export function ReforestationScreen() {
           </div>
         )}
       </Card>
+
+      <MangroveSitesPanel onSelectBarangay={id => { setSelectedId(id); window.scrollTo?.({ top: 0, behavior: 'smooth' }); }}/>
     </div>
   );
 }

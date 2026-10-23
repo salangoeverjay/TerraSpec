@@ -55,6 +55,11 @@ class ZoneUnit extends Model
         return $this->hasMany(ZoneZoningData::class, 'zone_unit_id', 'zone_unit_id');
     }
 
+    public function reforestationSites(): HasMany
+    {
+        return $this->hasMany(ReforestationSite::class, 'zone_unit_id', 'zone_unit_id');
+    }
+
     public function populationProjections(): HasMany
     {
         return $this->hasMany(PopulationProjection::class, 'zone_unit_id', 'zone_unit_id');

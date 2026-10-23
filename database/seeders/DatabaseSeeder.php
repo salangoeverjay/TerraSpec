@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ZoneUnitElevationSalinitySeeder::class,
             TreeSpeciesSeeder::class,
             EnvironmentalRestrictionSeeder::class,
+            ReforestationSiteSeeder::class,
         ]);
     }
 }

@@ -5,7 +5,7 @@ import {
 } from '../../components/ui/map';
 import { PANABO, BARANGAY_COORDS, ZONING_LEGEND, fetchSuitabilitySummary, findBarangayAt } from './data.js';
 import {
-  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer,
+  ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer, MangroveSitesLayer, MANGROVE_LEGEND,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
@@ -398,6 +398,20 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
     try { localStorage.setItem('terraspec-barangay-labels', on ? 'on' : 'off'); } catch {}
   }
 
+  // Actual mangrove reforestation sites (on by default, remembered per browser)
+  const [showMangrove, setShowMangrove] = useState(() => {
+    try { return localStorage.getItem('terraspec-mangrove-sites') !== 'off'; } catch { return true; }
+  });
+  function toggleMangrove(on) {
+    setShowMangrove(on);
+    try { localStorage.setItem('terraspec-mangrove-sites', on ? 'on' : 'off'); } catch {}
+  }
+  const [hiddenMangrove, setHiddenMangrove] = useState(new Set());
+  function toggleMangroveStatus(status) { setHiddenMangrove(prev => { const n = new Set(prev); n.has(status) ? n.delete(status) : n.add(status); return n; }); }
+  function zoomToMangroveSites() {
+    mapRef.current?.fitBounds([[125.6772, 7.2548], [125.7012, 7.2940]], { padding: { top: 60, bottom: 90, left: 250, right: 60 }, duration: 1000 });
+  }
+
   // Zoning query: filters, last result and the barangays it outlines on the map
   const [queryOpen, setQueryOpen] = useState(false);
   const [queryFilters, setQueryFilters] = useState(EMPTY_QUERY);
@@ -464,11 +478,17 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
       : null;
     const zoning = zoningFeature ? ZONING_LEGEND.find(z => z.id === zoningFeature.properties.zone) ?? null : null;
 
-    // Barangay containing the click (PSA boundaries)
-    const barangay = await findBarangayAt(lng, lat).catch(() => null);
+    // Mangrove reforestation site under the click (most lie seaward of the barangay boundaries)
+    const siteFeature = map.getLayer('mangrove-fill')
+      ? map.queryRenderedFeatures(e.point, { layers: ['mangrove-fill'] })[0]
+      : null;
+    const site = siteFeature ? siteFeature.properties : null;
+
+    // Barangay containing the click (PSA boundaries), or the barangay the site belongs to
+    const barangay = (await findBarangayAt(lng, lat).catch(() => null)) ?? site?.barangay ?? null;
     const scores = summaryRef.current.find(z => z.unit_name === barangay)?.scores ?? null;
 
-    setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores });
+    setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores, site });
     setNearestBarangay(barangay);
     if (setMapContext && barangay) {
       setMapContext(buildMapContext(barangay, zoning, summaryRef.current));
@@ -505,6 +525,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
           <LandslideLayer visible={layers.landslide} hiddenLandslide={hiddenLandslide}/>
           <FloodLayer visible={layers.flood} hiddenFlood={hiddenFlood}/>
           <QueryBarangayLayer names={queryNames}/>
+          <MangroveSitesLayer visible={showMangrove} hiddenStatuses={hiddenMangrove}/>
           <BarangayLabelLayer visible={showBarangays}/>
           {highlightZones.length > 0 && <FlyToHighlight zones={highlightZones}/>}
           {highlightZones.map((z, i) => {
@@ -566,6 +587,23 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                   <CardBody>
                     <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{selectedPoint.barangay ?? 'Outside Panabo City'}</div>
                     <div className="muted mono" style={{ fontSize: 11, marginBottom: 6 }}>{selectedPoint.coords[1].toFixed(5)}, {selectedPoint.coords[0].toFixed(5)}</div>
+                    {selectedPoint.site && (() => {
+                      const site = selectedPoint.site;
+                      const status = MANGROVE_LEGEND.find(l => l.val === site.status);
+                      return (
+                        <div style={{ borderLeft: `3px solid ${status?.hex ?? '#6b7280'}`, paddingLeft: 8, marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>{site.name}</div>
+                          <div style={{ fontSize: 11.5 }}>
+                            {status?.label.replace(/ \(.*\)/, '') ?? site.status}
+                            {site.year && site.year !== 'null' ? ` · ${site.year}` : ''}
+                            {site.adopter && site.adopter !== 'null' ? ` · adopted by ${site.adopter}` : ''}
+                          </div>
+                          <div className="muted" style={{ fontSize: 11 }}>
+                            {Number(site.area_ha).toFixed(2)} ha mangrove site · {Math.round(site.mangrove_zone_share * 100)}% in Mangrove sub-zone
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {selectedPoint.zoning && (
                       <div className="row" style={{ gap: 6, fontSize: 11.5, marginBottom: 6 }}>
                         <span style={{ width: 10, height: 10, borderRadius: 2, background: selectedPoint.zoning.hex, flexShrink: 0 }}/>
@@ -747,6 +785,10 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                 <input type="checkbox" checked={showBarangays} onChange={e => toggleBarangays(e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
                 <span>Barangay names</span>
               </label>
+              <label className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
+                <input type="checkbox" checked={showMangrove} onChange={e => toggleMangrove(e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
+                <span>Mangrove sites</span>
+              </label>
             </div>
             <div className="separator"/>
             <div style={{ ...sectionLabel, margin: '10px 0 7px' }}>Legend · click to toggle</div>
@@ -774,6 +816,16 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                       hidden={hiddenLevels.has(item.label)} onClick={() => toggleLevel(item.label)}
                     />
                   ))}
+                </LegendGroup>
+              )}
+              {showMangrove && (
+                <LegendGroup title="Mangrove reforestation sites">
+                  {MANGROVE_LEGEND.map(item => (
+                    <LegendItem key={item.val} label={item.label} swatch={item.hex} hidden={hiddenMangrove.has(item.val)} onClick={() => toggleMangroveStatus(item.val)}/>
+                  ))}
+                  <button onClick={zoomToMangroveSites} style={{ alignSelf: 'flex-start', fontSize: 11, padding: 0, marginTop: 2, border: 'none', background: 'none', color: 'hsl(var(--brand))', cursor: 'pointer', fontWeight: 600 }}>
+                    Zoom to sites →
+                  </button>
                 </LegendGroup>
               )}
               {layers.zoning && (
