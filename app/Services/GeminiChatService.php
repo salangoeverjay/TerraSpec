@@ -32,13 +32,18 @@ class GeminiChatService
         );
 
         $normalized = $this->normalizeAnswer($result['text']);
+        $intent = $this->detectIntent($prompt);
 
         return [
             'answer' => $normalized,
             'model' => $result['model'],
             'fallback_used' => $result['fallback_used'],
-            'recommended_zones' => $this->extractMentionedZones($normalized, $prompt),
-            'detected_intent' => $this->detectIntent($prompt),
+            // Suitability chips only for suitability questions: on a zoning or hazard question they would
+            // show an unrelated (default commercial) score for every barangay mentioned
+            'recommended_zones' => in_array($intent, ['environmental_assessment', 'zoning_compliance'], true)
+                ? []
+                : $this->extractMentionedZones($normalized, $prompt),
+            'detected_intent' => $intent,
             'extracted_entities' => $this->extractEntities($prompt, $normalized),
             'live_calculation' => $this->runLiveCalculation($prompt),
         ];

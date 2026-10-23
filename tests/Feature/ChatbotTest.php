@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\SuitabilityAnalysis;
+use App\Models\ZoneUnit;
 use App\Services\GeminiChatService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -155,4 +157,22 @@ it('sends the API key in a header, never in the URL', function () {
 
     Http::assertSent(fn ($request) => $request->hasHeader('x-goog-api-key', 'test-api-key')
         && ! str_contains($request->url(), 'test-api-key'));
+});
+
+it('does not attach suitability chips to zoning or hazard answers', function () {
+    $zone = ZoneUnit::create([
+        'unit_name' => 'Dapco', 'unit_type' => 'Rural', 'total_area_ha' => 100,
+        'population_2020' => 1000, 'household_count' => 250, 'population_density' => 10,
+        'avg_household_size' => 4, 'settlement_tier' => 'Satellite', 'saturation_index' => 0.2,
+        'dominant_soil_type' => 'Cabangan Clay Loam', 'dominant_slope_class' => '0-8', 'land_capability_class' => 'A',
+    ]);
+    SuitabilityAnalysis::create([
+        'zone_unit_id' => $zone->zone_unit_id, 'analysis_type' => 'commercial',
+        'total_score' => 0, 'suitability_level' => 'Not Suitable',
+    ]);
+    Http::fake(['*' => Http::response(geminiAnswer('In Dapco, 43.3 ha of Production Agricultural land is in very high flood areas.'))]);
+
+    $this->postJson('/api/chatbot', ['prompt' => 'Agricultural land in very high flood areas in Dapco'])
+        ->assertOk()
+        ->assertJson(['detected_intent' => 'environmental_assessment', 'recommended_zones' => []]);
 });
