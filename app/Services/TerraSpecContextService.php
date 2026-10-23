@@ -91,15 +91,26 @@ class TerraSpecContextService
         $labels = config('suitability.constraint_labels', []);
         $zones = ZoneUnit::with('zoningData')->orderBy('unit_name')->get();
 
-        $lines = ['=== ZONING CLASSES PER BARANGAY (Integrated Zoning Map 2020-2029, digitized; ha and share of zoned area) ==='];
+        $lines = [
+            '=== ZONING CLASSES PER BARANGAY (Integrated Zoning Map 2020-2029, digitized; ha and share of zoned area) ===',
+            'Where given, "VH flood" and "high landslide" are the hectares of that zoning class inside MGB 2020 very high flood or high landslide susceptibility areas. A class listed without them has none.',
+        ];
         foreach ($zones as $zone) {
             $rows = $zone->zoningData->where('zoning_code', '!=', 'NONE')->sortByDesc('area_ha');
             $total = (float) $rows->sum('area_ha');
             if ($total <= 0) {
                 continue;
             }
-            $parts = $rows->take(6)->map(fn ($r) => ($labels[$r->zoning_code] ?? $r->zoning_code)
-                .' '.number_format((float) $r->area_ha, 1).' ha ('.round(100 * $r->area_ha / $total).'%)');
+            $parts = $rows->map(function ($r) use ($labels, $total) {
+                $hazards = array_filter([
+                    $r->flood_very_high_ha > 0 ? 'VH flood '.number_format((float) $r->flood_very_high_ha, 1).' ha' : null,
+                    $r->landslide_high_ha > 0 ? 'high landslide '.number_format((float) $r->landslide_high_ha, 1).' ha' : null,
+                ]);
+
+                return ($labels[$r->zoning_code] ?? $r->zoning_code)
+                    .' '.number_format((float) $r->area_ha, 1).' ha ('.round(100 * $r->area_ha / $total).'%'
+                    .($hazards ? '; '.implode(', ', $hazards) : '').')';
+            });
             $lines[] = "{$zone->unit_name}: ".$parts->implode(', ');
         }
 

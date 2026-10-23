@@ -12,10 +12,10 @@ const EXAMPLES = [
  * "Ask the map": a plain-language question is turned into map filters by Gemini (structured output,
  * validated on the server). The parent applies the result to the map.
  */
-export function AskTheMap({ onResult }) {
-  const [question, setQuestion] = useState('');
+export function AskTheMap({ onResult, initialResult = null }) {
+  const [question, setQuestion] = useState(initialResult?.question ?? '');
   const [asking, setAsking] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(initialResult);
   const [error, setError] = useState('');
 
   async function ask(text = question) {

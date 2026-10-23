@@ -2,6 +2,8 @@
 
 use App\Models\ReforestationSite;
 use App\Models\ZoneUnit;
+use App\Models\ZoneZoningData;
+use App\Services\TerraSpecContextService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
@@ -93,4 +95,15 @@ it('returns a friendly message when the AI is unavailable and validates the ques
 
     $this->postJson('/api/map/interpret', ['question' => 'Farmland in Dapco'])->assertStatus(503);
     $this->postJson('/api/map/interpret', ['question' => ''])->assertJsonValidationErrors('question');
+});
+
+it('gives the AI assistant the zoning hectares inside very high flood and high landslide areas', function () {
+    ZoneZoningData::create([
+        'zone_unit_id' => ZoneUnit::where('unit_name', 'Dapco')->value('zone_unit_id'),
+        'zoning_code' => 'PA', 'area_ha' => 879.8, 'flood_very_high_ha' => 43.3, 'landslide_high_ha' => 0,
+    ]);
+
+    $context = app(TerraSpecContextService::class)->build();
+
+    expect($context)->toContain('Dapco: Production Agricultural / SAFDZ 879.8 ha (100%; VH flood 43.3 ha)');
 });

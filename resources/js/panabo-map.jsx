@@ -341,7 +341,7 @@ function buildMapContext(barangay, zoning, summary) {
   };
 }
 
-export function MapScreen({ go, initial, barangay, search, setSearch, highlightZones = [], setMapContext }) {
+export function MapScreen({ go, initial, barangay, search, setSearch, highlightZones = [], setMapContext, askResult = null }) {
   const mapRef = useRef(null);
 
   // Opened from a barangay profile ("Show on map"): fly to that barangay
@@ -507,6 +507,13 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
     setQueryResult(null);
     chooseView(result.view);
   }
+
+  // A question asked in the AI Assistant chat ("Show on map"): apply its filters after the map loads
+  useEffect(() => {
+    if (!askResult?.understood) return;
+    const timer = setTimeout(() => applyAskResult(askResult), 700);
+    return () => clearTimeout(timer);
+  }, [askResult]);
 
   function clearQuery() {
     setQueryFilters(EMPTY_QUERY);
@@ -692,7 +699,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
 
       {/* Ask the map: plain-language question -> AI-extracted map filters */}
       <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 31, width: queryOpen ? 'min(440px, calc(100% - 780px))' : 'min(560px, calc(100% - 520px))', minWidth: 300, transition: 'width .2s', display: 'flex', justifyContent: 'center' }}>
-        <AskTheMap onResult={applyAskResult}/>
+        <AskTheMap onResult={applyAskResult} initialResult={askResult}/>
       </div>
 
       {/* AI Recommendations banner */}
