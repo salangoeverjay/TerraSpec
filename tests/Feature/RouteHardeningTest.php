@@ -141,3 +141,33 @@ it('returns validation errors as JSON on data routes without an Accept header', 
         ->assertStatus(422)
         ->assertJsonValidationErrors(['analysis_type', 'zone_unit_id']);
 });
+
+/**
+ * A request that reaches the app through the load balancer at 10.0.0.5 for the visitor at $visitorIp.
+ */
+function throughProxy($test, string $visitorIp)
+{
+    return $test->withServerVariables(['REMOTE_ADDR' => '10.0.0.5'])->withHeader('X-Forwarded-For', $visitorIp);
+}
+
+it('gives each visitor behind the trusted proxy their own rate limit', function () {
+    config(['app.trusted_proxies' => '10.0.0.0/8']);
+
+    foreach (range(1, 60) as $i) {
+        throughProxy($this, '203.0.113.10')->getJson('/barangays')->assertOk();
+    }
+
+    throughProxy($this, '203.0.113.10')->getJson('/barangays')->assertTooManyRequests();
+    throughProxy($this, '203.0.113.20')->getJson('/barangays')->assertOk();
+});
+
+it('ignores forwarded addresses when the sender is not a trusted proxy', function () {
+    config(['app.trusted_proxies' => null]);
+
+    foreach (range(1, 60) as $i) {
+        throughProxy($this, '203.0.113.10')->getJson('/barangays')->assertOk();
+    }
+
+    // A client cannot escape its limit by sending a made-up X-Forwarded-For header
+    throughProxy($this, '203.0.113.99')->getJson('/barangays')->assertTooManyRequests();
+});

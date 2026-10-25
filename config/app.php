@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | The reverse proxy or load balancer in front of the app: comma-separated IPs or CIDR ranges
+    | (e.g. "10.0.0.0/8"), or "*" when the app can only be reached through the proxy. Empty trusts
+    | nothing. Read by App\Http\Middleware\TrustConfiguredProxies on every request.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
