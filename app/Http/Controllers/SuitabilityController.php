@@ -129,7 +129,9 @@ class SuitabilityController extends Controller
     // GET /suitability/rankings?analysis_type=commercial
     public function rankings(Request $request): JsonResponse
     {
-        $type = $request->input('analysis_type', 'commercial');
+        $type = $request->validate([
+            'analysis_type' => 'sometimes|in:commercial,residential,industrial,agricultural,reforestation',
+        ])['analysis_type'] ?? 'commercial';
 
         // Latest stored result per barangay: repeated "Calculate" runs add rows and must not appear twice
         $latestIds = SuitabilityAnalysis::query()

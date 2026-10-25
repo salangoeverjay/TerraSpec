@@ -9,7 +9,7 @@ use App\Http\Controllers\MapQueryController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/chatbot', ChatbotController::class);
+Route::post('/chatbot', ChatbotController::class)->middleware('throttle:chatbot');
 Route::post('/map/interpret', MapQueryController::class)->middleware('throttle:30,1');
 Route::get('/dashboard-stats', DashboardStatsController::class);
 

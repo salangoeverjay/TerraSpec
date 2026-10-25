@@ -31,5 +31,14 @@ class AppServiceProvider extends ServiceProvider
                     'message' => 'Too many login attempts. Please wait a minute and try again.',
                 ], 429));
         });
+
+        // The AI chat shares one Gemini quota: 20 questions per minute per signed-in user or IP
+        RateLimiter::for('chatbot', function (Request $request) {
+            return Limit::perMinute(20)
+                ->by((string) ($request->user()?->id ?? $request->ip()))
+                ->response(fn () => response()->json([
+                    'message' => 'You are sending questions too quickly. Please wait a minute and try again.',
+                ], 429));
+        });
     }
 }
