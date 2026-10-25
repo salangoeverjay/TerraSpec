@@ -1,0 +1,602 @@
+{
+ "type": "FeatureCollection",
+ "name": "mangrove_reforestation_sites",
+ "source": "Mangrove Reforestation and Rehabilitation.kml (Google Earth Pro); areas in EPSG:32651; barangay = containing or nearest PSA 2023 boundary; zoning shares from the digitized Integrated Zoning Map 2020-2029",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mangrove Rehabilitation 2020",
+    "status": "rehabilitated",
+    "year": 2020,
+    "adopter": null,
+    "area_ha": 1.26,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.752,
+    "distance_to_boundary_m": 0,
+    "mangrove_zone_share": 1,
+    "other_zone_share": 0,
+    "unzoned_share": 0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.679243206314,
+       7.25636691962871
+      ],
+      [
+       125.6794225713123,
+       7.256691916762868
+      ],
+      [
+       125.6791225941632,
+       7.256989757422956
+      ],
+      [
+       125.6790855227666,
+       7.257395698226282
+      ],
+      [
+       125.6789243032451,
+       7.257959998747503
+      ],
+      [
+       125.6790667632992,
+       7.25886616468626
+      ],
+      [
+       125.6789610849359,
+       7.258928504866564
+      ],
+      [
+       125.678619431437,
+       7.258409042500191
+      ],
+      [
+       125.6784283137112,
+       7.257569815051676
+      ],
+      [
+       125.6787235058201,
+       7.256907797087276
+      ],
+      [
+       125.679243206314,
+       7.25636691962871
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mangrove Rehabilitation 2021",
+    "status": "rehabilitated",
+    "year": 2021,
+    "adopter": null,
+    "area_ha": 1.49,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.488,
+    "distance_to_boundary_m": 0,
+    "mangrove_zone_share": 1.0,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6779151585526,
+       7.255946002390092
+      ],
+      [
+       125.6791033825317,
+       7.255412595363422
+      ],
+      [
+       125.6795592189458,
+       7.2559573867473
+      ],
+      [
+       125.6793005076184,
+       7.256092057060665
+      ],
+      [
+       125.6792405515151,
+       7.256367918148896
+      ],
+      [
+       125.6787228767279,
+       7.256906355237205
+      ],
+      [
+       125.6779151585526,
+       7.255946002390092
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mangrove Rehabilitation 2022 P1",
+    "status": "rehabilitated",
+    "year": 2022,
+    "adopter": null,
+    "area_ha": 0.8,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 0,
+    "mangrove_zone_share": 1.0,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6789588430267,
+       7.25783322781392
+      ],
+      [
+       125.6796937959087,
+       7.259064935457103
+      ],
+      [
+       125.6799073752058,
+       7.259966314273233
+      ],
+      [
+       125.6795315515306,
+       7.259619105969809
+      ],
+      [
+       125.6790702443435,
+       7.25886525103956
+      ],
+      [
+       125.6789268961987,
+       7.257960426011132
+      ],
+      [
+       125.6789588430267,
+       7.25783322781392
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mangrove Rehabilitation 2022 P2",
+    "status": "rehabilitated",
+    "year": 2022,
+    "adopter": null,
+    "area_ha": 0.46,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 113,
+    "mangrove_zone_share": 0.5829,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.4171
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6801244586846,
+       7.256972718481991
+      ],
+      [
+       125.680652057304,
+       7.257779935351061
+      ],
+      [
+       125.6799482779333,
+       7.258115632270037
+      ],
+      [
+       125.6801244586846,
+       7.256972718481991
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mangrove Rehabilitation 2023",
+    "status": "rehabilitated",
+    "year": 2023,
+    "adopter": null,
+    "area_ha": 1.0,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 97,
+    "mangrove_zone_share": 0.2399,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.7601
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6799484726503,
+       7.258115353390169
+      ],
+      [
+       125.6806502946249,
+       7.257781335758192
+      ],
+      [
+       125.6809777817039,
+       7.258851037906019
+      ],
+      [
+       125.6800592675359,
+       7.25894262053066
+      ],
+      [
+       125.6799484726503,
+       7.258115353390169
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "DICT_Adopted Site",
+    "status": "adopted",
+    "year": null,
+    "adopter": "DICT",
+    "area_ha": 1.64,
+    "barangay": "San Pedro",
+    "within_boundary_share": 0.0979,
+    "distance_to_boundary_m": 0,
+    "mangrove_zone_share": 0.1108,
+    "other_zone_share": 0.0112,
+    "unzoned_share": 0.878
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.7004382661093,
+       7.293185273287196
+      ],
+      [
+       125.6989849796598,
+       7.293431855809132
+      ],
+      [
+       125.6992733002562,
+       7.292336904059436
+      ],
+      [
+       125.7006363094398,
+       7.292338800035814
+      ],
+      [
+       125.7004382661093,
+       7.293185273287196
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "HCBI_Adopted Site",
+    "status": "adopted",
+    "year": null,
+    "adopter": "HCBI",
+    "area_ha": 0.94,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 69,
+    "mangrove_zone_share": 0.1941,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.8059
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6803006396636,
+       7.259798912708849
+      ],
+      [
+       125.681204851469,
+       7.2597209829892
+      ],
+      [
+       125.6814348925842,
+       7.260515449102128
+      ],
+      [
+       125.6805091913728,
+       7.260632929039892
+      ],
+      [
+       125.6803006396636,
+       7.259798912708849
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "MCPI_Adopted Site",
+    "status": "adopted",
+    "year": null,
+    "adopter": "MCPI",
+    "area_ha": 0.98,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 84,
+    "mangrove_zone_share": 0.1469,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.8531
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6809773672098,
+       7.258853128477621
+      ],
+      [
+       125.681201840503,
+       7.259721764694445
+      ],
+      [
+       125.6802998422193,
+       7.259795981918456
+      ],
+      [
+       125.6800607927377,
+       7.258942504448005
+      ],
+      [
+       125.6809773672098,
+       7.258853128477621
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "PMPC_Adopted Site",
+    "status": "adopted",
+    "year": null,
+    "adopter": "PMPC",
+    "area_ha": 1.0,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 61,
+    "mangrove_zone_share": 0.2616,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.7384
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6805106522623,
+       7.260634167052533
+      ],
+      [
+       125.6814353590003,
+       7.260515721287527
+      ],
+      [
+       125.6815662577318,
+       7.261390483905826
+      ],
+      [
+       125.6807461666896,
+       7.261571705471376
+      ],
+      [
+       125.6805106522623,
+       7.260634167052533
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Proposal MOA 3",
+    "status": "proposed",
+    "year": null,
+    "adopter": null,
+    "area_ha": 0.6,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 35,
+    "mangrove_zone_share": 0.1458,
+    "other_zone_share": 0.0,
+    "unzoned_share": 0.8542
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.682857873591,
+       7.272557662323941
+      ],
+      [
+       125.6836423245651,
+       7.272259747534274
+      ],
+      [
+       125.6838758997534,
+       7.272651452637714
+      ],
+      [
+       125.6828799912509,
+       7.273148038217766
+      ],
+      [
+       125.682857873591,
+       7.272557662323941
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Proposed MOA 1",
+    "status": "proposed",
+    "year": null,
+    "adopter": null,
+    "area_ha": 1.0,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 190,
+    "mangrove_zone_share": 0.0,
+    "other_zone_share": 0.0,
+    "unzoned_share": 1.0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.680648836994,
+       7.257778359490827
+      ],
+      [
+       125.6808860174872,
+       7.257668618963599
+      ],
+      [
+       125.6821021382391,
+       7.258763781687835
+      ],
+      [
+       125.6809774283839,
+       7.258850415069527
+      ],
+      [
+       125.680648836994,
+       7.257778359490827
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Proposed MOA 2",
+    "status": "proposed",
+    "year": null,
+    "adopter": null,
+    "area_ha": 1.04,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 179,
+    "mangrove_zone_share": 0.0,
+    "other_zone_share": 0.0,
+    "unzoned_share": 1.0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6809786043464,
+       7.258850217171238
+      ],
+      [
+       125.6821016814973,
+       7.258762314792827
+      ],
+      [
+       125.6821072157687,
+       7.259532747540357
+      ],
+      [
+       125.6812028728874,
+       7.25972655317184
+      ],
+      [
+       125.6809786043464,
+       7.258850217171238
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Proposed MOA 3",
+    "status": "proposed",
+    "year": null,
+    "adopter": null,
+    "area_ha": 0.75,
+    "barangay": "J.P. Laurel",
+    "within_boundary_share": 0.0,
+    "distance_to_boundary_m": 168,
+    "mangrove_zone_share": 0.0,
+    "other_zone_share": 0.0,
+    "unzoned_share": 1.0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       125.6812019437502,
+       7.259725217705636
+      ],
+      [
+       125.6821078178209,
+       7.259534873140264
+      ],
+      [
+       125.6819891175457,
+       7.260398725537092
+      ],
+      [
+       125.681433786448,
+       7.26051557370004
+      ],
+      [
+       125.6812019437502,
+       7.259725217705636
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

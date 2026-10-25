@@ -1,27 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
-
-function criteriaBar(value, max, label) {
-  const pct = Math.round((value / max) * 100);
-  return (
-    <div key={label}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ fontSize: 11 }}>{label}</span>
-        <span className="mono muted" style={{ fontSize: 11 }}>{pct}%</span>
-      </div>
-      <div className="meter"><span style={{ width: `${pct}%` }}/></div>
-    </div>
-  );
-}
-
-function scoreVariant(pct) {
-  if (pct >= 80) return 'brand';
-  if (pct >= 55) return 'warn';
-  return '';
-}
+import { MangroveSitesPanel, MangroveRecommendations } from './mangrove-sites.jsx';
 
 function restrictionVariant(type) {
-  if (type === 'Mangrove' || type === 'Watershed') return 'destructive';
+  // Protected restrictions (no development) in red; regulated ones in amber
+  if (['Mangrove', 'Mangrove site', 'Forest'].includes(type)) return 'destructive';
   return 'warn';
 }
 
@@ -96,65 +79,22 @@ function RestrictionList({ restrictions }) {
   );
 }
 
-function SpeciesCard({ sp }) {
-  return (
-    <Card style={{ background: 'hsl(var(--muted) / 0.3)' }}>
-      <CardBody>
-        <div className="row-between" style={{ marginBottom: 10 }}>
-          <span className="muted" style={{ fontSize: 11 }}>#{sp.rank}</span>
-          <Badge variant={scoreVariant(sp.score_pct)}>{sp.score_pct}%</Badge>
-        </div>
-        <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3, marginBottom: 3 }}>
-          {sp.common_name}
-        </div>
-        <div className="muted" style={{ fontSize: 11.5, fontStyle: 'italic', marginBottom: 10 }}>
-          {sp.scientific_name}
-        </div>
-
-        <div className="stack" style={{ gap: 6, marginBottom: 10 }}>
-          {criteriaBar(sp.criteria.soil,        0.35, 'Soil')}
-          {criteriaBar(sp.criteria.elevation,   0.25, 'Elevation')}
-          {criteriaBar(sp.criteria.salinity,    0.20, 'Salinity')}
-          {criteriaBar(sp.criteria.temperature, 0.20, 'Temperature')}
-        </div>
-
-        <div className="stack" style={{ gap: 3, marginBottom: 8 }}>
-          {[
-            ['Soil pref.', sp.soil_preference],
-            ['Elevation',  `${sp.elevation_range} m`],
-            ['Salinity',   sp.salinity_level],
-            ['Temp',       `${sp.temperature_range}°C`],
-          ].map(([k, v]) => (
-            <div key={k} className="row-between" style={{ fontSize: 11.5 }}>
-              <span className="muted">{k}</span>
-              <span>{v}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.5 }}>
-          {sp.suitability_notes}
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
-
 export function ReforestationScreen() {
   const [zones,        setZones]        = useState([]);
   const [selectedId,   setSelectedId]   = useState(null);
   const [zone,         setZone]         = useState(null);
-  const [species,      setSpecies]      = useState([]);
+  const [mangrove,     setMangrove]     = useState(null);
   const [restrictions, setRestrictions] = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [zonesLoading, setZonesLoading] = useState(true);
   const [error,        setError]        = useState(null);
+  const [studyArea,    setStudyArea]    = useState(null);
 
   // Load zone list once
   useEffect(() => {
     fetch('/reforestation')
       .then(r => r.json())
-      .then(json => setZones(json.zones ?? []))
+      .then(json => { setZones(json.zones ?? []); setStudyArea(json.study_area ?? null); })
       .catch(() => setError('Could not load zone list.'))
       .finally(() => setZonesLoading(false));
   }, []);
@@ -163,7 +103,7 @@ export function ReforestationScreen() {
   useEffect(() => {
     if (!selectedId) {
       setZone(null);
-      setSpecies([]);
+      setMangrove(null);
       setRestrictions([]);
       return;
     }
@@ -173,10 +113,10 @@ export function ReforestationScreen() {
       .then(r => r.json())
       .then(json => {
         setZone(json.zone ?? null);
-        setSpecies(json.species ?? []);
+        setMangrove(json.mangrove ?? null);
         setRestrictions(json.restrictions ?? []);
       })
-      .catch(() => setError('Could not load species matches.'))
+      .catch(() => setError('Could not load mangrove species.'))
       .finally(() => setLoading(false));
   }, [selectedId]);
 
@@ -209,8 +149,11 @@ export function ReforestationScreen() {
         <div>
           <h1 className="page-title">Reforestation Planning</h1>
           <p className="page-subtitle">
-            Species suitability and site recommendations · Panabo City
+            Mangrove species and reforestation sites · Panabo City
           </p>
+          {studyArea && (
+            <p className="muted" style={{ fontSize: 12, marginTop: 4, maxWidth: 760 }}>{studyArea.note}</p>
+          )}
         </div>
         <Btn variant="outline" icon="download" onClick={exportReport} disabled={!selectedId || exporting}>
           {exporting ? 'Generating PDF…' : 'Export PDF'}
@@ -251,16 +194,16 @@ export function ReforestationScreen() {
         </Card>
       </div>
 
-      {/* Species results */}
+      {/* Mangrove species (true mangroves and associates only) */}
       <Card>
         <CardHeader>
           <div className="row-between">
             <span className="card-title">
-              Recommended Species
+              Recommended Mangrove Species
               {zone ? ` — ${zone.unit_name}` : ''}
             </span>
-            {!loading && species.length > 0 && (
-              <Badge variant="brand">{species.length} matched</Badge>
+            {!loading && mangrove && (
+              <Badge variant="brand">{mangrove.species.length} species · {mangrove.zones.length} tidal zones</Badge>
             )}
           </div>
         </CardHeader>
@@ -273,28 +216,20 @@ export function ReforestationScreen() {
 
         {!selectedId && !error && (
           <div style={{ padding: '32px 18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 13 }}>
-            Select a barangay above to see recommended species.
+            Select a barangay above to see the mangrove species to plant.
           </div>
         )}
 
         {selectedId && loading && (
           <div style={{ padding: '32px 18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 13 }}>
-            Calculating species suitability…
+            Loading mangrove species…
           </div>
         )}
 
-        {!loading && selectedId && species.length === 0 && !error && (
-          <div style={{ padding: '32px 18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 13 }}>
-            No species matched for this zone.
-          </div>
-        )}
-
-        {!loading && species.length > 0 && (
-          <div className="grid grid-3" style={{ padding: 18, gap: 14 }}>
-            {species.map(sp => <SpeciesCard key={sp.species_id} sp={sp}/>)}
-          </div>
-        )}
+        {!loading && mangrove && <MangroveRecommendations data={mangrove}/>}
       </Card>
+
+      <MangroveSitesPanel onSelectBarangay={id => { setSelectedId(id); window.scrollTo?.({ top: 0, behavior: 'smooth' }); }}/>
     </div>
   );
 }

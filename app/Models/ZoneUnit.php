@@ -27,17 +27,12 @@ class ZoneUnit extends Model
         'elevation_min',
         'elevation_max',
         'salinity_level',
-        'center_latitude',
-        'center_longitude',
-        'geojson_poly',
     ];
 
     protected $casts = [
-        'total_area_ha'      => 'decimal:2',
+        'total_area_ha' => 'decimal:2',
         'population_density' => 'decimal:2',
-        'saturation_index'   => 'decimal:4',
-        'center_latitude'    => 'decimal:7',
-        'center_longitude'   => 'decimal:7',
+        'saturation_index' => 'decimal:4',
     ];
 
     public function hazardData(): HasOne
@@ -50,20 +45,20 @@ class ZoneUnit extends Model
         return $this->hasOne(ZoneSoilData::class, 'zone_unit_id', 'zone_unit_id');
     }
 
-    public function populationProjections(): HasMany
+    public function zoningData(): HasMany
     {
-        return $this->hasMany(PopulationProjection::class, 'zone_unit_id', 'zone_unit_id');
+        return $this->hasMany(ZoneZoningData::class, 'zone_unit_id', 'zone_unit_id');
     }
 
-    public function suitabilityAnalyses(): HasMany
+    public function reforestationSites(): HasMany
     {
-        return $this->hasMany(SuitabilityAnalysis::class, 'zone_unit_id', 'zone_unit_id');
+        return $this->hasMany(ReforestationSite::class, 'zone_unit_id', 'zone_unit_id');
     }
 
     public function latestAnalysis(): HasOne
     {
         return $this->hasOne(SuitabilityAnalysis::class, 'zone_unit_id', 'zone_unit_id')
-                    ->latestOfMany('analysis_id');
+            ->latestOfMany('analysis_id');
     }
 
     public function restrictions(): BelongsToMany

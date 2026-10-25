@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Icon, Btn, Card, CardHeader, CardBody, Inp } from './components.jsx';
+import { apiJson } from './http.js';
 
 // ── AHP constants ────────────────────────────────────────────────────────────
-const AHP_RI = [0, 0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.45]; // n=0..9
+const AHP_RI = [0, 0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49]; // n=0..10
 const SAATY_OPTS = [
   { v: '9',   l: '9 — Extreme importance' },
   { v: '8',   l: '8' },
@@ -40,13 +41,17 @@ function buildMatrix(upper, n) {
 
 function computeAHP(matrix) {
   const n = matrix.length;
-  // Column sums
-  const colSums = Array(n).fill(0);
-  matrix.forEach(row => row.forEach((v, j) => { colSums[j] += v; }));
-  // Priority vector (row averages of normalized matrix)
-  const weights = matrix.map(row =>
-    row.reduce((s, v, j) => s + v / colSums[j], 0) / n
-  );
+  const multiply = vec => matrix.map(row => row.reduce((s, v, j) => s + v * vec[j], 0));
+  // Priority vector = principal eigenvector (power iteration), same as AhpService
+  let weights = Array(n).fill(1 / n);
+  for (let it = 0; it < 1000; it++) {
+    const next = multiply(weights);
+    const total = next.reduce((s, v) => s + v, 0);
+    const normalized = next.map(v => v / total);
+    const delta = Math.max(...normalized.map((v, i) => Math.abs(v - weights[i])));
+    weights = normalized;
+    if (delta < 1e-12) break;
+  }
   // Weighted sum → λmax
   const lambdaMax =
     matrix.reduce((s, row, i) =>
@@ -59,7 +64,7 @@ function computeAHP(matrix) {
     lambdaMax: +lambdaMax.toFixed(4),
     ci:        +ci.toFixed(4),
     cr:        +cr.toFixed(4),
-    valid:     cr <= 0.10,
+    valid:     cr < 0.10,
   };
 }
 
@@ -109,13 +114,7 @@ function AhpCalculator({ criteria }) {
     setSaving(true); setSaveErr('');
     try {
       // Send full matrix to backend — backend re-validates CR and saves weights
-      const res = await fetch('/api/admin/ahp/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ analysis_type: analysisType, matrix }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || json.message || 'Failed to apply weights.');
+      await apiJson('/api/admin/ahp/apply', { method: 'POST', body: { analysis_type: analysisType, matrix } });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) { setSaveErr(e.message); }
@@ -204,8 +203,8 @@ function AhpCalculator({ criteria }) {
           </div>
           <div style={{ flex: 1, fontSize: 12.5, color: crOk ? 'hsl(var(--brand))' : 'hsl(var(--destructive))' }}>
             {crOk
-              ? `CR = ${crPct}% ≤ 10% — Comparisons are consistent. Weights are valid.`
-              : `CR = ${crPct}% > 10% — Comparisons are inconsistent. Adjust values until CR ≤ 10%.`}
+              ? `CR = ${crPct}% < 10% — Comparisons are consistent. Weights are valid.`
+              : `CR = ${crPct}% ≥ 10% — Comparisons are inconsistent. Adjust values until CR < 10%.`}
           </div>
           <div className="row" style={{ gap: 8 }}>
             {saveErr && <span style={{ fontSize: 12, color: 'hsl(var(--destructive))' }}>{saveErr}</span>}
@@ -252,7 +251,7 @@ const TAB_CONFIG = {
     display: r => [r.unit_name, r.unit_type, r.settlement_tier, Number(r.total_area_ha).toLocaleString(), r.salinity_level],
     searchKeys: ['unit_name', 'unit_type', 'settlement_tier'],
     fields: [
-      { key: 'unit_name',       label: 'Unit Name',        type: 'text',   required: true },
+      { key: 'unit_name',       label: 'Unit Name',        type: 'text',   readOnly: true, hint: 'Barangay names match the map boundaries and source data, so they cannot be changed here.' },
       { key: 'unit_type',       label: 'Type',             type: 'select', opts: ['Urban','Rural'], required: true },
       { key: 'settlement_tier', label: 'Settlement Tier',  type: 'select', opts: ['CBD','Minor_Growth','Emerging','Satellite'], required: true },
       { key: 'total_area_ha',   label: 'Total Area (ha)',  type: 'number', required: true },
@@ -269,51 +268,52 @@ const TAB_CONFIG = {
     searchKeys: ['restriction_name', 'restriction_type'],
     fields: [
       { key: 'restriction_name', label: 'Name',        type: 'text',     required: true },
-      { key: 'restriction_type', label: 'Type',        type: 'select',   opts: ['Mangrove','Watershed','SAFDZ','Ecological','Hazard'], required: true },
+      { key: 'restriction_type', label: 'Type',        type: 'select',   opts: ['Mangrove','Mangrove site','Forest','Buffer','SAFDZ','Ecological','Hazard'], required: true },
       { key: 'description',      label: 'Description', type: 'textarea' },
     ],
     canAdd: true, canDelete: true,
   },
+  // Mangrove species recommended by tidal zone (true mangroves and associates, Pototan et al. 2017)
   species: {
-    pk: 'species_id',
-    headers: ['Common Name', 'Scientific Name', 'Soil', 'Salinity'],
-    display: r => [r.common_name, r.scientific_name, r.soil_preference, r.salinity_level],
-    searchKeys: ['common_name', 'scientific_name', 'soil_preference'],
+    pk: 'id',
+    headers: ['Local Name', 'Scientific Name', 'Category', 'Tidal Zone'],
+    display: r => [r.local_name, r.scientific_name, r.category === 'associate' ? 'Associate' : 'True mangrove', r.tidal_zone],
+    searchKeys: ['local_name', 'scientific_name', 'family', 'tidal_zone'],
     fields: [
-      { key: 'common_name',       label: 'Common Name',       type: 'text',   required: true },
-      { key: 'scientific_name',   label: 'Scientific Name',   type: 'text',   required: true },
-      { key: 'soil_preference',   label: 'Soil Preference',   type: 'text',   required: true },
-      { key: 'elevation_range',   label: 'Elevation Range',   type: 'text',   required: true },
-      { key: 'temperature_range', label: 'Temperature Range', type: 'text',   required: true },
-      { key: 'salinity_level',    label: 'Salinity',          type: 'select', opts: ['None','Low','Med','High'], required: true },
-      { key: 'suitability_notes', label: 'Notes',             type: 'textarea' },
+      { key: 'local_name',      label: 'Local Name',      type: 'text',   required: true },
+      { key: 'scientific_name', label: 'Scientific Name', type: 'text',   required: true },
+      { key: 'family',          label: 'Family',          type: 'text',   required: true },
+      { key: 'category',        label: 'Category',        type: 'select', opts: ['true_mangrove','associate'], required: true },
+      { key: 'tidal_zone',      label: 'Tidal Zone',      type: 'select', opts: ['seaward','middle','landward','riverine','back_mangrove'], required: true },
+      { key: 'iucn_status',     label: 'IUCN Status',     type: 'text',   required: true },
+      { key: 'habit',           label: 'Habit',           type: 'text',   required: true, placeholder: 'e.g. Tree, Shrub, Palm' },
+      { key: 'zone_note',       label: 'Zone Note',       type: 'textarea' },
+      { key: 'source',          label: 'Source',          type: 'text',   required: true, placeholder: 'e.g. Pototan et al. (2017)' },
     ],
     canAdd: true, canDelete: true,
   },
   users: {
     pk: 'id',
-    headers: ['Name', 'Email', 'Role'],
-    display: r => [r.name, r.email, r.role],
+    headers: ['Name', 'Email', 'Role', 'Status'],
+    display: r => [r.name, r.email, r.role, r.must_change_password ? 'Temporary password' : 'Active'],
     searchKeys: ['name', 'email', 'role'],
     fields: [
       { key: 'name',     label: 'Full Name', type: 'text',     required: true },
       { key: 'email',    label: 'Email',     type: 'text',     required: true },
-      { key: 'role',     label: 'Role',      type: 'select',   opts: ['admin','planner','viewer'], required: true },
-      { key: 'password', label: 'New Password', type: 'password', placeholder: 'Leave blank to keep current' },
+      { key: 'role',     label: 'Role',      type: 'select',   opts: ['planner','admin','viewer'], required: true },
+      {
+        key: 'password', type: 'password',
+        label: 'New Temporary Password', placeholder: 'Leave blank to keep current',
+        addLabel: 'Temporary Password', addPlaceholder: 'Leave blank to generate one',
+        hint: 'At least 10 characters with upper- and lowercase letters and a number. The user must change it at first login.',
+      },
     ],
-    canAdd: false, canDelete: true,
+    canAdd: true, canDelete: true,
   },
 };
 
 async function apiFetch(method, path, body) {
-  const res = await fetch(`/api/admin${path}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.message || 'Request failed.');
-  return json;
+  return apiJson(`/api/admin${path}`, { method, body });
 }
 
 export function AdminScreen() {
@@ -324,6 +324,7 @@ export function AdminScreen() {
   const [loadErr, setLoadErr] = useState('');
   const [filter, setFilter] = useState('');
   const [modal, setModal]   = useState(null); // { mode:'add'|'edit', record:{} }
+  const [newAccount, setNewAccount] = useState(null); // { email, password } after creating a user
   const [draft, setDraft]   = useState({});
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
@@ -378,7 +379,10 @@ export function AdminScreen() {
     setSaving(true); setSaveErr('');
     try {
       if (modal.mode === 'add') {
-        await apiFetch('POST', `/${tab}`, draft);
+        const created = await apiFetch('POST', `/${tab}`, draft);
+        if (tab === 'users') {
+          setNewAccount({ email: created.data?.email, password: created.temporary_password ?? null });
+        }
       } else {
         const id = modal.record[cfg.pk];
         await apiFetch('PUT', `/${tab}/${id}`, draft);
@@ -467,6 +471,34 @@ export function AdminScreen() {
       {loadErr && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: 'hsl(var(--destructive)/0.1)', border: '1px solid hsl(var(--destructive)/0.25)', fontSize: 13, color: 'hsl(var(--destructive))' }}>
           {loadErr}
+        </div>
+      )}
+
+      {tab === 'users' && newAccount && (
+        <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 8, background: 'hsl(var(--brand) / 0.08)', border: '1px solid hsl(var(--brand) / 0.3)', fontSize: 13 }}>
+          <div className="row-between" style={{ gap: 12 }}>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>Account created for {newAccount.email}</div>
+              {newAccount.password ? (
+                <div>
+                  Temporary password: <span className="mono" style={{ fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'hsl(var(--background))' }}>{newAccount.password}</span>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                    Shown only once. Give it to the user privately; they must set their own password at first login.
+                  </div>
+                </div>
+              ) : (
+                <div className="muted" style={{ fontSize: 12 }}>
+                  They sign in with the temporary password you entered and must set their own password at first login.
+                </div>
+              )}
+            </div>
+            <div className="row" style={{ gap: 6, flexShrink: 0 }}>
+              {newAccount.password && (
+                <Btn sz="sm" variant="outline" icon="copy" onClick={() => navigator.clipboard?.writeText(newAccount.password)}>Copy</Btn>
+              )}
+              <Btn sz="sm" variant="outline" onClick={() => setNewAccount(null)}>Dismiss</Btn>
+            </div>
+          </div>
         </div>
       )}
 
@@ -635,7 +667,7 @@ export function AdminScreen() {
               {cfg.fields.map(f => (
                 <div key={f.key}>
                   <label className="label">
-                    {f.label}{f.required && <span style={{ color:'hsl(var(--destructive))', marginLeft: 2 }}>*</span>}
+                    {modal.mode === 'add' && f.addLabel ? f.addLabel : f.label}{f.required && <span style={{ color:'hsl(var(--destructive))', marginLeft: 2 }}>*</span>}
                   </label>
                   {f.type === 'select' ? (
                     <select className="input" value={draft[f.key]||''} onChange={e => setDraft(p => ({...p, [f.key]: e.target.value}))}>
@@ -655,10 +687,14 @@ export function AdminScreen() {
                       className="input"
                       type={f.type}
                       value={draft[f.key]||''}
-                      placeholder={f.placeholder||''}
+                      placeholder={(modal.mode === 'add' && f.addPlaceholder) || f.placeholder || ''}
+                      autoComplete={f.type === 'password' ? 'new-password' : undefined}
+                      readOnly={f.readOnly}
+                      style={f.readOnly ? { background: 'hsl(var(--muted))', cursor: 'not-allowed' } : undefined}
                       onChange={e => setDraft(p => ({...p, [f.key]: e.target.value}))}
                     />
                   )}
+                  {f.hint && <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>{f.hint}</div>}
                 </div>
               ))}
               {saveErr && (

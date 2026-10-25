@@ -1,0 +1,205 @@
+{
+ "source": "Mangrove sub-zone of the digitized Integrated Zoning Map 2020-2029 within PSA 2023 barangay boundaries; compact pieces = at least 0.5 ha and 80 m mean width",
+ "barangays": {
+  "aofloirendo": {
+   "name": "A. O. Floirendo",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "datuabduldadia": {
+   "name": "Datu Abdul Dadia",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "buenavista": {
+   "name": "Buenavista",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "cacao": {
+   "name": "Cacao",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "cagangohan": {
+   "name": "Cagangohan",
+   "compact_ha": 0,
+   "thin_strips_ha": 5.09
+  },
+  "consolacion": {
+   "name": "Consolacion",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "dapco": {
+   "name": "Dapco",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "gredu": {
+   "name": "Gredu",
+   "compact_ha": 0,
+   "thin_strips_ha": 0.74
+  },
+  "jplaurel": {
+   "name": "J.P. Laurel",
+   "compact_ha": 90.73,
+   "thin_strips_ha": 1.62
+  },
+  "kasilak": {
+   "name": "Kasilak",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "katipunan": {
+   "name": "Katipunan",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "katualan": {
+   "name": "Katualan",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "kauswagan": {
+   "name": "Kauswagan",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "kiotoy": {
+   "name": "Kiotoy",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "littlepanay": {
+   "name": "Little Panay",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "lowerpanaga": {
+   "name": "Lower Panaga",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "mabunao": {
+   "name": "Mabunao",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "maduao": {
+   "name": "Maduao",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "malativas": {
+   "name": "Malativas",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "manay": {
+   "name": "Manay",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "nanyo": {
+   "name": "Nanyo",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "newmalaga": {
+   "name": "New Malaga",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "newmalitbog": {
+   "name": "New Malitbog",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "newpandan": {
+   "name": "New Pandan",
+   "compact_ha": 0,
+   "thin_strips_ha": 4.09
+  },
+  "newvisayas": {
+   "name": "New Visayas",
+   "compact_ha": 0,
+   "thin_strips_ha": 6.72
+  },
+  "quezon": {
+   "name": "Quezon",
+   "compact_ha": 0,
+   "thin_strips_ha": 1.29
+  },
+  "salvacion": {
+   "name": "Salvacion",
+   "compact_ha": 0,
+   "thin_strips_ha": 3.91
+  },
+  "sanfrancisco": {
+   "name": "San Francisco",
+   "compact_ha": 0,
+   "thin_strips_ha": 3.06
+  },
+  "sannicolas": {
+   "name": "San Nicolas",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "sanroque": {
+   "name": "San Roque",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "sanvicente": {
+   "name": "San Vicente",
+   "compact_ha": 0,
+   "thin_strips_ha": 3.09
+  },
+  "santacruz": {
+   "name": "Santa Cruz",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "santonino": {
+   "name": "Santo Niño",
+   "compact_ha": 0,
+   "thin_strips_ha": 2.23
+  },
+  "sindaton": {
+   "name": "Sindaton",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "southerndavao": {
+   "name": "Southern Davao",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "tagpore": {
+   "name": "Tagpore",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "tibungol": {
+   "name": "Tibungol",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "upperlicanan": {
+   "name": "Upper Licanan",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "waterfall": {
+   "name": "Waterfall",
+   "compact_ha": 0,
+   "thin_strips_ha": 0
+  },
+  "sanpedro": {
+   "name": "San Pedro",
+   "compact_ha": 0,
+   "thin_strips_ha": 7.77
+  }
+ }
+}

@@ -1,0 +1,2207 @@
+{
+ "aofloirendo": {
+  "name": "A. O. Floirendo",
+  "psgc": 1102315001,
+  "area_ha": 3216.7,
+  "zoning": {
+   "PA": {
+    "area_ha": 2558.72,
+    "flood_very_high_ha": 89.77,
+    "landslide_high_ha": 1.29
+   },
+   "GC": {
+    "area_ha": 0.26,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 12.93,
+    "flood_very_high_ha": 0.36,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 0.28,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 3.08,
+    "flood_very_high_ha": 0.93,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 7.54,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 5.98,
+    "flood_very_high_ha": 0.27,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 9.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 618.49,
+    "flood_very_high_ha": 0.7,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "datuabduldadia": {
+  "name": "Datu Abdul Dadia",
+  "psgc": 1102315002,
+  "area_ha": 592.22,
+  "zoning": {
+   "PA": {
+    "area_ha": 195.55,
+    "flood_very_high_ha": 12.32,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 13.76,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 282.69,
+    "flood_very_high_ha": 15.26,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 6.74,
+    "flood_very_high_ha": 0.8,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 69.49,
+    "flood_very_high_ha": 1.75,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.01,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 2.66,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 1.23,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 4.69,
+    "flood_very_high_ha": 0.05,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 10.35,
+    "flood_very_high_ha": 0.09,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.94,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "BG": {
+    "area_ha": 3.1,
+    "flood_very_high_ha": 0.7,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.01,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "buenavista": {
+  "name": "Buenavista",
+  "psgc": 1102315003,
+  "area_ha": 791.43,
+  "zoning": {
+   "PA": {
+    "area_ha": 778.72,
+    "flood_very_high_ha": 3.17,
+    "landslide_high_ha": 278.85
+   },
+   "GC": {
+    "area_ha": 0.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 2.86,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 4.13,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.17
+   },
+   "C": {
+    "area_ha": 5.46,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.5
+   }
+  }
+ },
+ "cacao": {
+  "name": "Cacao",
+  "psgc": 1102315004,
+  "area_ha": 821.21,
+  "zoning": {
+   "PA": {
+    "area_ha": 749.06,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 92.99
+   },
+   "GC": {
+    "area_ha": 0.98,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 3.66,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 9.82,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 2.17
+   },
+   "R-1": {
+    "area_ha": 24.62,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 23.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.45
+   },
+   "INS": {
+    "area_ha": 3.25,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 2.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.9
+   },
+   "TZ": {
+    "area_ha": 3.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 1.4
+   },
+   "PRC": {
+    "area_ha": 0.45,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.17
+   }
+  }
+ },
+ "cagangohan": {
+  "name": "Cagangohan",
+  "psgc": 1102315005,
+  "area_ha": 329.32,
+  "zoning": {
+   "PA": {
+    "area_ha": 5.96,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 123.5,
+    "flood_very_high_ha": 0.07,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 62.98,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 53.71,
+    "flood_very_high_ha": 1.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 5.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 14.5,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 12.67,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 21.88,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 12.75,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 0.39,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 8.41,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 7.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "consolacion": {
+  "name": "Consolacion",
+  "psgc": 1102315006,
+  "area_ha": 566.52,
+  "zoning": {
+   "PA": {
+    "area_ha": 416.62,
+    "flood_very_high_ha": 10.34,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 1.97,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 21.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 0.37,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 30.35,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 15.33,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 8.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.86,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 71.38,
+    "flood_very_high_ha": 0.02,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "dapco": {
+  "name": "Dapco",
+  "psgc": 1102315007,
+  "area_ha": 1010.69,
+  "zoning": {
+   "PA": {
+    "area_ha": 879.84,
+    "flood_very_high_ha": 43.28,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 0.33,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 26.8,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 1.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.87,
+    "flood_very_high_ha": 0.41,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 1.64,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 4.73,
+    "flood_very_high_ha": 0.84,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 7.77,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 87.45,
+    "flood_very_high_ha": 2.09,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "gredu": {
+  "name": "Gredu",
+  "psgc": 1102315009,
+  "area_ha": 154.32,
+  "zoning": {
+   "PA": {
+    "area_ha": 4.39,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 58.76,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 52.82,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 0.74,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 31.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 0.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.4,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 4.26,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 0.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.03,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "jplaurel": {
+  "name": "J.P. Laurel",
+  "psgc": 1102315010,
+  "area_ha": 545.35,
+  "zoning": {
+   "PA": {
+    "area_ha": 0.99,
+    "flood_very_high_ha": 0.2,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 155.56,
+    "flood_very_high_ha": 19.67,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 52.01,
+    "flood_very_high_ha": 18.59,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 129.14,
+    "flood_very_high_ha": 19.54,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 92.35,
+    "flood_very_high_ha": 81.61,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 60.33,
+    "flood_very_high_ha": 17.77,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 18.48,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.93,
+    "flood_very_high_ha": 0.16,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 20.64,
+    "flood_very_high_ha": 10.29,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.62,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "BG": {
+    "area_ha": 4.22,
+    "flood_very_high_ha": 0.97,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 10.09,
+    "flood_very_high_ha": 1.14,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "kasilak": {
+  "name": "Kasilak",
+  "psgc": 1102315011,
+  "area_ha": 1059.45,
+  "zoning": {
+   "PA": {
+    "area_ha": 911.81,
+    "flood_very_high_ha": 212.29,
+    "landslide_high_ha": 4.31
+   },
+   "GC": {
+    "area_ha": 4.31,
+    "flood_very_high_ha": 0.03,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 10.99,
+    "flood_very_high_ha": 0.42,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 41.26,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 34.06,
+    "flood_very_high_ha": 1.55,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 35.91,
+    "flood_very_high_ha": 1.07,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.97,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 3.98,
+    "flood_very_high_ha": 3.61,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 2.58,
+    "flood_very_high_ha": 0.05,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 9.58,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 3.91,
+    "flood_very_high_ha": 0.62,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.08,
+    "flood_very_high_ha": 0.01,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "katipunan": {
+  "name": "Katipunan",
+  "psgc": 1102315012,
+  "area_ha": 862.32,
+  "zoning": {
+   "PA": {
+    "area_ha": 714.34,
+    "flood_very_high_ha": 51.29,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 0.12,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 26.98,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 0.52,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 92.66,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 18.47,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 7.24,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 1.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.04,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "katualan": {
+  "name": "Katualan",
+  "psgc": 1102315013,
+  "area_ha": 393.11,
+  "zoning": {
+   "PA": {
+    "area_ha": 367.78,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 32.33
+   },
+   "GR": {
+    "area_ha": 1.91,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.42
+   },
+   "R-1": {
+    "area_ha": 2.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 2.79,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.31
+   },
+   "NONE": {
+    "area_ha": 17.79,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 3.55
+   }
+  }
+ },
+ "kauswagan": {
+  "name": "Kauswagan",
+  "psgc": 1102315014,
+  "area_ha": 437.89,
+  "zoning": {
+   "PA": {
+    "area_ha": 374.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 10.92
+   },
+   "GC": {
+    "area_ha": 2.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 5.47,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 22.46,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 21.32,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 8.78,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 2.88,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.14
+   }
+  }
+ },
+ "kiotoy": {
+  "name": "Kiotoy",
+  "psgc": 1102315015,
+  "area_ha": 661.15,
+  "zoning": {
+   "PA": {
+    "area_ha": 616.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 150.31
+   },
+   "GC": {
+    "area_ha": 1.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 9.62,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 1.07
+   },
+   "R-1": {
+    "area_ha": 21.94,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 2.18
+   },
+   "C": {
+    "area_ha": 7.48,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 3.46,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.76,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "littlepanay": {
+  "name": "Little Panay",
+  "psgc": 1102315016,
+  "area_ha": 326.4,
+  "zoning": {
+   "PA": {
+    "area_ha": 254.04,
+    "flood_very_high_ha": 19.46,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 2.18,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 17.86,
+    "flood_very_high_ha": 0.03,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 23.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 19.27,
+    "flood_very_high_ha": 0.19,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.72,
+    "flood_very_high_ha": 0.71,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 3.44,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 3.13,
+    "flood_very_high_ha": 0.35,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 1.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.03,
+    "flood_very_high_ha": 0.01,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "lowerpanaga": {
+  "name": "Lower Panaga",
+  "psgc": 1102315017,
+  "area_ha": 735.31,
+  "zoning": {
+   "PA": {
+    "area_ha": 285.47,
+    "flood_very_high_ha": 0.56,
+    "landslide_high_ha": 211.82
+   },
+   "GR": {
+    "area_ha": 10.92,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 2.8
+   },
+   "FR": {
+    "area_ha": 157.96,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 138.25
+   },
+   "R-1": {
+    "area_ha": 28.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 14.27
+   },
+   "INS": {
+    "area_ha": 0.73,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.63
+   },
+   "PRC": {
+    "area_ha": 0.25,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 251.06,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 134.32
+   }
+  }
+ },
+ "mabunao": {
+  "name": "Mabunao",
+  "psgc": 1102315018,
+  "area_ha": 915.68,
+  "zoning": {
+   "PA": {
+    "area_ha": 891.89,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 588.63
+   },
+   "GC": {
+    "area_ha": 1.52,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 7.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 11.0,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 1.65
+   },
+   "C": {
+    "area_ha": 1.32,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 2.22,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.31,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.18
+   }
+  }
+ },
+ "maduao": {
+  "name": "Maduao",
+  "psgc": 1102315019,
+  "area_ha": 415.82,
+  "zoning": {
+   "PA": {
+    "area_ha": 295.23,
+    "flood_very_high_ha": 21.29,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 1.51,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 27.19,
+    "flood_very_high_ha": 0.18,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 45.36,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 28.7,
+    "flood_very_high_ha": 0.08,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 9.13,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.39,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 2.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 4.81,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "malativas": {
+  "name": "Malativas",
+  "psgc": 1102315020,
+  "area_ha": 618.13,
+  "zoning": {
+   "PA": {
+    "area_ha": 579.08,
+    "flood_very_high_ha": 0.77,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 8.47,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 5.67,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 9.67,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.88,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 12.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "manay": {
+  "name": "Manay",
+  "psgc": 1102315021,
+  "area_ha": 755.48,
+  "zoning": {
+   "PA": {
+    "area_ha": 594.4,
+    "flood_very_high_ha": 36.51,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 31.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 59.71,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 11.75,
+    "flood_very_high_ha": 1.24,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 5.51,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 5.53,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 3.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 9.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 5.22,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 11.87,
+    "flood_very_high_ha": 1.26,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 16.43,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "nanyo": {
+  "name": "Nanyo",
+  "psgc": 1102315022,
+  "area_ha": 508.87,
+  "zoning": {
+   "PA": {
+    "area_ha": 341.63,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 57.89,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 41.4,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 47.68,
+    "flood_very_high_ha": 3.47,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 2.86,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.4,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 2.12,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 0.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 3.11,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 6.11,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 3.73,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "newmalaga": {
+  "name": "New Malaga",
+  "psgc": 1102315023,
+  "area_ha": 647.91,
+  "zoning": {
+   "PA": {
+    "area_ha": 373.09,
+    "flood_very_high_ha": 3.1,
+    "landslide_high_ha": 49.37
+   },
+   "GC": {
+    "area_ha": 4.13,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 17.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "FR": {
+    "area_ha": 39.35,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 9.26
+   },
+   "C": {
+    "area_ha": 2.75,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 2.25,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.79,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 2.29,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 205.43,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 36.12
+   }
+  }
+ },
+ "newmalitbog": {
+  "name": "New Malitbog",
+  "psgc": 1102315024,
+  "area_ha": 590.91,
+  "zoning": {
+   "PA": {
+    "area_ha": 311.76,
+    "flood_very_high_ha": 0.01,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 61.52,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 19.44,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "FR": {
+    "area_ha": 2.75,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 146.15,
+    "flood_very_high_ha": 23.39,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 0.63,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 2.89,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 25.96,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 2.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 3.11,
+    "flood_very_high_ha": 0.4,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 14.65,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "newpandan": {
+  "name": "New Pandan",
+  "psgc": 1102315025,
+  "area_ha": 119.29,
+  "zoning": {
+   "PA": {
+    "area_ha": 4.35,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 39.82,
+    "flood_very_high_ha": 1.1,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 14.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 4.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 22.14,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 20.2,
+    "flood_very_high_ha": 0.71,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.04,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 8.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 3.77,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.28,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "newvisayas": {
+  "name": "New Visayas",
+  "psgc": 1102315026,
+  "area_ha": 435.02,
+  "zoning": {
+   "PA": {
+    "area_ha": 6.22,
+    "flood_very_high_ha": 0.18,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 55.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 223.54,
+    "flood_very_high_ha": 0.17,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 13.49,
+    "flood_very_high_ha": 0.22,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 6.72,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 54.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 46.57,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 14.11,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 0.74,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 5.81,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 5.64,
+    "flood_very_high_ha": 0.03,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 1.46,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "quezon": {
+  "name": "Quezon",
+  "psgc": 1102315027,
+  "area_ha": 393.48,
+  "zoning": {
+   "PA": {
+    "area_ha": 138.65,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 10.38,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 104.56,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 4.2,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 1.29,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 61.35,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 4.47,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.36,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 3.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.59,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.57,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 63.23,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "salvacion": {
+  "name": "Salvacion",
+  "psgc": 1102315028,
+  "area_ha": 145.8,
+  "zoning": {
+   "PA": {
+    "area_ha": 5.35,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 19.01,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 93.39,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 0.71,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 3.91,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 9.94,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 10.94,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 1.67,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "sanfrancisco": {
+  "name": "San Francisco",
+  "psgc": 1102315029,
+  "area_ha": 198.75,
+  "zoning": {
+   "PA": {
+    "area_ha": 4.44,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 44.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 93.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 3.06,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 28.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 9.41,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 8.66,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 4.25,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.71,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "sannicolas": {
+  "name": "San Nicolas",
+  "psgc": 1102315030,
+  "area_ha": 612.79,
+  "zoning": {
+   "PA": {
+    "area_ha": 524.04,
+    "flood_very_high_ha": 7.05,
+    "landslide_high_ha": 3.86
+   },
+   "GC": {
+    "area_ha": 2.57,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 26.98,
+    "flood_very_high_ha": 3.37,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 24.53,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 9.12,
+    "flood_very_high_ha": 0.27,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 14.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 1.78,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.37,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 5.31,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 3.27,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.62,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.12,
+    "flood_very_high_ha": 0.01,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "sanroque": {
+  "name": "San Roque",
+  "psgc": 1102315031,
+  "area_ha": 617.67,
+  "zoning": {
+   "PA": {
+    "area_ha": 606.16,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 282.1
+   },
+   "GR": {
+    "area_ha": 2.43,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 7.8,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 0.52,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.7,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.06,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "sanvicente": {
+  "name": "San Vicente",
+  "psgc": 1102315032,
+  "area_ha": 532.27,
+  "zoning": {
+   "PA": {
+    "area_ha": 8.45,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 124.0,
+    "flood_very_high_ha": 3.98,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 259.93,
+    "flood_very_high_ha": 1.62,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 67.88,
+    "flood_very_high_ha": 0.09,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 3.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 45.65,
+    "flood_very_high_ha": 0.17,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 3.89,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 1.1,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 3.42,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 1.97,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 12.88,
+    "flood_very_high_ha": 0.55,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "santacruz": {
+  "name": "Santa Cruz",
+  "psgc": 1102315033,
+  "area_ha": 842.61,
+  "zoning": {
+   "PA": {
+    "area_ha": 835.45,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 362.27
+   },
+   "GC": {
+    "area_ha": 0.23,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 1.18,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.13
+   },
+   "R-1": {
+    "area_ha": 3.95,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.06
+   },
+   "C": {
+    "area_ha": 0.65,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.07,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.08,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "santonino": {
+  "name": "Santo Niño",
+  "psgc": 1102315034,
+  "area_ha": 141.81,
+  "zoning": {
+   "GC": {
+    "area_ha": 71.56,
+    "flood_very_high_ha": 1.86,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 13.53,
+    "flood_very_high_ha": 0.45,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 0.68,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 2.23,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 2.43,
+    "flood_very_high_ha": 0.11,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 47.46,
+    "flood_very_high_ha": 5.05,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.99,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 2.32,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.61,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.01,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "sindaton": {
+  "name": "Sindaton",
+  "psgc": 1102315035,
+  "area_ha": 940.93,
+  "zoning": {
+   "PA": {
+    "area_ha": 700.55,
+    "flood_very_high_ha": 3.69,
+    "landslide_high_ha": 101.74
+   },
+   "GR": {
+    "area_ha": 109.88,
+    "flood_very_high_ha": 1.67,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 4.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.28,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 3.56,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.64,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 3.5,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 116.65,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 24.58
+   }
+  }
+ },
+ "southerndavao": {
+  "name": "Southern Davao",
+  "psgc": 1102315036,
+  "area_ha": 421.13,
+  "zoning": {
+   "PA": {
+    "area_ha": 229.18,
+    "flood_very_high_ha": 1.03,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 47.57,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 79.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 10.18,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 12.89,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 10.93,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 4.46,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 26.04,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "tagpore": {
+  "name": "Tagpore",
+  "psgc": 1102315037,
+  "area_ha": 441.33,
+  "zoning": {
+   "PA": {
+    "area_ha": 313.73,
+    "flood_very_high_ha": 8.02,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 0.72,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 7.79,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 69.14,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 31.59,
+    "flood_very_high_ha": 0.14,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 4.84,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 0.95,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 11.2,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "BG": {
+    "area_ha": 0.83,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "tibungol": {
+  "name": "Tibungol",
+  "psgc": 1102315038,
+  "area_ha": 1164.5,
+  "zoning": {
+   "PA": {
+    "area_ha": 747.91,
+    "flood_very_high_ha": 16.07,
+    "landslide_high_ha": 50.98
+   },
+   "GC": {
+    "area_ha": 0.28,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 35.55,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "FR": {
+    "area_ha": 39.14,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.51
+   },
+   "R-1": {
+    "area_ha": 2.96,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 3.28,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.09,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 2.04,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 1.4,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 331.85,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 54.26
+   }
+  }
+ },
+ "upperlicanan": {
+  "name": "Upper Licanan",
+  "psgc": 1102315039,
+  "area_ha": 693.45,
+  "zoning": {
+   "PA": {
+    "area_ha": 631.12,
+    "flood_very_high_ha": 2.37,
+    "landslide_high_ha": 148.02
+   },
+   "GC": {
+    "area_ha": 1.02,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 8.36,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.51
+   },
+   "I": {
+    "area_ha": 0.06,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 29.6,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 1.26
+   },
+   "C": {
+    "area_ha": 15.87,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.45,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "QZ": {
+    "area_ha": 5.49,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.11,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.36,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 0.03,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   }
+  }
+ },
+ "waterfall": {
+  "name": "Waterfall",
+  "psgc": 1102315040,
+  "area_ha": 371.31,
+  "zoning": {
+   "PA": {
+    "area_ha": 352.33,
+    "flood_very_high_ha": 1.54,
+    "landslide_high_ha": 12.17
+   },
+   "GC": {
+    "area_ha": 1.0,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 5.7,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "FR": {
+    "area_ha": 2.29,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 7.58,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "C": {
+    "area_ha": 1.16,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 1.25,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.03
+   }
+  }
+ },
+ "sanpedro": {
+  "name": "San Pedro",
+  "psgc": 1102315041,
+  "area_ha": 213.85,
+  "zoning": {
+   "PA": {
+    "area_ha": 2.4,
+    "flood_very_high_ha": 0.01,
+    "landslide_high_ha": 0.0
+   },
+   "GC": {
+    "area_ha": 153.5,
+    "flood_very_high_ha": 16.76,
+    "landslide_high_ha": 0.0
+   },
+   "GR": {
+    "area_ha": 1.49,
+    "flood_very_high_ha": 0.29,
+    "landslide_high_ha": 0.0
+   },
+   "I": {
+    "area_ha": 20.09,
+    "flood_very_high_ha": 0.34,
+    "landslide_high_ha": 0.0
+   },
+   "MG": {
+    "area_ha": 7.77,
+    "flood_very_high_ha": 2.28,
+    "landslide_high_ha": 0.0
+   },
+   "R-1": {
+    "area_ha": 0.05,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "UTS": {
+    "area_ha": 20.48,
+    "flood_very_high_ha": 0.57,
+    "landslide_high_ha": 0.0
+   },
+   "INS": {
+    "area_ha": 0.62,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "TZ": {
+    "area_ha": 0.97,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "PRC": {
+    "area_ha": 0.68,
+    "flood_very_high_ha": 0.33,
+    "landslide_high_ha": 0.0
+   },
+   "AI": {
+    "area_ha": 0.56,
+    "flood_very_high_ha": 0.0,
+    "landslide_high_ha": 0.0
+   },
+   "NONE": {
+    "area_ha": 5.24,
+    "flood_very_high_ha": 0.46,
+    "landslide_high_ha": 0.0
+   }
+  }
+ }
+}

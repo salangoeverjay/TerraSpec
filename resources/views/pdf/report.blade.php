@@ -259,33 +259,31 @@
 </div>
 @endif
 
-{{-- ── REFORESTATION SPECIES ── --}}
-@if(in_array('Recommendations', $sections) && $report_type === 'Reforestation Plan' && isset($species) && count($species))
+{{-- ── REFORESTATION SPECIES (mangroves only) ── --}}
+@if(in_array('Recommendations', $sections) && $report_type === 'Reforestation Plan' && isset($mangrove))
 <div class="section">
-  <div class="section-title">Recommended Tree Species (AHP-WLC Matched)</div>
+  <div class="section-title">Recommended Mangrove Species by Tidal Zone</div>
   <table class="score-table">
     <thead>
-      <tr><th>#</th><th>Common Name</th><th>Scientific Name</th><th>Match Score</th><th>Soil</th><th>Salinity</th></tr>
+      <tr><th>Tidal zone</th><th>Local name</th><th>Scientific name</th><th>Type</th><th>IUCN status</th></tr>
     </thead>
     <tbody>
-      @foreach($species as $sp)
-      <tr>
-        <td><span class="rank-badge">{{ $sp['rank'] }}</span></td>
-        <td style="font-weight:600">{{ $sp['common_name'] }}</td>
-        <td style="font-style:italic;color:#6b7280">{{ $sp['scientific_name'] }}</td>
-        <td>
-          <strong class="{{ $sp['score_pct'] >= 80 ? '' : '' }}" style="color:{{ $sp['score_pct'] >= 75 ? '#16a34a' : ($sp['score_pct'] >= 50 ? '#d97706' : '#6b7280') }}">{{ $sp['score_pct'] }}%</strong>
-          <div class="bar-wrap"><div class="bar-fill {{ $sp['score_pct'] >= 75 ? 'bar-high' : 'bar-mid' }}" style="width:{{ $sp['score_pct'] }}%"></div></div>
-        </td>
-        <td>{{ $sp['soil_preference'] }}</td>
-        <td>{{ $sp['salinity_level'] }}</td>
-      </tr>
+      @foreach($mangrove['zones'] as $group)
+        @foreach($group['species'] as $sp)
+        <tr>
+          <td>{{ $loop->first ? $group['label'] : '' }}</td>
+          <td style="font-weight:600">{{ $sp['local_name'] }}</td>
+          <td style="font-style:italic;color:#6b7280">{{ $sp['scientific_name'] }}</td>
+          <td>{{ $sp['category_label'] }}</td>
+          <td>{{ $sp['iucn_status'] }}</td>
+        </tr>
+        @endforeach
       @endforeach
     </tbody>
   </table>
+  <p style="font-size:9.5px;color:#6b7280;margin-top:6px">Species: {{ $mangrove['source'] }}. {{ $mangrove['zonation_note'] }}</p>
 </div>
 @endif
-
 {{-- ── COMPARATIVE ANALYSIS RANKINGS ── --}}
 @if($report_type === 'Comparative Analysis' && isset($rankings))
 @if(!empty($ai_narrative))
@@ -298,7 +296,7 @@
 </div>
 @endif
 <div class="section">
-  <div class="section-title">City-Wide Suitability Rankings — Commercial Analysis (All 40 Barangays)</div>
+  <div class="section-title">City-Wide Suitability Rankings — {{ ucfirst($analysis_type ?? 'commercial') }} Analysis ({{ $ranking_scope ?? 'All 40 Barangays' }})</div>
   <table class="ranking-table">
     <thead>
       <tr><th>Rank</th><th>Barangay</th><th>Type</th><th>Score</th><th>Classification</th></tr>

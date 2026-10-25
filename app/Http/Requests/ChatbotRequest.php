@@ -17,6 +17,7 @@ class ChatbotRequest extends FormRequest
             'prompt' => ['required', 'string', 'max:2000'],
             'context' => ['sometimes', 'array'],
             'context.selection' => ['sometimes', 'string', 'max:255'],
+            'context.zone' => ['sometimes', 'nullable', 'string', 'max:100'],
             'context.suitability' => ['sometimes', 'numeric', 'between:0,100'],
             'context.weights' => ['sometimes', 'array'],
             'context.weights.*' => ['sometimes', 'numeric', 'between:0,1'],

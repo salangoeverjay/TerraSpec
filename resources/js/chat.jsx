@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createConversation, loadConversations, getChatStorageKey, getOrCreateGuestToken, GUEST_TOKEN_KEY } from './data.js';
-import { Icon, Btn } from './components.jsx';
+import { Icon, Btn, levelStyle } from './components.jsx';
 
 function renderInline(text) {
   const result = [];
@@ -73,7 +73,7 @@ const ANALYSIS_COLORS = {
 };
 
 function LiveCalcCard({ data, go }) {
-  const scoreColor = data.total_pct >= 75 ? '#16a34a' : data.total_pct >= 50 ? '#d97706' : '#dc2626';
+  const scoreColor = levelStyle(data.suitability_level).hex;
   const typeColor  = ANALYSIS_COLORS[data.analysis_type] ?? 'hsl(var(--brand))';
 
   return (
@@ -136,6 +136,34 @@ function LiveCalcCard({ data, go }) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// Runs the same AI map-filter extraction as "Ask the map" and opens Map Viewer with the result applied
+function ShowOnMapButton({ question, go }) {
+  const [state, setState] = useState('idle');
+  async function show() {
+    setState('loading');
+    try {
+      const res = await fetch('/api/map/interpret', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.data?.understood) throw new Error(body.message ?? 'not a map question');
+      go('map', { askResult: body.data });
+    } catch {
+      setState('failed');
+    }
+  }
+  return (
+    <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+      <button onClick={show} disabled={state === 'loading'} className="chip" style={{ fontSize: 12, fontWeight: 600, color: 'hsl(var(--brand))', borderColor: 'hsl(var(--brand) / 0.45)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <Icon name="map" size={12}/> {state === 'loading' ? 'Reading the question…' : 'Show on map'}
+      </button>
+      {state === 'failed' && <span className="muted" style={{ fontSize: 11.5 }}>Could not turn this into map filters. Try the Ask the map bar in Map Viewer.</span>}
     </div>
   );
 }
@@ -302,8 +330,8 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         body: JSON.stringify({
           prompt: message,
           context: {
-            selection:   mapContext?.barangay ?? 'Panabo City',
-            suitability: mapContext?.score    ?? null,
+            selection:   mapContext?.selection ?? mapContext?.barangay ?? 'Panabo City',
+            ...(mapContext?.score != null && { suitability: mapContext.score }),
             zone:        mapContext?.zone     ?? null,
           },
         }),
@@ -319,6 +347,10 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         const msgs = c.messages.filter(m => m.content !== 'Thinking...').concat({
           role:             'assistant',
           content:          payload.answer || 'Gemini returned an empty response.',
+          model:            payload.model || null,
+          question:         message,
+          mapIntent:        ['zoning_compliance', 'environmental_assessment'].includes(intent),
+          fallbackUsed:     !!payload.fallback_used,
           zones:            payload.recommended_zones ?? [],
           live_calculation: payload.live_calculation || null,
           followups:        buildFollowups(intent, entities),
@@ -334,7 +366,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
       const text = err instanceof Error ? err.message : 'The assistant could not answer right now.';
       setChatError(text);
       updateActive(c => ({
-        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: 'Could not reach Gemini 2.5 Flash. Check the API key and try again.' }),
+        messages: c.messages.filter(m => m.content !== 'Thinking...').concat({ role: 'assistant', content: text }),
       }));
     } finally {
       setIsLoading(false); setChatInput('');
@@ -779,6 +811,14 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                     {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                   </div>
                 )}
+                {m.role === 'assistant' && m.mapIntent && m.question && go && (
+                  <ShowOnMapButton question={m.question} go={go}/>
+                )}
+                {m.role === 'assistant' && m.model && (
+                  <div className="muted mono" style={{ fontSize: 10.5 }} title={m.fallbackUsed ? 'The main model was busy or out of quota, so a backup model answered.' : undefined}>
+                    Answered by {m.model}{m.fallbackUsed ? ' (backup model)' : ''}
+                  </div>
+                )}
                 {m.role === 'assistant' && m.zones?.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -797,9 +837,9 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                           <span style={{ fontWeight: 500 }}>{z.unit_name}</span>
                           <span style={{
                             padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                            background: z.total_pct >= 75 ? 'hsl(142 72% 29% / 0.15)' : z.total_pct >= 55 ? 'hsl(38 92% 50% / 0.15)' : 'hsl(var(--muted))',
-                            color: z.total_pct >= 75 ? 'hsl(142 72% 29%)' : z.total_pct >= 55 ? 'hsl(32 95% 44%)' : 'hsl(var(--muted-foreground))',
-                          }}>{z.total_pct}%</span>
+                            background: levelStyle(z.suitability_level).bg,
+                            color: levelStyle(z.suitability_level).hex,
+                          }} title={z.suitability_level}>{z.total_pct}%</span>
                         </div>
                       ))}
                     </div>
@@ -946,7 +986,6 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                     const dotColor = {
                       barangay: 'hsl(var(--brand))',
                       zone:     '#3b82f6',
-                      parcel:   '#8b5cf6',
                       species:  '#0d9488',
                       hazard:   'hsl(var(--destructive))',
                     }[e.type] ?? 'hsl(var(--muted-foreground))';

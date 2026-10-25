@@ -23,11 +23,11 @@ class PopulationProjectionSeeder extends Seeder
                 $n = $year - 2020;
                 $projected = (int) round($base * pow(1 + $rate, $n));
 
-                PopulationProjection::create([
-                    'zone_unit_id' => $zone->zone_unit_id,
-                    'year'         => $year,
-                    'population'   => $projected,
-                ]);
+                // One row per barangay and year, also when seeding again
+                PopulationProjection::updateOrCreate(
+                    ['zone_unit_id' => $zone->zone_unit_id, 'year' => $year],
+                    ['population' => $projected],
+                );
             }
         }
     }

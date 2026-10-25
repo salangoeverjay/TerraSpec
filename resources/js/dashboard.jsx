@@ -1,10 +1,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { loadConversations } from './data.js';
-import { PANABO } from './data.js';
+import { loadConversations, BARANGAY_COORDS, fetchSuitabilitySummary } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
 
+const USE_LABEL = {
+  commercial: 'Commercial', residential: 'Residential', industrial: 'Industrial',
+  agricultural: 'Agricultural', reforestation: 'Reforestation',
+};
+
+const LEVEL_HEX = {
+  'Highly Suitable': '#16a34a',
+  'Moderately Suitable': '#f59e0b',
+  'Low Suitability': '#ef4444',
+  'Not Suitable': '#9ca3af',
+};
+
+// Highest stored suitability result of a barangay across land uses.
+function bestUse(scores) {
+  return Object.entries(scores ?? {})
+    .map(([use, s]) => ({ use, ...s }))
+    .sort((a, b) => b.pct - a.pct)[0] ?? null;
+}
+
 function DashboardMap({ onParcelClick }) {
+  const [summary, setSummary] = useState([]);
+  useEffect(() => {
+    fetchSuitabilitySummary().then(setSummary).catch(e => console.warn('Suitability summary error', e));
+  }, []);
+
   return (
     <Map
       center={[125.6847, 7.307]}
@@ -29,14 +52,16 @@ function DashboardMap({ onParcelClick }) {
         <MarkerTooltip>Panabo City, Davao del Norte</MarkerTooltip>
       </MapMarker>
 
-      {PANABO.parcels.map(p => {
-        const zone = PANABO.zones.find(z => z.id === p.zone);
+      {summary.map(z => {
+        const coords = BARANGAY_COORDS[z.unit_name];
+        const best = bestUse(z.scores);
+        if (!coords || !best) return null;
         return (
-          <MapMarker key={p.id} longitude={p.lng} latitude={p.lat} onClick={() => onParcelClick(p.id)}>
+          <MapMarker key={z.zone_unit_id} longitude={coords[0]} latitude={coords[1]} onClick={() => onParcelClick(z.unit_name)}>
             <MarkerContent>
-              <div style={{ width: 13, height: 13, borderRadius: '50%', background: zone?.hex ?? 'hsl(var(--brand))', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.35)', cursor: 'pointer' }}/>
+              <div style={{ width: 11, height: 11, borderRadius: '50%', background: LEVEL_HEX[best.level] ?? '#9ca3af', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.35)', cursor: 'pointer' }}/>
             </MarkerContent>
-            <MarkerTooltip>{p.id} · {p.barangay} · {p.score}%</MarkerTooltip>
+            <MarkerTooltip>{z.unit_name} · best: {USE_LABEL[best.use]} {best.pct}%</MarkerTooltip>
           </MapMarker>
         );
       })}
@@ -119,7 +144,7 @@ export function DashboardScreen({ go }) {
         {[
           { label: 'Zone Units',       value: zoneUnitCount,  icon: 'pin',   sub: '40 barangays · Panabo City' },
           { label: 'Avg Suitability',  value: displayAvg,     icon: 'chart', sub: 'Commercial · AHP-WLC score' },
-          { label: 'Flagged Areas',    value: flaggedCount,   icon: 'alert', sub: stats?.breakdown ? `Flood ${stats.breakdown.flood} · Landslide ${stats.breakdown.landslide} · Storm ${stats.breakdown.storm_surge}` : 'Hazard-flagged zones' },
+          { label: 'High-Hazard Barangays', value: flaggedCount, icon: 'alert', sub: stats?.breakdown ? `High flood ${stats.breakdown.flood} · High landslide ${stats.breakdown.landslide}` : 'High flood or landslide' },
           { label: 'Active Reports',   value: activeReports,  icon: 'file',  sub: 'Pending / Draft / Final' },
         ].map(s => (
           <Card key={s.label}>
@@ -144,14 +169,15 @@ export function DashboardScreen({ go }) {
             </div>
           </CardHeader>
           <div style={{ height: 240, position: 'relative' }}>
-            <DashboardMap onParcelClick={(id) => go('map', { parcel: id })}/>
+            <DashboardMap onParcelClick={name => go('map', { barangay: name })}/>
           </div>
           <CardBody style={{ paddingTop: 10 }}>
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {PANABO.zones.map(z => (
-                <div key={z.id} className="row" style={{ gap: 5, fontSize: 11.5 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: z.hex, opacity: 0.85, display: 'inline-block', flexShrink: 0 }}/>
-                  <span>{z.name}</span>
+              <span className="muted" style={{ fontSize: 11.5 }}>Best land use per barangay:</span>
+              {Object.entries(LEVEL_HEX).map(([level, hex]) => (
+                <div key={level} className="row" style={{ gap: 5, fontSize: 11.5 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: hex, display: 'inline-block', flexShrink: 0 }}/>
+                  <span>{level}</span>
                 </div>
               ))}
             </div>
@@ -234,7 +260,7 @@ export function DashboardScreen({ go }) {
         <Card>
           <CardHeader>
             <div className="row-between">
-              <span className="card-title">Top Tree Species</span>
+              <span className="card-title">Mangrove Species</span>
               <Btn sz="sm" variant="outline" onClick={() => go('reforestation')}>View All</Btn>
             </div>
           </CardHeader>
@@ -245,9 +271,9 @@ export function DashboardScreen({ go }) {
               <div key={s.species_id} className="row-between" style={{ padding: '9px 18px', borderBottom: i < topSpecies.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.common_name}</div>
-                  <div className="muted" style={{ fontSize: 11.5 }}>{s.soil_preference?.split('/')[0].trim()}</div>
+                  <div className="muted" style={{ fontSize: 11.5, fontStyle: 'italic' }}>{s.scientific_name}</div>
                 </div>
-                <Badge variant={s.salinity_level === 'High' ? 'brand' : s.salinity_level === 'Med' ? 'warn' : ''}>{s.salinity_level}</Badge>
+                <Badge variant={['Vulnerable', 'Near threatened'].includes(s.iucn_status) ? 'warn' : 'brand'} style={{ whiteSpace: 'nowrap' }}>{['Vulnerable', 'Near threatened'].includes(s.iucn_status) ? s.iucn_status : s.tidal_zone}</Badge>
               </div>
             ))}
           </CardBody>
