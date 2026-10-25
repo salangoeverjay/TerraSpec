@@ -48,8 +48,10 @@ class SuitabilityScoreService
      * Constraint-masked AHP weighted linear combination:
      * 1) remove land excluded for this analysis type (config/suitability.php, CLUP sieve);
      * 2) score each criterion 0-1 and combine with the AHP weights in suitability_criteria.
+     *
+     * @param  Collection<int, SuitabilityCriteria>|null  $criteria  weights already loaded by calculateAll()
      */
-    public function calculate(ZoneUnit $zone, string $analysisType, ?string $useSubtype = null): array
+    public function calculate(ZoneUnit $zone, string $analysisType, ?string $useSubtype = null, ?Collection $criteria = null): array
     {
         $zone->loadMissing(['hazardData', 'soilData', 'zoningData']);
         $hazard = $zone->hazardData;
@@ -116,7 +118,7 @@ class SuitabilityScoreService
         ];
 
         // 8. APPLY WEIGHTS — fetched from suitability_criteria, never hardcoded
-        $criteriaRows = SuitabilityCriteria::all();
+        $criteriaRows = $criteria ?? SuitabilityCriteria::all();
         $appliedWeights = [];
         $totalScore = 0.0;
         $breakdown = [];
@@ -292,11 +294,15 @@ class SuitabilityScoreService
     public function calculateAll(string $analysisType, ?string $useSubtype = null): Collection
     {
         // Reforestation is assessed only in the study area (barangays with verified sites)
+        // A barangay without CLUP hazard data cannot be scored, so it is left out rather than guessed
         $zones = ZoneUnit::with(['hazardData', 'soilData', 'zoningData'])
+            ->has('hazardData')
             ->when($this->studyArea->appliesTo($analysisType), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
             ->get();
-        $results = $zones->map(function (ZoneUnit $zone) use ($analysisType, $useSubtype) {
-            return $this->calculate($zone, $analysisType, $useSubtype);
+        // Weights are read once per run, not once per barangay
+        $criteria = SuitabilityCriteria::all();
+        $results = $zones->map(function (ZoneUnit $zone) use ($analysisType, $useSubtype, $criteria) {
+            return $this->calculate($zone, $analysisType, $useSubtype, $criteria);
         });
 
         return $results

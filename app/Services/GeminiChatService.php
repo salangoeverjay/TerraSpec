@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\MangroveSpecies;
-use App\Models\SuitabilityAnalysis;
 use App\Models\ZoneUnit;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
@@ -65,19 +64,16 @@ class GeminiChatService
             return [];
         }
 
-        return SuitabilityAnalysis::with('zoneUnit')
-            ->whereIn('zone_unit_id', $mentionedIds)
-            ->where('analysis_type', $type)
-            ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
-            ->orderByDesc('total_score')
-            ->get()
+        // Live scores (already limited to the study area for reforestation), one chip per barangay
+        return $this->scorer->calculateAll($type)
+            ->filter(fn (array $r) => in_array($r['zone']->zone_unit_id, $mentionedIds, true))
             ->take(5)
-            ->map(fn ($a) => [
-                'zone_unit_id' => $a->zone_unit_id,
-                'unit_name' => $a->zoneUnit->unit_name,
-                'unit_type' => $a->zoneUnit->unit_type,
-                'total_pct' => round($a->total_score * 100, 1),
-                'suitability_level' => $a->suitability_level,
+            ->map(fn (array $r) => [
+                'zone_unit_id' => $r['zone']->zone_unit_id,
+                'unit_name' => $r['zone']->unit_name,
+                'unit_type' => $r['zone']->unit_type,
+                'total_pct' => $r['total_pct'],
+                'suitability_level' => $r['suitability_level'],
                 'analysis_type' => $type,
             ])
             ->values()

@@ -69,12 +69,14 @@ it('counts high-hazard barangays on the dashboard from verified data', function 
         ->and($stats['restrictions'][0]['severity'])->toBe('high');
 });
 
-it('ranks each barangay once even after repeated calculations', function () {
+it('ranks each barangay once from live scores, ignoring stored calculation rows', function () {
     $zone = ZoneUnit::first();
-    SuitabilityAnalysis::create(['zone_unit_id' => $zone->zone_unit_id, 'analysis_type' => 'commercial', 'total_score' => 0.5, 'suitability_level' => 'Moderately Suitable']);
-    SuitabilityAnalysis::create(['zone_unit_id' => $zone->zone_unit_id, 'analysis_type' => 'commercial', 'total_score' => 0.6, 'suitability_level' => 'Moderately Suitable']);
+    SuitabilityAnalysis::create(['zone_unit_id' => $zone->zone_unit_id, 'analysis_type' => 'commercial', 'total_score' => 0.99, 'suitability_level' => 'Highly Suitable']);
+    SuitabilityAnalysis::create(['zone_unit_id' => $zone->zone_unit_id, 'analysis_type' => 'commercial', 'total_score' => 0.98, 'suitability_level' => 'Highly Suitable']);
 
-    $rankings = $this->getJson('/suitability/rankings?analysis_type=commercial')->assertOk()->json('data');
+    $rankings = collect($this->getJson('/suitability/rankings?analysis_type=commercial')->assertOk()->json('data'));
 
-    expect($rankings)->toHaveCount(1)->and($rankings[0]['total_pct'])->toEqual(60);
+    expect($rankings)->toHaveCount(40)
+        ->and($rankings->pluck('zone_unit_id')->unique())->toHaveCount(40)
+        ->and($rankings->firstWhere('zone_unit_id', $zone->zone_unit_id)['total_pct'])->not->toEqual(99);
 });

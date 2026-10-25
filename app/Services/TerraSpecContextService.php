@@ -4,14 +4,16 @@ namespace App\Services;
 
 use App\Models\EnvironmentalRestriction;
 use App\Models\MangroveSpecies;
-use App\Models\SuitabilityAnalysis;
 use App\Models\ZoneUnit;
 
 class TerraSpecContextService
 {
     private const TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
-    public function __construct(private ReforestationStudyArea $studyArea) {}
+    public function __construct(
+        private ReforestationStudyArea $studyArea,
+        private SuitabilityScoreService $scorer,
+    ) {}
 
     public function build(): string
     {
@@ -38,51 +40,35 @@ class TerraSpecContextService
              ."Coverage: {$total} barangays ({$urban} Urban, {$rural} Rural)\n"
              ."Method: CLUP development-constraint step, then AHP-Weighted Linear Combination (7 criteria); compared with AHP-TOPSIS, EWM-WLC and EWM-TOPSIS\n"
              ."Criteria: Flood Risk, Slope, Soil, Liquefaction, Population Density, Market Saturation, Zoning Compliance\n"
-             .'Note: AHP weights are the current system weights set by the LGU; scores are decision support only.';
+             .'Note: the scores below are computed live from the current AHP weights set by the LGU; they are decision support only.';
     }
 
     private function buildSuitabilityRankings(): string
     {
         $lines = [];
 
-        // Latest stored result per barangay and land use (repeated runs are stored as new rows)
-        $latestIds = SuitabilityAnalysis::query()
-            ->selectRaw('MAX(analysis_id) as analysis_id')
-            ->groupBy('zone_unit_id', 'analysis_type')
-            ->pluck('analysis_id');
-
+        // Computed live from the current weights, the same scores the rankings page shows
         foreach (self::TYPES as $type) {
-            $rows = SuitabilityAnalysis::with('zoneUnit')
-                ->whereIn('analysis_id', $latestIds)
-                ->where('analysis_type', $type)
-                ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
-                ->orderByDesc('total_score')
-                ->get()
-                ->values();
+            $results = $this->scorer->calculateAll($type);
 
-            if ($rows->isEmpty()) {
+            if ($results->isEmpty()) {
                 continue;
             }
 
-            $avg = round($rows->avg('total_score') * 100, 1);
+            $avg = round($results->avg('total_score') * 100, 1);
             $label = strtoupper($type)." SUITABILITY (avg: {$avg}%)";
             $lines[] = "=== {$label} ===";
             if ($this->studyArea->appliesTo($type)) {
                 $lines[] = $this->studyArea->description();
             }
 
-            foreach ($rows as $i => $row) {
-                $rank = $i + 1;
-                $name = $row->zoneUnit->unit_name;
-                $type_ = $row->zoneUnit->unit_type;
-                $pct = round($row->total_score * 100, 1);
-                $level = $row->suitability_level;
-                $lines[] = "{$rank}. {$name} ({$type_}) — {$pct}% [{$level}]";
+            foreach ($results as $result) {
+                $lines[] = "{$result['rank']}. {$result['zone']->unit_name} ({$result['zone']->unit_type}) — {$result['total_pct']}% [{$result['suitability_level']}]";
             }
         }
 
         return empty($lines)
-            ? "=== SUITABILITY RANKINGS ===\nNo ranking data available. Run a suitability calculation first."
+            ? "=== SUITABILITY RANKINGS ===\nNo ranking data available."
             : implode("\n", $lines);
     }
 

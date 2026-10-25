@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 
 class SuitabilityController extends Controller
 {
+    private const ANALYSIS_TYPES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
+
     public function __construct(
         private SuitabilityScoreService $scorer,
         private ReforestationStudyArea $studyArea,
@@ -83,35 +85,18 @@ class SuitabilityController extends Controller
     }
 
     // GET /suitability/summary
-    // Latest stored AHP-WLC result of every zone unit for every analysis type (for map popups,
-    // chat context and the landing page).
+    // Live AHP-WLC result of every zone unit for every analysis type, from the current weights
+    // (for map popups and the landing page).
     public function summary(): JsonResponse
     {
-        $latestIds = SuitabilityAnalysis::query()
-            ->selectRaw('MAX(analysis_id) as analysis_id')
-            ->groupBy('zone_unit_id', 'analysis_type')
-            ->pluck('analysis_id');
+        $results = collect(self::ANALYSIS_TYPES)
+            ->mapWithKeys(fn (string $type) => [$type => $this->scorer->calculateAll($type)->keyBy(fn ($r) => $r['zone']->zone_unit_id)]);
 
-        $analyses = SuitabilityAnalysis::query()
-            ->whereIn('analysis_id', $latestIds)
-            ->get()
-            ->groupBy('analysis_type')
-            ->map(fn ($rows) => $rows->sortByDesc('total_score')->values()->map(fn ($a, $i) => [
-                'zone_unit_id' => $a->zone_unit_id,
-                'pct' => round($a->total_score * 100, 1),
-                'level' => $a->suitability_level,
-                'rank' => $i + 1,
-            ]));
-
-        $zones = ZoneUnit::orderBy('unit_name')->get()->map(function (ZoneUnit $zone) use ($analyses) {
+        $zones = ZoneUnit::orderBy('unit_name')->get()->map(function (ZoneUnit $zone) use ($results) {
             $scores = [];
-            foreach ($analyses as $type => $rows) {
-                if (! $this->studyArea->includes($type, $zone->zone_unit_id)) {
-                    continue;
-                }
-                $row = $rows->firstWhere('zone_unit_id', $zone->zone_unit_id);
-                if ($row) {
-                    $scores[$type] = ['pct' => $row['pct'], 'level' => $row['level'], 'rank' => $row['rank']];
+            foreach ($results as $type => $byZone) {
+                if ($result = $byZone->get($zone->zone_unit_id)) {
+                    $scores[$type] = ['pct' => $result['total_pct'], 'level' => $result['suitability_level'], 'rank' => $result['rank']];
                 }
             }
 
@@ -133,39 +118,26 @@ class SuitabilityController extends Controller
             'analysis_type' => 'sometimes|in:commercial,residential,industrial,agricultural,reforestation',
         ])['analysis_type'] ?? 'commercial';
 
-        // Latest stored result per barangay: repeated "Calculate" runs add rows and must not appear twice
-        $latestIds = SuitabilityAnalysis::query()
-            ->where('analysis_type', $type)
-            ->selectRaw('MAX(analysis_id) as analysis_id')
-            ->groupBy('zone_unit_id')
-            ->pluck('analysis_id');
-
-        $rows = SuitabilityAnalysis::with('zoneUnit')
-            ->whereIn('analysis_id', $latestIds)
-            ->where('analysis_type', $type)
-            ->when($this->studyArea->appliesTo($type), fn ($query) => $query->whereIn('zone_unit_id', $this->studyArea->zoneIds()))
-            ->orderByDesc('total_score')
-            ->get()
-            ->values()
-            ->map(fn ($a, $i) => [
-                'rank' => $i + 1,
-                'analysis_id' => $a->analysis_id,
-                'zone_unit_id' => $a->zone_unit_id,
-                'unit_name' => $a->zoneUnit->unit_name,
-                'unit_type' => $a->zoneUnit->unit_type,
-                'settlement_tier' => $a->zoneUnit->settlement_tier,
-                'population_density' => $a->zoneUnit->population_density,
-                'total_score' => $a->total_score,
-                'total_pct' => round($a->total_score * 100, 1),
-                'suitability_level' => $a->suitability_level,
-                'flood_score' => $a->flood_score,
-                'slope_score' => $a->slope_score,
-                'soil_score' => $a->soil_score,
-                'liquefaction_score' => $a->liquefaction_score,
-                'population_score' => $a->population_score,
-                'saturation_score' => $a->saturation_score,
-                'applied_weights' => $a->applied_weights,
-            ]);
+        // Computed live from the current weights, so a weight change shows here at once
+        $rows = $this->scorer->calculateAll($type)->map(fn (array $r) => [
+            'rank' => $r['rank'],
+            'zone_unit_id' => $r['zone']->zone_unit_id,
+            'unit_name' => $r['zone']->unit_name,
+            'unit_type' => $r['zone']->unit_type,
+            'settlement_tier' => $r['zone']->settlement_tier,
+            'population_density' => $r['zone']->population_density,
+            'total_score' => $r['total_score'],
+            'total_pct' => $r['total_pct'],
+            'suitability_level' => $r['suitability_level'],
+            'flood_score' => $r['scores']['flood'],
+            'slope_score' => $r['scores']['slope'],
+            'soil_score' => $r['scores']['soil'],
+            'liquefaction_score' => $r['scores']['liquefaction'],
+            'population_score' => $r['scores']['population'],
+            'saturation_score' => $r['scores']['saturation'],
+            'zoning_score' => $r['scores']['zoning'],
+            'applied_weights' => $r['applied_weights'],
+        ]);
 
         $avg = $rows->avg('total_score');
 
