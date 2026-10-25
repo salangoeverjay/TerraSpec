@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { getJson } from './http.js';
 import {
   Map, MapControls, MapMarker, MarkerContent,
   MapPopup, MarkerTooltip, useMap,
@@ -368,8 +369,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
   // Reforestation study area: barangays with verified reforestation or mangrove sites
   const [studyArea, setStudyArea] = useState({ barangays: [], note: '' });
   useEffect(() => {
-    fetch('/reforestation', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    getJson('/reforestation')
       .then(json => setStudyArea(json.study_area ?? { barangays: [], note: '' }))
       .catch(() => {});
   }, []);

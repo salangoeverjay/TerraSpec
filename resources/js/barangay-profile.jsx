@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { getJson } from './http.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { ZONING_LEGEND } from './data.js';
 import { MANGROVE_LEGEND } from './map-layers.jsx';
@@ -69,8 +70,7 @@ export function BarangayProfileScreen({ go, barangay }) {
 
   useEffect(() => {
     let active = true;
-    fetch('/barangays', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    getJson('/barangays')
       .then(json => {
         if (!active) return;
         const rows = json.data ?? [];

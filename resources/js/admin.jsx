@@ -302,7 +302,7 @@ const TAB_CONFIG = {
     fields: [
       { key: 'name',     label: 'Full Name', type: 'text',     required: true },
       { key: 'email',    label: 'Email',     type: 'text',     required: true },
-      { key: 'role',     label: 'Role',      type: 'select',   opts: ['planner','admin','viewer'], required: true },
+      { key: 'role',     label: 'Role',      type: 'select',   opts: ['planner','admin'], required: true },
       {
         key: 'password', type: 'password',
         label: 'New Temporary Password', placeholder: 'Leave blank to keep current',
@@ -318,8 +318,9 @@ async function apiFetch(method, path, body) {
   return apiJson(`/api/admin${path}`, { method, body });
 }
 
-export function AdminScreen() {
-  const TABS = ['ahp', 'zones', 'criteria', 'restrictions', 'species', 'users'];
+// staffRole is the signed-in user's real role: planners manage the planning data, only admins manage accounts
+export function AdminScreen({ staffRole }) {
+  const TABS = ['ahp', 'zones', 'criteria', 'restrictions', 'species', ...(staffRole === 'admin' ? ['users'] : [])];
   const [tab, setTab]       = useState('zones');
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(false);

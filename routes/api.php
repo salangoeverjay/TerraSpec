@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/chatbot', ChatbotController::class)->middleware('throttle:chatbot');
 Route::post('/map/interpret', MapQueryController::class)->middleware('throttle:30,1');
-Route::get('/dashboard-stats', DashboardStatsController::class);
+Route::get('/dashboard-stats', DashboardStatsController::class)->middleware('throttle:public');
 
 // LGU login and admin API: session cookies + CSRF protection (web middleware), checked on the server.
 Route::middleware('web')->group(function () {

@@ -107,3 +107,37 @@ it('hides exception details on API errors when debug is off', function () {
         ->and($response->json())->not->toHaveKeys(['exception', 'file', 'trace'])
         ->and($response->getContent())->not->toContain('secret detail');
 });
+
+it('allows 30 four-method and sensitivity analyses per minute, enough to click through every land use', function () {
+    foreach (range(1, 30) as $i) {
+        $this->getJson('/suitability/compare?analysis_type=commercial')->assertOk();
+    }
+
+    $this->getJson('/suitability/compare?analysis_type=commercial')
+        ->assertTooManyRequests()
+        ->assertJsonPath('message', 'Too many analyses in a minute. Please wait a minute and try again.');
+});
+
+it('limits public PDF reports to 10 per minute', function () {
+    foreach (range(1, 10) as $i) {
+        $this->get('/environmental/report')->assertOk();
+    }
+
+    $this->getJson('/environmental/report')
+        ->assertTooManyRequests()
+        ->assertJsonPath('message', 'Too many report downloads. Please wait a minute and try again.');
+});
+
+it('limits ordinary public data routes to 60 per minute', function () {
+    foreach (range(1, 60) as $i) {
+        $this->getJson('/barangays')->assertOk();
+    }
+
+    $this->getJson('/barangays')->assertTooManyRequests();
+});
+
+it('returns validation errors as JSON on data routes without an Accept header', function () {
+    $this->get('/suitability/breakdown')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['analysis_type', 'zone_unit_id']);
+});

@@ -27,6 +27,12 @@ class LguAuthController extends Controller
 
         $user = Auth::user();
 
+        // Remember which password this session signed in with, so a reset before the next request still ends it
+        $request->session()->put(
+            'password_hash_'.Auth::getDefaultDriver(),
+            Auth::guard()->hashPasswordForCookie($user->getAuthPassword()),
+        );
+
         if (! in_array($user->role, ['admin', 'planner'], true)) {
             $this->endSession($request);
 

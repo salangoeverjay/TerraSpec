@@ -30,7 +30,7 @@ class AhpController extends Controller
 
             return response()->json($result);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -58,12 +58,12 @@ class AhpController extends Controller
         try {
             $result = $this->ahp->compute($request->input('matrix'));
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         if (! $result['valid']) {
             return response()->json([
-                'error' => "Consistency Ratio {$result['cr_pct']}% is not below 10%. Adjust the pairwise comparisons until CR < 10%.",
+                'message' => "Consistency Ratio {$result['cr_pct']}% is not below 10%. Adjust the pairwise comparisons until CR < 10%.",
                 'cr' => $result['cr'],
                 'cr_pct' => $result['cr_pct'],
                 'valid' => false,

@@ -27,6 +27,12 @@ export async function apiRequest(url, { method = 'GET', body, accept = 'applicat
   return res;
 }
 
+// GET a JSON data route. Throws on any error status (with the server's message when it sends one),
+// so a failed load reaches the screen's error state instead of showing as an empty list.
+export async function getJson(url) {
+  return apiJson(url);
+}
+
 export async function apiJson(url, { method = 'GET', body } = {}) {
   const res = await apiRequest(url, { method, body });
   const json = await res.json().catch(() => ({}));

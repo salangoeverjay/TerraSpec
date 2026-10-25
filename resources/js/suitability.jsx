@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getJson } from './http.js';
 import { Btn, Card, CardHeader, CardBody, Badge, ScoreRing, levelStyle, levelForPct } from './components.jsx';
 import { MethodComparison } from './method-comparison.jsx';
 import { SensitivityAnalysis } from './sensitivity-analysis.jsx';
@@ -222,8 +223,7 @@ export function SuitabilityScreen() {
     setLoading(true);
     setError(null);
     setCheckedIds(new Set());
-    fetch(`/suitability/rankings?analysis_type=${analysisType}`)
-      .then(r => r.json())
+    getJson(`/suitability/rankings?analysis_type=${analysisType}`)
       .then(json => {
         if (!active) return;
         setRankings(json.data ?? []);
@@ -316,8 +316,7 @@ export function SuitabilityScreen() {
     try {
       const results = await Promise.all(
         ANALYSIS_TYPES.map(t =>
-          fetch(`/suitability/rankings?analysis_type=${t}`)
-            .then(r => r.json())
+          getJson(`/suitability/rankings?analysis_type=${t}`)
             .then(json => ({ type: t, rankings: json.data ?? [], avgScore: json.avg_score ?? 0, avgLevel: json.avg_level ?? 'Not Suitable' }))
         )
       );

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getJson } from './http.js';
 import { ZONING_LEGEND, loadBarangayBoundaries, normalizeName } from './data.js';
 import { Icon, Btn, Card, CardBody, Badge } from './components.jsx';
 
@@ -76,8 +77,7 @@ function downloadCsv(result) {
 export function ZoningQueryPanel({ filters, setFilters, result, loading, error, onRun, onClear, onClose, onFocusBarangay }) {
   const [barangays, setBarangays] = useState([]);
   useEffect(() => {
-    fetch('/barangays', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    getJson('/barangays')
       .then(json => setBarangays(json.data ?? []))
       .catch(() => setBarangays([]));
   }, []);

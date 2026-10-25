@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getJson } from './http.js';
 import { Btn, Card, CardHeader, CardBody, Badge, Icon } from './components.jsx';
 
 const LEVEL_VARIANT = { protected: 'destructive', regulated: 'warn' };
@@ -12,20 +13,30 @@ export function EnvironmentalScreen() {
   const [error, setError]     = useState(null);
   const [exporting, setExporting] = useState(false);
 
-  function exportReport() {
+  // Download through fetch so a rate limit or server error shows a message instead of saving a broken file
+  async function exportReport() {
     setExporting(true);
-    const link = document.createElement('a');
-    link.href = '/environmental/report';
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => setExporting(false), 3000);
+    setError(null);
+    try {
+      const res = await fetch('/environmental/report', { headers: { Accept: 'application/pdf, application/json' } });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.message ?? `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'environmental-assessment-panabo.pdf';
+      const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (e) {
+      setError(`Could not export the report (${e.message}).`);
+    } finally {
+      setExporting(false);
+    }
   }
 
   useEffect(() => {
-    fetch('/environmental/summary', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    getJson('/environmental/summary')
       .then(setData)
       .catch(() => setError('Could not load environmental data.'))
       .finally(() => setLoading(false));

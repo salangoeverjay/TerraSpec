@@ -101,5 +101,6 @@ it('still rejects an inconsistent AHP matrix', function () {
 
     $this->postJson('/api/admin/ahp/apply', ['analysis_type' => 'commercial', 'matrix' => $matrix])
         ->assertUnprocessable()
-        ->assertJsonPath('valid', false);
+        ->assertJsonPath('valid', false)
+        ->assertJson(fn ($json) => $json->where('message', fn ($message) => str_contains($message, 'Consistency Ratio'))->etc());
 });

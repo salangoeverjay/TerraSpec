@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getJson } from './http.js';
 import { Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { MangroveSitesPanel, MangroveRecommendations } from './mangrove-sites.jsx';
 
@@ -92,8 +93,7 @@ export function ReforestationScreen() {
 
   // Load zone list once
   useEffect(() => {
-    fetch('/reforestation')
-      .then(r => r.json())
+    getJson('/reforestation')
       .then(json => { setZones(json.zones ?? []); setStudyArea(json.study_area ?? null); })
       .catch(() => setError('Could not load zone list.'))
       .finally(() => setZonesLoading(false));
@@ -111,8 +111,7 @@ export function ReforestationScreen() {
     let active = true;
     setLoading(true);
     setError(null);
-    fetch(`/reforestation/${selectedId}/match`)
-      .then(r => r.json())
+    getJson(`/reforestation/${selectedId}/match`)
       .then(json => {
         if (!active) return;
         setZone(json.zone ?? null);

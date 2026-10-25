@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PANABO } from './data.js';
-import { apiRequest } from './http.js';
+import { apiRequest, getJson } from './http.js';
 import { Btn, Card, CardHeader, CardBody, Badge, Inp } from './components.jsx';
 
 const REPORT_TYPES = [
@@ -43,12 +43,12 @@ export function ReportsScreen({ role }) {
   const [generating, setGenerating] = useState(false);
   const [archive, setArchive]   = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(true);
+  const [archiveError, setArchiveError]     = useState('');
   // Reforestation plans only cover the study area (barangays with verified reforestation or mangrove sites)
   const [studyArea, setStudyArea] = useState({ barangays: [], note: '' });
 
   useEffect(() => {
-    fetch('/reforestation', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    getJson('/reforestation')
       .then(json => setStudyArea(json.study_area ?? { barangays: [], note: '' }))
       .catch(() => {});
   }, []);
@@ -65,10 +65,10 @@ export function ReportsScreen({ role }) {
   }, [type, barangayOptions, barangay]);
 
   function loadArchive() {
-    return fetch('/api/reports', { headers: { Accept: 'application/json' } })
-      .then(r => r.json())
+    setArchiveError('');
+    return getJson('/api/reports')
       .then(json => setArchive(Array.isArray(json) ? json : []))
-      .catch(() => setArchive([]))
+      .catch(e => { setArchive([]); setArchiveError(e.message); })
       .finally(() => setArchiveLoading(false));
   }
 
@@ -234,8 +234,10 @@ export function ReportsScreen({ role }) {
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className="muted">Loading archive…</td></tr>
               )}
               {!archiveLoading && filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className="muted">
-                  {archive.length === 0 ? 'No reports generated yet. Use the Report Builder above.' : 'No reports match your search.'}
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }} className={archiveError ? undefined : 'muted'}>
+                  {archiveError
+                    ? <span style={{ color: 'hsl(var(--destructive))' }}>Could not load the report archive ({archiveError}).</span>
+                    : archive.length === 0 ? 'No reports generated yet. Use the Report Builder above.' : 'No reports match your search.'}
                 </td></tr>
               )}
               {filtered.map(r => (

@@ -4,6 +4,7 @@ use App\Models\User;
 use Database\Seeders\LguAdminSeeder;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
@@ -175,4 +176,77 @@ it('ends the session on logout', function () {
     $this->postJson('/api/lgu/logout')->assertOk();
 
     $this->getJson('/api/lgu/me')->assertJson(['authenticated' => false]);
+});
+
+/**
+ * A request as a browser sends it: with the session cookie it was given, and the user reloaded from the
+ * database (the test client otherwise keeps the signed-in user cached between requests).
+ */
+function asBrowser($test, ?string $session, string $method, string $uri, array $data = [])
+{
+    Auth::forgetGuards();
+
+    return ($session ? $test->withCookie(config('session.cookie'), $session) : $test)->json($method, $uri, $data);
+}
+
+function sessionCookieOf($response): string
+{
+    return $response->getCookie(config('session.cookie'))->getValue();
+}
+
+it('signs a user out after an admin resets their password', function () {
+    $planner = User::factory()->planner()->create();
+    $session = sessionCookieOf(asBrowser($this, null, 'POST', '/api/lgu/login', ['email' => $planner->email, 'password' => 'password'])->assertOk());
+    asBrowser($this, $session, 'GET', '/api/admin/zones')->assertOk();
+
+    // An admin resets the password from another session
+    $planner->forceFill(['password' => Hash::make('NewPassword123')])->save();
+
+    asBrowser($this, $session, 'GET', '/api/admin/zones')->assertUnauthorized();
+});
+
+it('signs a user out after a reset even when they made no request since logging in', function () {
+    $planner = User::factory()->planner()->create();
+    $session = sessionCookieOf(asBrowser($this, null, 'POST', '/api/lgu/login', ['email' => $planner->email, 'password' => 'password'])->assertOk());
+
+    $planner->forceFill(['password' => Hash::make('NewPassword123')])->save();
+
+    asBrowser($this, $session, 'GET', '/api/admin/zones')->assertUnauthorized();
+});
+
+it('keeps the user signed in after changing their own password', function () {
+    $admin = User::factory()->admin()->create();
+    $session = sessionCookieOf(asBrowser($this, null, 'POST', '/api/lgu/login', ['email' => $admin->email, 'password' => 'password'])->assertOk());
+
+    $changed = asBrowser($this, $session, 'POST', '/api/lgu/password', [
+        'current_password' => 'password',
+        'password' => 'BrandNewPass123',
+        'password_confirmation' => 'BrandNewPass123',
+    ])->assertOk();
+
+    asBrowser($this, sessionCookieOf($changed), 'GET', '/api/admin/zones')->assertOk();
+});
+
+it('keeps an admin signed in after setting their own password in the Users tab', function () {
+    $admin = User::factory()->admin()->create();
+    $session = sessionCookieOf(asBrowser($this, null, 'POST', '/api/lgu/login', ['email' => $admin->email, 'password' => 'password'])->assertOk());
+
+    $updated = asBrowser($this, $session, 'PUT', "/api/admin/users/{$admin->id}", [
+        'name' => $admin->name, 'email' => $admin->email, 'role' => 'admin', 'password' => 'MyOwnNewPass123',
+    ])->assertOk();
+
+    asBrowser($this, sessionCookieOf($updated), 'GET', '/api/admin/zones')->assertOk();
+});
+
+it('only creates or assigns admin or planner accounts', function () {
+    $admin = User::factory()->admin()->create();
+    $account = ['name' => 'New Staff', 'email' => 'new.staff@panabocity.gov.ph', 'password' => 'TempPass1234'];
+
+    $this->actingAs($admin)->postJson('/api/admin/users', [...$account, 'role' => 'viewer'])
+        ->assertUnprocessable()->assertInvalid(['role']);
+    $this->postJson('/api/admin/users', [...$account, 'role' => 'planner'])->assertCreated();
+
+    $planner = User::where('email', 'new.staff@panabocity.gov.ph')->firstOrFail();
+    $this->putJson("/api/admin/users/{$planner->id}", ['name' => 'New Staff', 'email' => $planner->email, 'role' => 'viewer'])
+        ->assertUnprocessable()->assertInvalid(['role']);
 });

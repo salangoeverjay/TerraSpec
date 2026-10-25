@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { getJson } from './http.js';
 import { loadConversations, BARANGAY_COORDS, fetchSuitabilitySummary } from './data.js';
 import { Icon, Btn, Card, CardHeader, CardBody, Badge } from './components.jsx';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
@@ -89,25 +90,25 @@ export function DashboardScreen({ go }) {
   const [avgScore, setAvgScore]         = useState(null);
   const [loading, setLoading]           = useState(true);
   const [stats, setStats]               = useState(null);
+  const [loadError, setLoadError]       = useState(null);
 
   useEffect(() => {
-    fetch('/suitability/rankings?analysis_type=commercial')
-      .then(r => r.json())
+    getJson('/suitability/rankings?analysis_type=commercial')
       .then(json => { setRankings(json.data ?? []); setAvgScore(json.avg_score ?? null); })
-      .catch(() => {})
+      .catch(e => setLoadError(e.message))
       .finally(() => setLoading(false));
 
-    fetch('/api/dashboard-stats')
-      .then(r => r.json())
+    getJson('/api/dashboard-stats')
       .then(json => setStats(json))
-      .catch(() => {});
+      .catch(e => setLoadError(e.message));
   }, []);
 
   const top5          = rankings.slice(0, 5);
   const zoneUnitCount = stats?.zone_count   ?? rankings.length ?? 40;
   const displayAvg    = avgScore !== null    ? `${avgScore}%`  : '—';
-  const flaggedCount  = stats?.flagged_count ?? '…';
-  const activeReports = stats?.report_count  ?? '…';
+  const pending       = loadError && !stats ? '—' : '…';
+  const flaggedCount  = stats?.flagged_count ?? pending;
+  const activeReports = stats?.report_count  ?? pending;
   const restrictions  = stats?.restrictions  ?? [];
   const topSpecies    = stats?.species       ?? [];
 
@@ -139,6 +140,12 @@ export function DashboardScreen({ go }) {
         </div>
         <Btn variant="brand" icon="map" onClick={() => go('map')}>Open Map</Btn>
       </div>
+
+      {loadError && (
+        <div role="alert" style={{ padding: '12px 16px', marginBottom: 16, background: 'hsl(var(--destructive) / 0.08)', borderRadius: 8, color: 'hsl(var(--destructive))', fontSize: 13 }}>
+          Some dashboard data could not be loaded ({loadError}). Try again in a moment.
+        </div>
+      )}
 
       <div className="grid grid-4" style={{ marginBottom: 20 }}>
         {[
@@ -244,7 +251,7 @@ export function DashboardScreen({ go }) {
           <CardHeader><span className="card-title">Environmental Restrictions</span></CardHeader>
           <CardBody style={{ padding: 0 }}>
             {restrictions.length === 0 ? (
-              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>Loading…</div>
+              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>{loadError && !stats ? 'Could not load restrictions.' : 'Loading…'}</div>
             ) : restrictions.map((r, i) => (
               <div key={r.id} className="row" style={{ padding: '10px 18px', gap: 10, borderBottom: i < restrictions.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <Badge variant={r.severity === 'high' ? 'destructive' : r.severity === 'medium' ? 'warn' : ''}>{r.severity}</Badge>
@@ -266,7 +273,7 @@ export function DashboardScreen({ go }) {
           </CardHeader>
           <CardBody style={{ padding: 0 }}>
             {topSpecies.length === 0 ? (
-              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>Loading…</div>
+              <div style={{ padding: '18px', textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 12.5 }}>{loadError && !stats ? 'Could not load species.' : 'Loading…'}</div>
             ) : topSpecies.map((s, i) => (
               <div key={s.species_id} className="row-between" style={{ padding: '9px 18px', borderBottom: i < topSpecies.length - 1 ? '1px solid hsl(var(--border))' : 'none' }}>
                 <div style={{ minWidth: 0 }}>

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\ZoneUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -215,7 +216,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'role' => 'required|in:admin,planner,viewer',
+            'role' => 'required|in:admin,planner',
             'password' => ['nullable', 'string', Password::min(10)->letters()->mixedCase()->numbers()],
         ]);
 
@@ -243,7 +244,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($id)],
-            'role' => 'required|in:admin,planner,viewer',
+            'role' => 'required|in:admin,planner',
             'password' => ['nullable', 'string', Password::min(10)->letters()->mixedCase()->numbers()],
         ]);
 
@@ -260,6 +261,12 @@ class AdminController extends Controller
         }
 
         $user->update($data);
+
+        // An admin setting their own password keeps this session: other sessions of theirs still end
+        if (isset($data['password']) && $user->is($request->user())) {
+            Auth::guard()->setUser($user);
+            $request->session()->regenerate();
+        }
 
         return response()->json(['message' => 'User updated.', 'data' => $user->only(['id', 'name', 'email', 'role'])]);
     }

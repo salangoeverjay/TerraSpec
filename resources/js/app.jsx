@@ -331,7 +331,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <Screen go={go} role={role} search={search} setSearch={setSearch} mapContext={mapContext} setMapContext={setMapContext} {...screenProps}/>
+          <Screen go={go} role={role} staffRole={lguUser?.role ?? null} search={search} setSearch={setSearch} mapContext={mapContext} setMapContext={setMapContext} {...screenProps}/>
         )}
       </main>
       {showSidebar && (
