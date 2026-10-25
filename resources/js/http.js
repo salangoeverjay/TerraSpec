@@ -8,22 +8,30 @@ function xsrfToken() {
   return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
 }
 
-export async function apiJson(url, { method = 'GET', body } = {}) {
+// Raw request with the session cookie and XSRF token (for non-JSON answers such as PDF downloads).
+// Never throws on an error status; a 401 still signs the app out.
+export async function apiRequest(url, { method = 'GET', body, accept = 'application/json' } = {}) {
   const res = await fetch(url, {
     method,
     credentials: 'same-origin',
     headers: {
-      Accept: 'application/json',
+      Accept: accept,
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(method !== 'GET' ? { 'X-XSRF-TOKEN': xsrfToken() } : {}),
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
+  if (res.status === 401) window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
+
+  return res;
+}
+
+export async function apiJson(url, { method = 'GET', body } = {}) {
+  const res = await apiRequest(url, { method, body });
   const json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    if (res.status === 401) window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
     const firstError = json.errors ? Object.values(json.errors)[0]?.[0] : null;
     const error = new Error(firstError || json.message || json.error || 'Request failed.');
     error.status = res.status;

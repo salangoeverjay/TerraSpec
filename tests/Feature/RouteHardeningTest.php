@@ -5,7 +5,9 @@ use App\Models\User;
 use App\Models\ZoneHazardData;
 use App\Models\ZoneUnit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\StrayRequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 
 uses(RefreshDatabase::class);
 
@@ -86,4 +88,22 @@ it('limits each visitor to 20 chat questions per minute', function () {
     $this->postJson('/api/chatbot', ['prompt' => 'One more question'])
         ->assertTooManyRequests()
         ->assertJsonPath('message', 'You are sending questions too quickly. Please wait a minute and try again.');
+});
+
+it('blocks real HTTP calls and paid AI keys in tests', function () {
+    expect(config('services.gemini.api_key'))->toBeEmpty()
+        ->and(config('services.openai.api_key'))->toBeEmpty()
+        ->and(config('services.anthropic.api_key'))->toBeEmpty()
+        ->and(fn () => Http::get('https://generativelanguage.googleapis.com/v1beta/models'))->toThrow(StrayRequestException::class);
+});
+
+it('hides exception details on API errors when debug is off', function () {
+    config(['app.debug' => false]);
+    Route::get('/api/test-failure', fn () => throw new RuntimeException('secret detail'));
+
+    $response = $this->getJson('/api/test-failure')->assertStatus(500);
+
+    expect($response->json('message'))->toBe('Server Error')
+        ->and($response->json())->not->toHaveKeys(['exception', 'file', 'trace'])
+        ->and($response->getContent())->not->toContain('secret detail');
 });

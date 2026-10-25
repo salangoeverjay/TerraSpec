@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Icon, Btn, Card, CardHeader, CardBody, Inp } from './components.jsx';
 import { apiJson } from './http.js';
+import { refreshSuitabilitySummary } from './data.js';
 
 // ── AHP constants ────────────────────────────────────────────────────────────
 const AHP_RI = [0, 0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49]; // n=0..10
@@ -115,6 +116,7 @@ function AhpCalculator({ criteria }) {
     try {
       // Send full matrix to backend — backend re-validates CR and saves weights
       await apiJson('/api/admin/ahp/apply', { method: 'POST', body: { analysis_type: analysisType, matrix } });
+      refreshSuitabilitySummary();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) { setSaveErr(e.message); }
@@ -336,11 +338,18 @@ export function AdminScreen() {
   const [weightsErr, setWeightsErr] = useState('');
   const [weightsSaved, setWeightsSaved] = useState(false);
 
+  // Only the latest load for the tab still open may update the table: an older or other tab's answer
+  // arriving late (e.g. the reload after a save, when the user has switched tab) is ignored
+  const loadRequest = useRef(0);
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
   const load = useCallback(async (t) => {
+    const request = ++loadRequest.current;
     const apiTab = t === 'ahp' ? 'criteria' : t;
     setLoading(true); setLoadErr(''); setFilter('');
     try {
       const json = await apiFetch('GET', `/${apiTab}`);
+      if (request !== loadRequest.current || t !== tabRef.current) return;
       const list = Array.isArray(json) ? json : [];
       setRows(list);
       if (t === 'criteria' || t === 'ahp') {
@@ -356,8 +365,8 @@ export function AdminScreen() {
         });
         setWeights(w); setWeightsDirty(false); setWeightsErr(''); setWeightsSaved(false);
       }
-    } catch (e) { setLoadErr(e.message); }
-    finally { setLoading(false); }
+    } catch (e) { if (request === loadRequest.current) setLoadErr(e.message); }
+    finally { if (request === loadRequest.current) setLoading(false); }
   }, []);
 
   useEffect(() => { load(tab); }, [tab, load]);
@@ -386,6 +395,8 @@ export function AdminScreen() {
       } else {
         const id = modal.record[cfg.pk];
         await apiFetch('PUT', `/${tab}/${id}`, draft);
+        // A barangay's type and area feed its suitability score
+        if (tab === 'zones') refreshSuitabilitySummary();
       }
       setModal(null);
       load(tab);
@@ -429,6 +440,7 @@ export function AdminScreen() {
         reforestation_weight: weights[c.criteria_id]?.reforestation ?? 0,
       }));
       await apiFetch('PUT', '/criteria', payload);
+      refreshSuitabilitySummary();
       setWeightsDirty(false); setWeightsSaved(true);
       setTimeout(() => setWeightsSaved(false), 3000);
       load('criteria');

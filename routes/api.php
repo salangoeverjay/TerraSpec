@@ -23,7 +23,8 @@ Route::middleware('web')->group(function () {
     // CPDO staff (admin and planner) manage the planning data and AHP weights, and the reports
     Route::middleware('role:admin,planner')->group(function () {
         Route::get('/reports', [ReportController::class, 'archive']);
-        Route::get('/reports/generate', [ReportController::class, 'generate']);
+        // POST: generating saves a report and calls Gemini, so it needs CSRF protection and a limit
+        Route::post('/reports/generate', [ReportController::class, 'generate'])->middleware('throttle:10,1');
 
         Route::prefix('admin/ahp')->group(function () {
             Route::post('/compute', [AhpController::class, 'compute']);

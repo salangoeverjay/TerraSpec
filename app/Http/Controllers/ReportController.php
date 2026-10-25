@@ -23,7 +23,7 @@ class ReportController extends Controller
         private MangroveRecommendationService $mangroves,
     ) {}
 
-    // GET /api/reports/generate (CPDO staff only)
+    // POST /api/reports/generate (CPDO staff only, 10 per minute)
     public function generate(GenerateReportRequest $request): Response
     {
         $type = $request->validated('type');

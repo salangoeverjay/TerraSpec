@@ -217,20 +217,24 @@ export function SuitabilityScreen() {
   const [studyArea, setStudyArea]       = useState(null);
 
   useEffect(() => {
+    // Ignore the answer for a land use the user has already switched away from
+    let active = true;
     setLoading(true);
     setError(null);
     setCheckedIds(new Set());
     fetch(`/suitability/rankings?analysis_type=${analysisType}`)
       .then(r => r.json())
       .then(json => {
+        if (!active) return;
         setRankings(json.data ?? []);
         setAvgScore(json.avg_score ?? 0);
         setAvgLevel(json.avg_level ?? 'Not Suitable');
         setClasses(json.classes ?? []);
         setStudyArea(json.study_area ?? null);
       })
-      .catch(() => setError('Could not load rankings.'))
-      .finally(() => setLoading(false));
+      .catch(() => { if (active) setError('Could not load rankings.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [analysisType]);
 
   const appliedWeights = rankings[0]?.applied_weights ?? null;

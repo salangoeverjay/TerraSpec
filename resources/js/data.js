@@ -121,7 +121,8 @@ export const normalizeName = name => name.normalize('NFKD').replace(/[^\w]/g, ''
 
 let summaryPromise = null;
 
-// Latest stored AHP-WLC result of every barangay for every land use (GET /suitability/summary).
+// Live AHP-WLC result of every barangay for every land use (GET /suitability/summary), shared by the
+// screens that need it until refreshSuitabilitySummary() is called.
 export function fetchSuitabilitySummary() {
   if (!summaryPromise) {
     summaryPromise = fetch('/suitability/summary', { headers: { Accept: 'application/json' } })
@@ -130,6 +131,11 @@ export function fetchSuitabilitySummary() {
       .catch(e => { summaryPromise = null; throw e; });
   }
   return summaryPromise;
+}
+
+// Forget the shared summary after weights or barangay data change, so the next screen loads new scores
+export function refreshSuitabilitySummary() {
+  summaryPromise = null;
 }
 
 let boundariesPromise = null;

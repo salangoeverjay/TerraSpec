@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PANABO } from './data.js';
+import { apiRequest } from './http.js';
 import { Btn, Card, CardHeader, CardBody, Badge, Inp } from './components.jsx';
 
 const REPORT_TYPES = [
@@ -76,19 +77,21 @@ export function ReportsScreen({ role }) {
 
   // Downloads the PDF with the staff session; validation or permission errors are shown as text
   async function generateReport(params = { type, barangay, landUse, sections: [...sections] }) {
-    const query = new URLSearchParams({ type: params.type });
-    if (params.type !== 'Comparative Analysis') query.set('barangay', params.barangay);
-    if (params.type !== 'Reforestation Plan' && params.landUse) query.set('land_use', params.landUse);
-    (params.sections ?? []).forEach(sec => query.append('sections[]', sec));
+    const body = { type: params.type, sections: params.sections ?? [] };
+    if (params.type !== 'Comparative Analysis') body.barangay = params.barangay;
+    if (params.type !== 'Reforestation Plan' && params.landUse) body.land_use = params.landUse;
 
     setGenerating(true);
     setError('');
     try {
-      const res = await fetch(`/api/reports/generate?${query}`, { headers: { Accept: 'application/json, application/pdf' } });
+      // POST with the XSRF token: generating saves a report, so it is never a plain link
+      const res = await apiRequest('/api/reports/generate', { method: 'POST', body, accept: 'application/json, application/pdf' });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        const firstError = Object.values(body.errors ?? {}).flat()[0];
-        throw new Error(firstError ?? body.message ?? `Could not generate the report (HTTP ${res.status}).`);
+        const json = await res.json().catch(() => ({}));
+        const firstError = Object.values(json.errors ?? {}).flat()[0];
+        throw new Error(res.status === 429
+          ? 'Too many reports in a minute. Please wait and try again.'
+          : firstError ?? json.message ?? `Could not generate the report (HTTP ${res.status}).`);
       }
       const blob = await res.blob();
       const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'terraspec-report.pdf';

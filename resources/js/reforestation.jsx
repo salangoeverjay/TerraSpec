@@ -107,17 +107,21 @@ export function ReforestationScreen() {
       setRestrictions([]);
       return;
     }
+    // Ignore the answer for a barangay the user has already switched away from
+    let active = true;
     setLoading(true);
     setError(null);
     fetch(`/reforestation/${selectedId}/match`)
       .then(r => r.json())
       .then(json => {
+        if (!active) return;
         setZone(json.zone ?? null);
         setMangrove(json.mangrove ?? null);
         setRestrictions(json.restrictions ?? []);
       })
-      .catch(() => setError('Could not load mangrove species.'))
-      .finally(() => setLoading(false));
+      .catch(() => { if (active) setError('Could not load mangrove species.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [selectedId]);
 
   const [exporting, setExporting] = useState(false);

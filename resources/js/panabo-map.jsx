@@ -428,6 +428,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
   const [queryFilters, setQueryFilters] = useState(EMPTY_QUERY);
   const [queryResult, setQueryResult] = useState(null);
   const [queryLoading, setQueryLoading] = useState(false);
+  const queryRequest = useRef(0);
   const [queryError, setQueryError] = useState(null);
   const queryNames = useMemo(() => queryResult?.by_barangay.map(b => b.barangay) ?? [], [queryResult]);
   // Zoning is faded under other themes, but not while a query shows its hazard on top of it
@@ -439,10 +440,13 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
   }
 
   async function runQuery(filters = queryFilters) {
+    // Only the latest query may update the map: an earlier one finishing late is ignored
+    const request = ++queryRequest.current;
     setQueryLoading(true);
     setQueryError(null);
     try {
       const result = await runZoningQuery(filters);
+      if (request !== queryRequest.current) return;
       setQueryResult(result);
       // Show the queried zoning classes, with the hazard class the condition refers to
       const flood = ['flood', 'hazard_free'].includes(filters.hazard);
@@ -454,9 +458,9 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
       setHiddenLandslide(new Set(LANDSLIDE_LEGEND.map(l => l.val).filter(v => v !== 'High')));
       fitBarangays(result.by_barangay.map(b => b.barangay));
     } catch {
-      setQueryError('Could not run the zoning query.');
+      if (request === queryRequest.current) setQueryError('Could not run the zoning query.');
     } finally {
-      setQueryLoading(false);
+      if (request === queryRequest.current) setQueryLoading(false);
     }
   }
 
@@ -467,16 +471,23 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
     runQuery(filters);
   }
 
+  // Leave query mode: a query still running is cancelled so its late answer cannot reapply its filters
+  function dropQueryResult() {
+    queryRequest.current++;
+    setQueryLoading(false);
+    setQueryResult(null);
+  }
+
   // Apply map filters extracted by the AI from a plain-language question (validated on the server)
   function applyAskResult(result) {
     if (result.view === 'suitability') {
-      setQueryResult(null);
+      dropQueryResult();
       chooseView('suitability');
       if (result.land_use) setSuitUse(result.land_use);
       return;
     }
     if (result.view === 'reforestation') {
-      setQueryResult(null);
+      dropQueryResult();
       chooseView('reforestation');
       return;
     }
@@ -493,7 +504,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
       runQuery(filters);
       return;
     }
-    setQueryResult(null);
+    dropQueryResult();
     chooseView(result.view);
   }
 
@@ -506,7 +517,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
 
   function clearQuery() {
     setQueryFilters(EMPTY_QUERY);
-    setQueryResult(null);
+    dropQueryResult();
     setQueryError(null);
     chooseView('zoning');
     setHiddenZones(new Set());

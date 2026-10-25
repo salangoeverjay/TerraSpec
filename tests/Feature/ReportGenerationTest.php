@@ -33,10 +33,10 @@ beforeEach(function () {
 });
 
 it('does not let guests or viewers generate reports', function () {
-    $this->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Inland')->assertUnauthorized();
+    $this->postJson('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Inland'])->assertUnauthorized();
 
     $this->actingAs(User::factory()->create(['role' => 'viewer']))
-        ->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Inland')
+        ->postJson('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Inland'])
         ->assertForbidden();
 
     expect(Report::count())->toBe(0);
@@ -46,7 +46,7 @@ it('lets planners generate a report for the chosen land use', function () {
     $planner = User::factory()->planner()->create();
 
     $this->actingAs($planner)
-        ->get('/api/reports/generate?type=Suitability%20Summary&barangay=Inland&land_use=residential')
+        ->post('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Inland', 'land_use' => 'residential'])
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
 
@@ -59,19 +59,19 @@ it('lets planners generate a report for the chosen land use', function () {
 it('validates the report type, barangay and land use', function () {
     $this->actingAs(User::factory()->admin()->create());
 
-    $this->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Poblacion')->assertJsonValidationErrors('barangay');
-    $this->getJson('/api/reports/generate?type=Suitability%20Summary')->assertJsonValidationErrors('barangay');
-    $this->getJson('/api/reports/generate?type=Fake%20Report&barangay=Inland')->assertJsonValidationErrors('type');
-    $this->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Inland&land_use=mining')->assertJsonValidationErrors('land_use');
+    $this->postJson('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Poblacion'])->assertJsonValidationErrors('barangay');
+    $this->postJson('/api/reports/generate', ['type' => 'Suitability Summary'])->assertJsonValidationErrors('barangay');
+    $this->postJson('/api/reports/generate', ['type' => 'Fake Report', 'barangay' => 'Inland'])->assertJsonValidationErrors('type');
+    $this->postJson('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Inland', 'land_use' => 'mining'])->assertJsonValidationErrors('land_use');
 });
 
 it('keeps reforestation reports inside the study area', function () {
     $this->actingAs(User::factory()->admin()->create());
 
-    $this->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Inland&land_use=reforestation')->assertStatus(422);
-    $this->getJson('/api/reports/generate?type=Reforestation%20Plan&barangay=Inland')->assertStatus(422);
-    $this->get('/api/reports/generate?type=Reforestation%20Plan&barangay=Coastal')->assertOk();
-    $this->get('/api/reports/generate?type=Comparative%20Analysis&land_use=reforestation')->assertOk();
+    $this->postJson('/api/reports/generate', ['type' => 'Suitability Summary', 'barangay' => 'Inland', 'land_use' => 'reforestation'])->assertStatus(422);
+    $this->postJson('/api/reports/generate', ['type' => 'Reforestation Plan', 'barangay' => 'Inland'])->assertStatus(422);
+    $this->post('/api/reports/generate', ['type' => 'Reforestation Plan', 'barangay' => 'Coastal'])->assertOk();
+    $this->post('/api/reports/generate', ['type' => 'Comparative Analysis', 'land_use' => 'reforestation'])->assertOk();
 });
 
 it('keeps the report archive for signed-in staff only', function () {
@@ -80,4 +80,22 @@ it('keeps the report archive for signed-in staff only', function () {
 
     $this->getJson('/api/reports')->assertUnauthorized();
     $this->actingAs($admin)->getJson('/api/reports')->assertOk()->assertJsonPath('0.generated_by', 'Maria Planner')->assertJsonPath('0.analysis_type', 'commercial');
+});
+
+it('rejects report generation by GET so a link cannot create a report', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->getJson('/api/reports/generate?type=Suitability%20Summary&barangay=Inland')
+        ->assertStatus(405);
+
+    expect(Report::count())->toBe(0);
+});
+
+it('limits report generation to 10 per minute', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    foreach (range(1, 10) as $i) {
+        $this->postJson('/api/reports/generate', ['type' => 'Fake Report'])->assertUnprocessable();
+    }
+
+    $this->postJson('/api/reports/generate', ['type' => 'Fake Report'])->assertTooManyRequests();
 });

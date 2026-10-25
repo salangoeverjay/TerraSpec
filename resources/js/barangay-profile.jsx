@@ -68,15 +68,18 @@ export function BarangayProfileScreen({ go, barangay }) {
   const [error, setError]       = useState(null);
 
   useEffect(() => {
+    let active = true;
     fetch('/barangays', { headers: { Accept: 'application/json' } })
       .then(r => r.json())
       .then(json => {
+        if (!active) return;
         const rows = json.data ?? [];
         setList(rows);
         const initial = rows.find(b => b.unit_name === barangay) ?? rows[0];
         if (initial) setSelectedId(initial.zone_unit_id);
       })
-      .catch(() => setError('Could not load barangays.'));
+      .catch(() => { if (active) setError('Could not load barangays.'); });
+    return () => { active = false; };
   }, [barangay]);
 
   useEffect(() => {
