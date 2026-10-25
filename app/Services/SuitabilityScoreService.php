@@ -146,7 +146,7 @@ class SuitabilityScoreService
         if ($isExcluded) {
             $totalScore = 0.0;
         }
-        $level = $isExcluded ? 'Not Suitable' : $this->classify($totalScore);
+        $level = $isExcluded ? 'Not Suitable' : self::levelFor($totalScore);
 
         return [
             'zone' => $zone,
@@ -347,16 +347,15 @@ class SuitabilityScoreService
         return 'commercial';
     }
 
-    private function classify(float $score): string
+    /**
+     * Suitability class of a 0-1 score, from config/suitability.php "classes" (the single source of the cut-offs).
+     */
+    public static function levelFor(float $score): string
     {
-        if ($score >= 0.75) {
-            return 'Highly Suitable';
-        }
-        if ($score >= 0.50) {
-            return 'Moderately Suitable';
-        }
-        if ($score >= 0.25) {
-            return 'Low Suitability';
+        foreach (config('suitability.classes') as $class) {
+            if ($score >= $class['min']) {
+                return $class['level'];
+            }
         }
 
         return 'Not Suitable';

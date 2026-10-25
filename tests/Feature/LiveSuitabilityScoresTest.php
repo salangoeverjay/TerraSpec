@@ -69,3 +69,19 @@ it('gives the AI the same live scores as the rankings page', function () {
         ->toContain("Gredu ({$ranking['unit_type']}) — {$ranking['total_pct']}% [{$ranking['suitability_level']}]")
         ->toContain('computed live from the current AHP weights');
 });
+
+it('classifies every score with the cut-offs in config and sends them with the rankings', function () {
+    $default = $this->getJson('/suitability/rankings?analysis_type=commercial')->assertOk();
+    expect($default->json('classes'))->toEqual(config('suitability.classes'))
+        ->and($default->json('avg_level'))->toBe('Low Suitability');
+
+    config()->set('suitability.classes', [['level' => 'Highly Suitable', 'min' => 0.40], ['level' => 'Not Suitable', 'min' => 0.0]]);
+
+    $rankings = $this->getJson('/suitability/rankings?analysis_type=commercial')->assertOk();
+    $gredu = collect($rankings->json('data'))->firstWhere('zone_unit_id', $this->gredu->zone_unit_id);
+    $breakdown = $this->getJson("/suitability/breakdown?analysis_type=commercial&zone_unit_id={$this->gredu->zone_unit_id}")->json('data');
+
+    expect($gredu['suitability_level'])->toBe('Highly Suitable')
+        ->and($breakdown['suitability_level'])->toBe('Highly Suitable')
+        ->and($rankings->json('avg_level'))->toBe('Highly Suitable');
+});

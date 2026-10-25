@@ -38,6 +38,15 @@ return [
 
     'min_available_share' => 0.05,
 
+    // Suitability classes of an AHP-WLC score (0-1), highest first: a score gets the first class whose
+    // minimum it reaches. The API returns the class as suitability_level; screens show it, never re-derive it.
+    'classes' => [
+        ['level' => 'Highly Suitable', 'min' => 0.75],
+        ['level' => 'Moderately Suitable', 'min' => 0.50],
+        ['level' => 'Low Suitability', 'min' => 0.25],
+        ['level' => 'Not Suitable', 'min' => 0.0],
+    ],
+
     // Environmental restriction types and how strictly they limit development:
     // "protected" = no development (counts as protected), "regulated" = development limited by the CLUP.
     'restriction_types' => [

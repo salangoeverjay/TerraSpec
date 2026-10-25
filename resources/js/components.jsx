@@ -84,11 +84,28 @@ export function Inp({ value, onChange, placeholder, icon, type = 'text', style, 
   );
 }
 
-export function ScoreRing({ value = 0, size = 80 }) {
+// Look of each suitability class. The class itself comes from the API (suitability_level, from
+// config/suitability.php); screens never derive it from a score with their own cut-offs.
+export const LEVEL_STYLE = {
+  'Highly Suitable':     { variant: 'brand',       hex: '#16a34a', bg: '#dcfce7' },
+  'Moderately Suitable': { variant: 'warn',        hex: '#d97706', bg: '#fef3c7' },
+  'Low Suitability':     { variant: 'destructive', hex: '#dc2626', bg: '#fee2e2' },
+  'Not Suitable':        { variant: '',            hex: '#6b7280', bg: '#f3f4f6' },
+};
+
+export const levelStyle = level => LEVEL_STYLE[level] ?? LEVEL_STYLE['Not Suitable'];
+
+// Class of a percentage the screen computed itself (e.g. the average of selected barangays), using the
+// class table the API sends ({ level, min } with min on a 0-1 scale, highest first)
+export function levelForPct(pct, classes = []) {
+  return classes.find(c => pct / 100 >= c.min)?.level ?? 'Not Suitable';
+}
+
+export function ScoreRing({ value = 0, size = 80, level }) {
   const r = (size - 10) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (value / 100) * circ;
-  const color = value >= 75 ? 'hsl(162 55% 42%)' : value >= 50 ? 'hsl(35 90% 50%)' : 'hsl(0 70% 55%)';
+  const color = level ? levelStyle(level).hex : 'hsl(var(--brand))';
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={5}/>

@@ -8,7 +8,7 @@ import {
   ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer, MangroveSitesLayer, MANGROVE_LEGEND,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
-import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing } from './components.jsx';
+import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing, levelStyle } from './components.jsx';
 import { ZoningQueryPanel, ZONING_QUERY_PRESETS, EMPTY_QUERY, runZoningQuery, barangayBounds } from './zoning-query.jsx';
 import { AskTheMap } from './ask-the-map.jsx';
 
@@ -281,8 +281,6 @@ function LegendItem({ label, swatch, border, note, hidden, onClick }) {
     </div>
   );
 }
-
-const LEVEL_COLOR = { 'Highly Suitable': '#16a34a', 'Moderately Suitable': '#f59e0b', 'Low Suitability': '#ef4444' };
 
 // Registers one map click listener for the map's lifetime; the latest callback is used on each click
 function MapClickHandler({ onMapClick }) {
@@ -590,7 +588,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
           {highlightZones.map((z, i) => {
             const coords = BARANGAY_COORDS[z.unit_name];
             if (!coords) return null;
-            const color = LEVEL_COLOR[z.suitability_level] ?? '#6b7280';
+            const color = levelStyle(z.suitability_level).hex;
             return (
               <MapMarker key={z.zone_unit_id} longitude={coords[0]} latitude={coords[1]}>
                 <MarkerContent className="translate-y-[-12px]">
@@ -675,7 +673,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                         {Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, label]) => (
                           <div key={k} className="row-between" style={{ fontSize: 11.5, gap: 10 }}>
                             <span>{label}</span>
-                            <span className="mono" style={{ color: LEVEL_COLOR[selectedPoint.scores[k].level] ?? 'hsl(var(--muted-foreground))' }}>{selectedPoint.scores[k].pct}%</span>
+                            <span className="mono" style={{ color: levelStyle(selectedPoint.scores[k].level).hex }}>{selectedPoint.scores[k].pct}%</span>
                           </div>
                         ))}
                       </>
@@ -758,7 +756,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                         <div style={{ fontSize: 13, fontWeight: 500 }}>{p.id}</div>
                         <div className="muted" style={{ fontSize: 11.5 }}>{p.barangay} · {p.zone}</div>
                       </div>
-                      <Badge variant={p.score >= 75 ? 'brand' : 'warn'}>{p.score}%</Badge>
+                      <Badge variant={levelStyle(p.suitability_level).variant}>{p.score}%</Badge>
                     </div>
                   ))}
                 </>
@@ -932,11 +930,11 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
               <div className="row" style={{ gap: 18, marginBottom: 20 }}>
-                <ScoreRing value={parcel.score} size={88}/>
+                <ScoreRing value={parcel.score} size={88} level={parcel.suitability_level}/>
                 <div style={{ flex: 1 }}>
                   <div className="muted" style={{ fontSize: 11.5 }}>Overall MCDA score</div>
                   <div style={{ fontSize: 13.5, fontWeight: 500, marginTop: 4 }}>
-                    {parcel.score >= 75 ? 'Highly suitable' : parcel.score >= 50 ? 'Moderately suitable' : 'Not suitable'}
+                    {parcel.suitability_level ?? 'Not assessed'}
                   </div>
                   <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>
                     {parcel.flag === 'mangrove' ? '⚠ Within Panabo Mangrove Park' : parcel.flag === 'protected' ? '⚠ Within Tibungol Watershed' : 'All ordinances satisfied'}

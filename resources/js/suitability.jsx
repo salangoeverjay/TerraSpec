@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Btn, Card, CardHeader, CardBody, Badge, ScoreRing } from './components.jsx';
+import { Btn, Card, CardHeader, CardBody, Badge, ScoreRing, levelStyle, levelForPct } from './components.jsx';
 import { MethodComparison } from './method-comparison.jsx';
 import { SensitivityAnalysis } from './sensitivity-analysis.jsx';
 import { ScoreBreakdown } from './score-breakdown.jsx';
@@ -13,18 +13,6 @@ const TYPE_LABELS = {
   agricultural:  'Agricultural',
   reforestation: 'Reforestation',
 };
-
-function levelVariant(level) {
-  if (level === 'Highly Suitable')     return 'brand';
-  if (level === 'Moderately Suitable') return 'warn';
-  return 'destructive';
-}
-
-function scoreVariant(pct) {
-  if (pct >= 75) return 'brand';
-  if (pct >= 50) return 'warn';
-  return 'destructive';
-}
 
 // ─── PDF helpers (module-level so both export functions share them) ───────────
 
@@ -57,11 +45,11 @@ const PDF_CSS = `
   }
 `;
 
-function buildTypeSection(type, { rankings, avgScore, weights, exportRows, selectionNote, isLast, dateStr }) {
+function buildTypeSection(type, { rankings, avgScore, avgLevel, weights, exportRows, selectionNote, isLast, dateStr }) {
   const typeLabel    = TYPE_LABELS[type];
   const exportAvgPct = Math.round(avgScore);
-  const levelLabel   = exportAvgPct >= 75 ? 'Highly Suitable' : exportAvgPct >= 50 ? 'Moderately Suitable' : 'Low Suitability';
-  const levelColor   = exportAvgPct >= 75 ? '#16a34a' : exportAvgPct >= 50 ? '#d97706' : '#dc2626';
+  const levelLabel   = avgLevel;
+  const levelColor   = levelStyle(avgLevel).hex;
 
   const weightsRows = weights
     ? Object.entries(weights).map(([name, w]) => {
@@ -89,8 +77,8 @@ function buildTypeSection(type, { rankings, avgScore, weights, exportRows, selec
 
   const tableRows = exportRows.map((r, i) => {
     const bg         = i % 2 === 0 ? '#ffffff' : '#f9fafb';
-    const scoreColor = r.total_pct >= 75 ? '#16a34a' : r.total_pct >= 50 ? '#d97706' : '#dc2626';
-    const levelBg    = r.total_pct >= 75 ? '#dcfce7'  : r.total_pct >= 50 ? '#fef3c7'  : '#fee2e2';
+    const scoreColor = levelStyle(r.suitability_level).hex;
+    const levelBg    = levelStyle(r.suitability_level).bg;
     return `<tr style="background:${bg};">
       <td style="text-align:center;color:#9ca3af;">${r.rank}</td>
       <td style="font-weight:600;">${r.unit_name}</td>
@@ -221,6 +209,8 @@ export function SuitabilityScreen() {
   const [analysisType, setAnalysisType] = useState('commercial');
   const [rankings, setRankings]         = useState([]);
   const [avgScore, setAvgScore]         = useState(0);
+  const [avgLevel, setAvgLevel]         = useState('Not Suitable');
+  const [classes, setClasses]           = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [checkedIds, setCheckedIds]     = useState(new Set());
@@ -235,6 +225,8 @@ export function SuitabilityScreen() {
       .then(json => {
         setRankings(json.data ?? []);
         setAvgScore(json.avg_score ?? 0);
+        setAvgLevel(json.avg_level ?? 'Not Suitable');
+        setClasses(json.classes ?? []);
         setStudyArea(json.study_area ?? null);
       })
       .catch(() => setError('Could not load rankings.'))
@@ -260,6 +252,12 @@ export function SuitabilityScreen() {
       ? `${checkedRows[0].unit_name} · ${TYPE_LABELS[analysisType]}`
       : `${checkedCount} of ${rankings.length} zones selected · avg ${displayPct}%`;
   const avgPct         = displayPct;
+  // Level from the API: the set's average, one barangay's own level, or the class of a selection's average
+  const displayLevel   = checkedCount === 0
+    ? avgLevel
+    : checkedCount === 1
+      ? checkedRows[0].suitability_level
+      : levelForPct(displayPct, classes);
 
   // Barangay whose score breakdown is shown in the weights card (last one checked)
   const [focusId, setFocusId] = useState(null);
@@ -300,7 +298,7 @@ export function SuitabilityScreen() {
       : '';
     const dateStr = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
     const section = buildTypeSection(analysisType, {
-      rankings, avgScore, weights: appliedWeights,
+      rankings, avgScore, avgLevel, weights: appliedWeights,
       exportRows, selectionNote, isLast: true, dateStr,
     });
     const win = window.open('', '_blank');
@@ -316,7 +314,7 @@ export function SuitabilityScreen() {
         ANALYSIS_TYPES.map(t =>
           fetch(`/suitability/rankings?analysis_type=${t}`)
             .then(r => r.json())
-            .then(json => ({ type: t, rankings: json.data ?? [], avgScore: json.avg_score ?? 0 }))
+            .then(json => ({ type: t, rankings: json.data ?? [], avgScore: json.avg_score ?? 0, avgLevel: json.avg_level ?? 'Not Suitable' }))
         )
       );
 
@@ -335,8 +333,8 @@ export function SuitabilityScreen() {
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:16px;">Contents</div>
             ${results.map((d, i) => {
               const avg  = Math.round(d.avgScore);
-              const color = avg >= 75 ? '#16a34a' : avg >= 50 ? '#d97706' : '#dc2626';
-              const level = avg >= 75 ? 'Highly Suitable' : avg >= 50 ? 'Moderately Suitable' : 'Low Suitability';
+              const color = levelStyle(d.avgLevel).hex;
+              const level = d.avgLevel;
               return `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;">
                   <div style="display:flex;align-items:center;gap:12px;">
@@ -345,7 +343,7 @@ export function SuitabilityScreen() {
                   </div>
                   <div style="display:flex;align-items:center;gap:10px;">
                     <span style="font-size:13px;font-weight:700;color:${color};">${avg}%</span>
-                    <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${avg >= 75 ? '#dcfce7' : avg >= 50 ? '#fef3c7' : '#fee2e2'};color:${color};">${level}</span>
+                    <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${levelStyle(d.avgLevel).bg};color:${color};">${level}</span>
                   </div>
                 </div>`;
             }).join('')}
@@ -360,6 +358,7 @@ export function SuitabilityScreen() {
         buildTypeSection(d.type, {
           rankings:  d.rankings,
           avgScore:  d.avgScore,
+          avgLevel:  d.avgLevel,
           weights:   d.rankings[0]?.applied_weights ?? null,
           exportRows: d.rankings,
           selectionNote: '',
@@ -425,12 +424,12 @@ export function SuitabilityScreen() {
           <CardBody style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
             {loading
               ? <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'hsl(var(--muted))', flexShrink: 0 }}/>
-              : <ScoreRing value={avgPct} size={100}/>
+              : <ScoreRing value={avgPct} size={100} level={displayLevel}/>
             }
             <div>
               <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{displayLabel}</div>
               <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                {loading ? '—' : avgPct >= 75 ? 'Highly Suitable' : avgPct >= 50 ? 'Moderately Suitable' : 'Low Suitability'}
+                {loading ? '—' : displayLevel}
               </div>
               <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                 {loading ? '' : displaySub}
@@ -562,7 +561,7 @@ export function SuitabilityScreen() {
                       </Badge>
                     </td>
                     <td>
-                      <Badge variant={scoreVariant(row.total_pct)}>{row.total_pct}%</Badge>
+                      <Badge variant={levelStyle(row.suitability_level).variant}>{row.total_pct}%</Badge>
                     </td>
                     <td>
                       <span className="mono" style={{ fontSize: 12 }}>
@@ -585,7 +584,7 @@ export function SuitabilityScreen() {
                       </span>
                     </td>
                     <td>
-                      <Badge variant={levelVariant(row.suitability_level)}>
+                      <Badge variant={levelStyle(row.suitability_level).variant}>
                         {row.suitability_level}
                       </Badge>
                     </td>

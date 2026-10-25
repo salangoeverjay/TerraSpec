@@ -145,6 +145,9 @@ class SuitabilityController extends Controller
             'analysis_type' => $type,
             'count' => $rows->count(),
             'avg_score' => round($avg * 100, 1),
+            'avg_level' => SuitabilityScoreService::levelFor((float) $avg),
+            // The class table, for averages the screen computes itself (a user's selection of barangays)
+            'classes' => config('suitability.classes'),
             'study_area' => $this->studyAreaNote($type),
             'data' => $rows,
         ]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createConversation, loadConversations, getChatStorageKey, getOrCreateGuestToken, GUEST_TOKEN_KEY } from './data.js';
-import { Icon, Btn } from './components.jsx';
+import { Icon, Btn, levelStyle } from './components.jsx';
 
 function renderInline(text) {
   const result = [];
@@ -73,7 +73,7 @@ const ANALYSIS_COLORS = {
 };
 
 function LiveCalcCard({ data, go }) {
-  const scoreColor = data.total_pct >= 75 ? '#16a34a' : data.total_pct >= 50 ? '#d97706' : '#dc2626';
+  const scoreColor = levelStyle(data.suitability_level).hex;
   const typeColor  = ANALYSIS_COLORS[data.analysis_type] ?? 'hsl(var(--brand))';
 
   return (
@@ -837,9 +837,9 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                           <span style={{ fontWeight: 500 }}>{z.unit_name}</span>
                           <span style={{
                             padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                            background: z.total_pct >= 75 ? 'hsl(142 72% 29% / 0.15)' : z.total_pct >= 55 ? 'hsl(38 92% 50% / 0.15)' : 'hsl(var(--muted))',
-                            color: z.total_pct >= 75 ? 'hsl(142 72% 29%)' : z.total_pct >= 55 ? 'hsl(32 95% 44%)' : 'hsl(var(--muted-foreground))',
-                          }}>{z.total_pct}%</span>
+                            background: levelStyle(z.suitability_level).bg,
+                            color: levelStyle(z.suitability_level).hex,
+                          }} title={z.suitability_level}>{z.total_pct}%</span>
                         </div>
                       ))}
                     </div>

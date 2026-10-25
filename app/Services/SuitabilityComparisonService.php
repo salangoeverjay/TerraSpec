@@ -405,16 +405,6 @@ class SuitabilityComparisonService
 
     public function classify(float $score): string
     {
-        if ($score >= 0.75) {
-            return 'Highly Suitable';
-        }
-        if ($score >= 0.50) {
-            return 'Moderately Suitable';
-        }
-        if ($score >= 0.25) {
-            return 'Low Suitability';
-        }
-
-        return 'Not Suitable';
+        return SuitabilityScoreService::levelFor($score);
     }
 }
