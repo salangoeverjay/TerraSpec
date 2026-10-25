@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -63,17 +64,51 @@ class AdminController extends Controller
             '*.reforestation_weight' => 'required|numeric|min:0|max:1',
         ]);
 
-        foreach ($rows as $row) {
-            SuitabilityCriteria::where('criteria_id', $row['criteria_id'])->update([
-                'commercial_weight' => $row['commercial_weight'],
-                'residential_weight' => $row['residential_weight'],
-                'industrial_weight' => $row['industrial_weight'],
-                'agricultural_weight' => $row['agricultural_weight'],
-                'reforestation_weight' => $row['reforestation_weight'],
+        $this->ensureCompleteWeightColumns($rows);
+
+        // All weights change together or not at all
+        DB::transaction(function () use ($rows) {
+            foreach ($rows as $row) {
+                SuitabilityCriteria::where('criteria_id', $row['criteria_id'])->update([
+                    'commercial_weight' => $row['commercial_weight'],
+                    'residential_weight' => $row['residential_weight'],
+                    'industrial_weight' => $row['industrial_weight'],
+                    'agricultural_weight' => $row['agricultural_weight'],
+                    'reforestation_weight' => $row['reforestation_weight'],
+                ]);
+            }
+        });
+
+        return response()->json(['message' => 'All criteria weights saved.']);
+    }
+
+    /**
+     * AHP-WLC needs every criterion listed once and each land use's weights to sum to 1.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     *
+     * @throws ValidationException
+     */
+    private function ensureCompleteWeightColumns(array $rows): void
+    {
+        $ids = array_column($rows, 'criteria_id');
+        if (count($ids) !== count(array_unique($ids)) || count($ids) !== SuitabilityCriteria::count()) {
+            throw ValidationException::withMessages([
+                'criteria' => 'Send the weights of every criterion exactly once.',
             ]);
         }
 
-        return response()->json(['message' => 'All criteria weights saved.']);
+        $errors = [];
+        foreach (['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'] as $type) {
+            $sum = array_sum(array_column($rows, "{$type}_weight"));
+            if (abs($sum - 1) > 0.001) {
+                $errors["{$type}_weight"] = sprintf('The %s weights must add up to 1 (they add up to %.3f).', $type, $sum);
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     // ── RESTRICTIONS ─────────────────────────────────────────────────

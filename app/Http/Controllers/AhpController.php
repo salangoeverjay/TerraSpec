@@ -6,6 +6,7 @@ use App\Models\SuitabilityCriteria;
 use App\Services\AhpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AhpController extends Controller
 {
@@ -40,11 +41,18 @@ class AhpController extends Controller
      */
     public function apply(Request $request): JsonResponse
     {
+        // One row and one column per criterion: a smaller matrix would leave the other weights unchanged
+        // and the column would no longer sum to 1
+        $criteriaCount = SuitabilityCriteria::count();
+
         $request->validate([
             'analysis_type' => 'required|in:commercial,residential,industrial,agricultural,reforestation',
-            'matrix' => 'required|array|min:2',
-            'matrix.*' => 'required|array',
+            'matrix' => "required|array|size:{$criteriaCount}",
+            'matrix.*' => "required|array|size:{$criteriaCount}",
             'matrix.*.*' => 'required|numeric|min:0.0001|max:9',
+        ], [
+            'matrix.size' => "The matrix must have one row per criterion ({$criteriaCount}).",
+            'matrix.*.size' => "Each matrix row must have one value per criterion ({$criteriaCount}).",
         ]);
 
         try {
@@ -66,21 +74,17 @@ class AhpController extends Controller
         $typeKey = "{$type}_weight";
         $criteria = SuitabilityCriteria::orderBy('criteria_id')->get();
 
-        foreach ($criteria as $idx => $criterion) {
-            if (isset($result['weights'][$idx])) {
-                $criterion->update([$typeKey => round($result['weights'][$idx], 6)]);
-            }
-        }
-
-        // Also update the default_weight if this is the first/only type run
-        // (optional — keeps default in sync with commercial as the primary type)
-        if ($type === 'commercial') {
+        // All weights of the column change together or not at all
+        DB::transaction(function () use ($criteria, $result, $typeKey, $type) {
             foreach ($criteria as $idx => $criterion) {
-                if (isset($result['weights'][$idx])) {
-                    $criterion->update(['default_weight' => round($result['weights'][$idx], 6)]);
-                }
+                $weight = round($result['weights'][$idx], 6);
+
+                // Commercial is the primary type, so its weights also become the defaults
+                $criterion->update($type === 'commercial'
+                    ? [$typeKey => $weight, 'default_weight' => $weight]
+                    : [$typeKey => $weight]);
             }
-        }
+        });
 
         return response()->json([
             'message' => "AHP weights applied to {$type} analysis.",
