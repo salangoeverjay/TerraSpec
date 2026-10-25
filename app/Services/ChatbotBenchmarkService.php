@@ -12,7 +12,7 @@ use RuntimeException;
  */
 class ChatbotBenchmarkService
 {
-    public function __construct(private GeminiChatService $chat) {}
+    public function __construct(private ChatPromptBuilder $prompts) {}
 
     /**
      * @return array<int, array{id: string, category: string, question: string, expected: string, require: array<int, string>, forbid?: array<int, string>}>
@@ -58,8 +58,8 @@ class ChatbotBenchmarkService
             ->post('/chat/completions', [
                 'model' => $model,
                 'messages' => [
-                    ['role' => 'system', 'content' => $this->chat->systemPrompt($question)],
-                    ['role' => 'user', 'content' => $this->chat->buildPrompt($question, [])],
+                    ['role' => 'system', 'content' => $this->prompts->systemPrompt($question)],
+                    ['role' => 'user', 'content' => $this->prompts->userPrompt($question)],
                 ],
                 'max_completion_tokens' => 2048,
             ]);
@@ -100,8 +100,8 @@ class ChatbotBenchmarkService
             ->post('/messages', [
                 'model' => $model,
                 'max_tokens' => 2048,
-                'system' => $this->chat->systemPrompt($question),
-                'messages' => [['role' => 'user', 'content' => $this->chat->buildPrompt($question, [])]],
+                'system' => $this->prompts->systemPrompt($question),
+                'messages' => [['role' => 'user', 'content' => $this->prompts->userPrompt($question)]],
             ]);
 
         $latency = (int) round((microtime(true) - $started) * 1000);
@@ -129,8 +129,8 @@ class ChatbotBenchmarkService
             throw new RuntimeException('Gemini API key is not configured.');
         }
 
-        $system = $this->chat->systemPrompt($question);
-        $user = $this->chat->buildPrompt($question, []);
+        $system = $this->prompts->systemPrompt($question);
+        $user = $this->prompts->userPrompt($question);
 
         $started = microtime(true);
         $response = $this->send($apiKey, $model, $system, $user, separateSystem: true);

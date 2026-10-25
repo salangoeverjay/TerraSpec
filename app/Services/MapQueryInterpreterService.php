@@ -20,7 +20,7 @@ class MapQueryInterpreterService
     public const LAND_USES = ['commercial', 'residential', 'industrial', 'agricultural', 'reforestation'];
 
     public function __construct(
-        private GeminiChatService $gemini,
+        private GeminiClient $gemini,
         private ReforestationStudyArea $studyArea,
     ) {}
 

@@ -315,38 +315,6 @@ class SuitabilityScoreService
             });
     }
 
-    public function detectAnalysisType(string $nlpQuery): string
-    {
-        $q = strtolower($nlpQuery);
-
-        // Checked in this exact order — first match wins. Reforestation goes first so
-        // "plant trees" is not read as an industrial "plant"; keywords match whole words
-        // (plurals allowed) so "restore" is not "store" and "report" is not "port".
-        $keywords = [
-            'reforestation' => ['tree', 'reforest', 'reforestation', 'forest', 'mangrove', 'native species',
-                'seedling', 'nursery', 'watershed', 'planting', 'plant trees', 'greening'],
-            'commercial' => ['grocery', 'store', 'mall', 'market', 'shop', 'retail',
-                'restaurant', 'cafe', 'bakery', 'pharmacy', 'clinic',
-                'hospital', 'school', 'hotel', 'gasoline', 'hardware'],
-            'residential' => ['house', 'subdivision', 'condo', 'housing',
-                'residential', 'apartment', 'home', 'dwelling'],
-            'industrial' => ['factory', 'warehouse', 'plant', 'industrial',
-                'manufacturing', 'storage', 'logistics', 'port'],
-            'agricultural' => ['farm', 'crop', 'rice', 'banana', 'coconut',
-                'agricultural', 'plantation', 'irrigation', 'harvest'],
-        ];
-
-        foreach ($keywords as $type => $words) {
-            foreach ($words as $kw) {
-                if (preg_match('/\b'.preg_quote($kw, '/').'(s|es)?\b/', $q)) {
-                    return $type;
-                }
-            }
-        }
-
-        return 'commercial';
-    }
-
     /**
      * Suitability class of a 0-1 score, from config/suitability.php "classes" (the single source of the cut-offs).
      */

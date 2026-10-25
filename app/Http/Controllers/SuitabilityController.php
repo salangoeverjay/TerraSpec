@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SuitabilityAnalysis;
 use App\Models\ZoneUnit;
+use App\Services\AnalysisTypeDetector;
 use App\Services\ReforestationStudyArea;
 use App\Services\SuitabilityComparisonService;
 use App\Services\SuitabilityScoreService;
@@ -225,14 +226,14 @@ class SuitabilityController extends Controller
 
     // POST /suitability/nlp
     // Body: { query: "best place for a grocery store" }
-    public function fromNlp(Request $request): JsonResponse
+    public function fromNlp(Request $request, AnalysisTypeDetector $detector): JsonResponse
     {
         $validated = $request->validate([
             'query' => 'required|string|max:500',
         ]);
 
         $query = $validated['query'];
-        $type = $this->scorer->detectAnalysisType($query);
+        $type = $detector->detect($query);
         $useSubtype = $this->extractSubtype($query);
         $userId = $request->user()?->id;
 

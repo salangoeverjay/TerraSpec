@@ -2,8 +2,11 @@
 
 use App\Models\SuitabilityAnalysis;
 use App\Models\ZoneUnit;
+use App\Services\ChatPromptBuilder;
+use App\Services\ChatResponseGrounder;
 use App\Services\GeminiChatService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
@@ -64,7 +67,7 @@ it('restricts the assistant to ordinance, CLUP and TerraSpec data', function () 
     Http::assertSent(function ($request) {
         $system = data_get($request->data(), 'systemInstruction.parts.0.text');
 
-        return str_contains($system, GeminiChatService::OFF_TOPIC_REPLY)
+        return str_contains($system, ChatPromptBuilder::OFF_TOPIC_REPLY)
             && str_contains($system, 'Use ONLY the information between the SOURCES markers')
             && str_contains($system, 'Urbanizable land = total land area')
             && str_contains($system, 'Zoning Ordinance text is NOT loaded yet')
@@ -175,4 +178,67 @@ it('does not attach suitability chips to zoning or hazard answers', function () 
     $this->postJson('/api/chatbot', ['prompt' => 'Agricultural land in very high flood areas in Dapco'])
         ->assertOk()
         ->assertJson(['detected_intent' => 'environmental_assessment', 'recommended_zones' => []]);
+});
+
+it('flags an answer that Gemini cut off at the output limit', function () {
+    Http::fake(['*' => Http::response(['candidates' => [[
+        'content' => ['parts' => [['text' => 'Panabo has 40 barangays and']]],
+        'finishReason' => 'MAX_TOKENS',
+    ]]])]);
+
+    $response = $this->postJson('/api/chatbot', ['prompt' => 'Describe every barangay of Panabo'])->assertOk();
+
+    expect($response->json('truncated'))->toBeTrue()
+        ->and($response->json('answer'))->toEndWith(GeminiChatService::TRUNCATED_NOTE);
+});
+
+it('answers a blocked prompt plainly without trying other models or locking the model', function () {
+    Http::fake(['*' => Http::response(['promptFeedback' => ['blockReason' => 'SAFETY']])]);
+
+    $this->postJson('/api/chatbot', ['prompt' => 'Something the safety filter blocks'])
+        ->assertOk()
+        ->assertJson(['answer' => GeminiChatService::BLOCKED_REPLY, 'recommended_zones' => []]);
+
+    Http::assertSentCount(1);
+    expect(Cache::has('gemini-unavailable:gemini-2.5-flash'))->toBeFalse();
+});
+
+it('tries the next model without a cooldown when thinking used the whole output budget', function () {
+    Http::fake([
+        '*/models/gemini-2.5-flash:generateContent*' => Http::response(['candidates' => [[
+            'content' => ['parts' => [['text' => 'long reasoning', 'thought' => true]]],
+            'finishReason' => 'MAX_TOKENS',
+        ]]]),
+        '*/models/gemini-3.5-flash:generateContent*' => Http::response(geminiAnswer('Total land area is 25,123 ha.')),
+    ]);
+
+    $this->postJson('/api/chatbot', ['prompt' => 'What is the total land area of Panabo?'])
+        ->assertOk()
+        ->assertJson(['model' => 'gemini-3.5-flash', 'truncated' => false]);
+
+    expect(Cache::has('gemini-unavailable:gemini-2.5-flash'))->toBeFalse();
+});
+
+it('matches barangay names as whole words, ignoring accents', function () {
+    foreach (['Santo Nino', 'Dapco'] as $name) {
+        ZoneUnit::create([
+            'unit_name' => $name, 'unit_type' => 'Rural', 'total_area_ha' => 100,
+            'population_2020' => 1000, 'household_count' => 250, 'population_density' => 10,
+            'avg_household_size' => 4, 'settlement_tier' => 'Satellite', 'saturation_index' => 0.2,
+            'dominant_soil_type' => 'Cabangan Clay Loam', 'dominant_slope_class' => '0-8', 'land_capability_class' => 'A',
+        ]);
+    }
+
+    $entities = app(ChatResponseGrounder::class)->entities('Tell me about Santo Niño', 'It borders Dapcoville.');
+
+    expect($entities)->toContain(['type' => 'barangay', 'value' => 'Santo Nino'])
+        ->not->toContain(['type' => 'barangay', 'value' => 'Dapco']);
+});
+
+it('always ends a report narrative with the required disclaimer', function () {
+    $grounder = app(ChatResponseGrounder::class);
+
+    expect($grounder->narrative('Gredu scores **74.4%**.'))->toBe('Gredu scores 74.4%. '.ChatPromptBuilder::NARRATIVE_DISCLAIMER)
+        ->and($grounder->narrative('Done. '.ChatPromptBuilder::NARRATIVE_DISCLAIMER))->toBe('Done. '.ChatPromptBuilder::NARRATIVE_DISCLAIMER)
+        ->and($grounder->narrative(''))->toBe('');
 });
