@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Schema;
  */
 class EnvironmentalRestrictionSeeder extends Seeder
 {
+    use MatchesZoneUnits;
+
     private const MIN_AREA_HA = 1.0;
 
     public function run(): void
@@ -83,7 +85,7 @@ class EnvironmentalRestrictionSeeder extends Seeder
         $area = 0.0;
 
         foreach (ZoneUnit::all() as $zone) {
-            $compact = (float) ($data[preg_replace('/[^a-z0-9]/', '', strtolower($zone->unit_name))]['compact_ha'] ?? 0);
+            $compact = (float) $this->entryFor($data, $zone->unit_name, 'data/barangay_mangrove_subzone.json')['compact_ha'];
             if ($compact >= self::MIN_AREA_HA) {
                 $ids[] = $zone->zone_unit_id;
                 $area += $compact;

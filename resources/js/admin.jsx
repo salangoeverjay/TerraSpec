@@ -251,7 +251,7 @@ const TAB_CONFIG = {
     display: r => [r.unit_name, r.unit_type, r.settlement_tier, Number(r.total_area_ha).toLocaleString(), r.salinity_level],
     searchKeys: ['unit_name', 'unit_type', 'settlement_tier'],
     fields: [
-      { key: 'unit_name',       label: 'Unit Name',        type: 'text',   required: true },
+      { key: 'unit_name',       label: 'Unit Name',        type: 'text',   readOnly: true, hint: 'Barangay names match the map boundaries and source data, so they cannot be changed here.' },
       { key: 'unit_type',       label: 'Type',             type: 'select', opts: ['Urban','Rural'], required: true },
       { key: 'settlement_tier', label: 'Settlement Tier',  type: 'select', opts: ['CBD','Minor_Growth','Emerging','Satellite'], required: true },
       { key: 'total_area_ha',   label: 'Total Area (ha)',  type: 'number', required: true },
@@ -686,6 +686,8 @@ export function AdminScreen() {
                       value={draft[f.key]||''}
                       placeholder={(modal.mode === 'add' && f.addPlaceholder) || f.placeholder || ''}
                       autoComplete={f.type === 'password' ? 'new-password' : undefined}
+                      readOnly={f.readOnly}
+                      style={f.readOnly ? { background: 'hsl(var(--muted))', cursor: 'not-allowed' } : undefined}
                       onChange={e => setDraft(p => ({...p, [f.key]: e.target.value}))}
                     />
                   )}

@@ -57,6 +57,10 @@ class SuitabilityScoreService
         $hazard = $zone->hazardData;
         $area = (float) $zone->total_area_ha;
 
+        if ($hazard === null) {
+            return $this->notAssessed($zone, $analysisType, $useSubtype, $criteria ?? SuitabilityCriteria::all());
+        }
+
         $constraint = $this->evaluateConstraints($zone, $analysisType);
 
         // 1. FLOOD SCORE — weighted flood area as a share of the barangay total in CLUP Table PF-19
@@ -156,6 +160,7 @@ class SuitabilityScoreService
             'total_score' => $totalScore,
             'total_pct' => round($totalScore * 100, 1),
             'suitability_level' => $level,
+            'assessed' => true,
             'criteria_breakdown' => $breakdown,
             'applied_weights' => $appliedWeights,
             'constraint' => $constraint === null ? null : [
@@ -164,6 +169,38 @@ class SuitabilityScoreService
                 'available_area_ha' => round($constraint['available_share'] * $area, 2),
                 'constrained_ha' => round($constraint['constrained_ha'], 2),
                 'reasons' => $constraint['reasons'],
+            ],
+        ];
+    }
+
+    /**
+     * Result for a barangay without CLUP hazard data: it cannot be scored, so it is reported as not
+     * assessed (and treated as excluded by the method comparison) instead of being scored on guesses.
+     *
+     * @param  Collection<int, SuitabilityCriteria>  $criteria
+     * @return array<string, mixed>
+     */
+    private function notAssessed(ZoneUnit $zone, string $analysisType, ?string $useSubtype, Collection $criteria): array
+    {
+        $weights = $criteria->mapWithKeys(fn (SuitabilityCriteria $c) => [$c->criteria_name => $c->getWeightForType($analysisType)])->all();
+
+        return [
+            'zone' => $zone,
+            'analysis_type' => $analysisType,
+            'use_subtype' => $useSubtype,
+            'scores' => array_fill_keys(['flood', 'slope', 'liquefaction', 'population', 'saturation', 'soil', 'zoning'], 0.0),
+            'total_score' => 0.0,
+            'total_pct' => 0.0,
+            'suitability_level' => 'Not Assessed',
+            'assessed' => false,
+            'criteria_breakdown' => array_map(fn (float $weight) => ['score' => 0.0, 'weight' => $weight, 'weighted' => 0.0], $weights),
+            'applied_weights' => $weights,
+            'constraint' => [
+                'excluded' => true,
+                'available_share' => 0.0,
+                'available_area_ha' => 0.0,
+                'constrained_ha' => round((float) $zone->total_area_ha, 2),
+                'reasons' => ['No CLUP hazard data loaded' => round((float) $zone->total_area_ha, 2)],
             ],
         ];
     }

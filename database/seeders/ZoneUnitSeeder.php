@@ -56,8 +56,8 @@ class ZoneUnitSeeder extends Seeder
         ];
 
         foreach ($barangays as $row) {
-            ZoneUnit::create([
-                'unit_name' => $row[0],
+            // Keyed on the name so re-seeding updates the 40 barangays instead of adding 40 more
+            ZoneUnit::updateOrCreate(['unit_name' => $row[0]], [
                 'unit_type' => $row[1],
                 'total_area_ha' => $row[2],
                 'population_2020' => $row[3],

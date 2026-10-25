@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use App\Models\ZoneUnit;
 use App\Models\ZoneZoningData;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
-use RuntimeException;
 
 /**
  * Seeds per-barangay zoning class areas from data/barangay_zoning.json.
@@ -17,6 +15,8 @@ use RuntimeException;
  */
 class ZoneZoningDataSeeder extends Seeder
 {
+    use MatchesZoneUnits;
+
     public function run(): void
     {
         /** @var array<string, array{name: string, area_ha: float, zoning: array<string, array{area_ha: float, flood_very_high_ha: float, landslide_high_ha: float}>}> $barangays */
@@ -25,13 +25,7 @@ class ZoneZoningDataSeeder extends Seeder
         ZoneZoningData::query()->delete();
 
         foreach (ZoneUnit::all() as $zone) {
-            $key = $this->normalize($zone->unit_name);
-
-            if (! isset($barangays[$key])) {
-                throw new RuntimeException("No zoning data for zone unit '{$zone->unit_name}'.");
-            }
-
-            foreach ($barangays[$key]['zoning'] as $code => $row) {
+            foreach ($this->entryFor($barangays, $zone->unit_name, 'data/barangay_zoning.json')['zoning'] as $code => $row) {
                 ZoneZoningData::create([
                     'zone_unit_id' => $zone->zone_unit_id,
                     'zoning_code' => $code,
@@ -41,10 +35,5 @@ class ZoneZoningDataSeeder extends Seeder
                 ]);
             }
         }
-    }
-
-    private function normalize(string $name): string
-    {
-        return preg_replace('/[^a-z0-9]/', '', Str::lower(Str::ascii($name)));
     }
 }

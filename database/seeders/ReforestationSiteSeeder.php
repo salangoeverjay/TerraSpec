@@ -3,10 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ReforestationSite;
-use App\Models\ZoneUnit;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
-use RuntimeException;
 
 /**
  * Seeds the actual mangrove reforestation sites from public/data/mangrove_sites.geojson.
@@ -17,19 +14,18 @@ use RuntimeException;
  */
 class ReforestationSiteSeeder extends Seeder
 {
+    use MatchesZoneUnits;
+
     public function run(): void
     {
         $sites = json_decode(file_get_contents(public_path('data/mangrove_sites.geojson')), true);
-        $zoneIds = ZoneUnit::pluck('zone_unit_id', 'unit_name')->mapWithKeys(fn ($id, $name) => [$this->normalize($name) => $id]);
-
         ReforestationSite::query()->delete();
 
         foreach ($sites['features'] as $feature) {
             $site = $feature['properties'];
-            $zoneId = $zoneIds[$this->normalize($site['barangay'])] ?? throw new RuntimeException("No zone unit for barangay '{$site['barangay']}'.");
 
             ReforestationSite::create([
-                'zone_unit_id' => $zoneId,
+                'zone_unit_id' => $this->zoneIdFor($site['barangay'], 'public/data/mangrove_sites.geojson'),
                 'name' => $site['name'],
                 'site_type' => 'mangrove',
                 'status' => $site['status'],
@@ -42,10 +38,5 @@ class ReforestationSiteSeeder extends Seeder
                 'distance_to_boundary_m' => $site['distance_to_boundary_m'],
             ]);
         }
-    }
-
-    private function normalize(string $name): string
-    {
-        return preg_replace('/[^a-z0-9]/', '', Str::lower(Str::ascii($name)));
     }
 }

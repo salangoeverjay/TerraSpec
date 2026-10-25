@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\ZoneSoilData;
-use App\Models\ZoneUnit;
 use Illuminate\Database\Seeder;
 
 /**
@@ -12,6 +11,8 @@ use Illuminate\Database\Seeder;
  */
 class ZoneSoilDataSeeder extends Seeder
 {
+    use MatchesZoneUnits;
+
     public function run(): void
     {
         // [barangay, Cabangan Clay Loam, Camasan Sandy Clay Loam, Matina Clay Loam, San Manuel Silty Clay Loam]
@@ -60,16 +61,9 @@ class ZoneSoilDataSeeder extends Seeder
 
         ZoneSoilData::query()->delete();
 
-        $zoneMap = ZoneUnit::pluck('zone_unit_id', 'unit_name');
-
         foreach ($soil as [$name, $cabangan, $camasan, $matina, $sanManuel]) {
-            $zoneUnitId = $zoneMap[$name] ?? null;
-            if (! $zoneUnitId) {
-                continue;
-            }
-
             ZoneSoilData::create([
-                'zone_unit_id' => $zoneUnitId,
+                'zone_unit_id' => $this->zoneIdFor($name, 'CLUP soil table'),
                 'cabangan_clay_loam_ha' => $cabangan,
                 'camasan_sandy_clay_loam_ha' => $camasan,
                 'matina_clay_loam_ha' => $matina,

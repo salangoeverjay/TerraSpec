@@ -3,11 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\ZoneHazardData;
-use App\Models\ZoneUnit;
 use Illuminate\Database\Seeder;
 
 class ZoneHazardDataSeeder extends Seeder
 {
+    use MatchesZoneUnits;
+
     public function run(): void
     {
         // Rebuilt from the sources below on every run
@@ -59,8 +60,6 @@ class ZoneHazardDataSeeder extends Seeder
             ['Waterfall',          1.88,   1.42,    49.85,  382.61,    0.00,  247.99,     0.00],
         ];
 
-        $zoneMap = ZoneUnit::pluck('zone_unit_id', 'unit_name');
-
         // MGB 2020 landslide map within PSA 2023 boundaries (see data/barangay_landslide.json)
         $landslide = json_decode(file_get_contents(database_path('seeders/data/barangay_landslide.json')), true)['barangays'];
 
@@ -72,15 +71,17 @@ class ZoneHazardDataSeeder extends Seeder
             'Santa Cruz' => 1006.81, 'Santo Nino' => 6.97, 'Waterfall' => 187.78,
         ];
 
+        // A misspelt name in the partial "None" list would silently become 0 ha
+        foreach (array_keys($liquefactionNone) as $name) {
+            $this->zoneIdFor($name, 'CLUP Table PF-26 (None column)');
+        }
+        $liquefactionNone = collect($liquefactionNone)->mapWithKeys(fn (float $ha, string $name) => [$this->nameKey($name) => $ha]);
+
         foreach ($hazardData as $row) {
-            $zoneUnitId = $zoneMap[$row[0]] ?? null;
-            if (! $zoneUnitId) {
-                continue;
-            }
-            $slide = $landslide[preg_replace('/[^a-z0-9]/', '', strtolower($row[0]))] ?? null;
+            $slide = $this->entryFor($landslide, $row[0], 'data/barangay_landslide.json');
 
             ZoneHazardData::create([
-                'zone_unit_id' => $zoneUnitId,
+                'zone_unit_id' => $this->zoneIdFor($row[0], 'CLUP Tables PF-19/PF-26'),
                 'flood_high_ha' => $row[1],
                 'flood_moderate_ha' => $row[2],
                 'flood_low_ha' => $row[3],
@@ -88,12 +89,12 @@ class ZoneHazardDataSeeder extends Seeder
                 'liquefaction_hsa_ha' => $row[5],
                 'liquefaction_lsa_ha' => $row[6],
                 'liquefaction_msa_ha' => $row[7],
-                'liquefaction_none_ha' => $liquefactionNone[$row[0]] ?? 0,
-                'landslide_high_ha' => $slide['landslide_high_ha'] ?? 0,
-                'landslide_moderate_ha' => $slide['landslide_moderate_ha'] ?? 0,
+                'liquefaction_none_ha' => $liquefactionNone[$this->nameKey($row[0])] ?? 0,
+                'landslide_high_ha' => $slide['landslide_high_ha'],
+                'landslide_moderate_ha' => $slide['landslide_moderate_ha'],
                 // Flags follow the verified areas: any flood class in PF-19, any landslide class on the MGB map
                 'has_flood' => ($row[1] + $row[2] + $row[3]) > 0,
-                'has_landslide' => (($slide['landslide_high_ha'] ?? 0) + ($slide['landslide_moderate_ha'] ?? 0)) > 0,
+                'has_landslide' => ($slide['landslide_high_ha'] + $slide['landslide_moderate_ha']) > 0,
                 // No verified per-barangay source is loaded yet: unknown, not "no"
                 'has_storm_surge' => null,
                 'has_drought' => null,

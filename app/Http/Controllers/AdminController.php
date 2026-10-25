@@ -33,16 +33,19 @@ class AdminController extends Controller
     public function updateZone(Request $request, int $id): JsonResponse
     {
         $zone = ZoneUnit::findOrFail($id);
+        // The barangay name is not editable: the map boundaries, seeders and reports all match on it
         $data = $request->validate([
-            'unit_name' => 'required|string|max:100',
+            'unit_name' => ['sometimes', Rule::in([$zone->unit_name])],
             'unit_type' => 'required|in:Urban,Rural',
             'total_area_ha' => 'required|numeric|min:0',
             'settlement_tier' => 'required|in:CBD,Minor_Growth,Emerging,Satellite',
             'elevation_min' => 'required|integer|min:0',
             'elevation_max' => 'required|integer|min:0',
             'salinity_level' => 'required|in:None,Low,Med,High',
+        ], [
+            'unit_name.in' => 'The barangay name cannot be changed.',
         ]);
-        $zone->update($data);
+        $zone->update(collect($data)->except('unit_name')->all());
 
         return response()->json(['message' => 'Zone updated.', 'data' => $zone]);
     }
