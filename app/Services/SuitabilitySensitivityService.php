@@ -20,7 +20,7 @@ class SuitabilitySensitivityService
     public function __construct(private SuitabilityComparisonService $comparison) {}
 
     /**
-     * @return array{analysis_type: string, eligible_units: int, total_area_ha: float, steps: array<int, float>, criteria: array<int, array<string, mixed>>, max_area_changed_pct: float, max_area_changed_pct_at_10: float, min_spearman: float, most_sensitive: string|null, robust: bool, robust_at_10: bool}
+     * @return array{analysis_type: string, eligible_units: int, total_area_ha: float, steps: array<int, float>, criteria: array<int, array<string, mixed>>, max_area_changed_pct: float, max_area_changed_pct_at_10: float, rank_comparable: bool, min_spearman: float|null, most_sensitive: string|null, robust: bool, robust_at_10: bool}
      */
     public function analyze(string $analysisType): array
     {
@@ -34,6 +34,8 @@ class SuitabilitySensitivityService
         $baseLevels = array_map(fn (float $s): string => $this->comparison->classify($s), $baseScores);
         $baseRanks = $this->comparison->ranks($baseScores);
         $baseTop = $this->topFive($baseRanks);
+        // Rank correlation needs enough barangays; class changes by area stay meaningful for any number
+        $comparable = count($matrix) >= SuitabilityComparisonService::MIN_COMPARABLE_UNITS;
 
         $rows = [];
         foreach ($criteria as $index => $name) {
@@ -56,7 +58,7 @@ class SuitabilitySensitivityService
                     'units_changed' => count($changed),
                     'area_changed_ha' => round($changedArea, 2),
                     'area_changed_pct' => $totalArea > 0 ? round(100 * $changedArea / $totalArea, 1) : 0.0,
-                    'spearman' => round($this->comparison->spearman($baseScores, $scores), 3),
+                    'spearman' => $comparable ? round($this->comparison->spearman($baseScores, $scores), 3) : null,
                     'top5_overlap' => count(array_intersect($baseTop, $this->topFive($ranks))),
                     'changed_units' => array_map(fn (int $i): string => $eligible[$i]['zone']->unit_name, $changed),
                 ];
@@ -94,7 +96,8 @@ class SuitabilitySensitivityService
             'criteria' => $rows,
             'max_area_changed_pct' => $maxArea,
             'max_area_changed_pct_at_10' => $maxAreaAtTen,
-            'min_spearman' => $rows === [] ? 1.0 : min(array_merge(...array_map(fn (array $r): array => array_column($r['results'], 'spearman'), $rows))),
+            'rank_comparable' => $comparable,
+            'min_spearman' => ! $comparable || $rows === [] ? null : min(array_merge(...array_map(fn (array $r): array => array_column($r['results'], 'spearman'), $rows))),
             'most_sensitive' => $mostSensitive && $mostSensitive['max_area_changed_pct'] > 0 ? $mostSensitive['criterion'] : null,
             'robust' => $maxArea < self::ROBUST_AREA_PCT,
             'robust_at_10' => $maxAreaAtTen < self::ROBUST_AREA_PCT,

@@ -22,7 +22,9 @@ function Verdict({ data }) {
       {data.robust
         ? <>It also stays under 5% at ±20%. </>
         : <>At ±20%, up to {at20}% changes class{data.most_sensitive && <>, mostly driven by <b>{data.most_sensitive}</b></>}, so that weight needs the strongest justification. </>}
-      Rankings stay stable (lowest Spearman ρ = {data.min_spearman.toFixed(3)}).
+      {data.rank_comparable
+        ? <>Rankings stay stable (lowest Spearman ρ = {data.min_spearman.toFixed(3)}).</>
+        : <>Rank stability is not comparable with fewer than 3 eligible barangays.</>}
     </p>
   );
 }
@@ -97,7 +99,7 @@ export function SensitivityAnalysis({ analysisType, typeLabel }) {
                       >
                         <Badge variant={areaVariant(cell.area_changed_pct)}>{cell.area_changed_pct}%</Badge>
                         <span className="muted mono" style={{ fontSize: 11, marginLeft: 6 }}>
-                          {cell.units_changed} · {cell.spearman.toFixed(2)}
+                          {cell.units_changed}{cell.spearman != null && <> · {cell.spearman.toFixed(2)}</>}
                         </span>
                       </td>
                     ))}

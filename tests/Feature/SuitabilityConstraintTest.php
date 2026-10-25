@@ -112,7 +112,47 @@ it('reports AHP-WLC weight sensitivity for every weighted criterion and step', f
         ->and($criteria)->toHaveCount(7)
         ->and($criteria[0]['results'])->toHaveCount(4)
         ->and(array_column($criteria[0]['results'], 'step'))->toEqual([-0.2, -0.1, 0.1, 0.2])
-        ->and($response->json('data.robust_at_10'))->toBeBool();
+        ->and($response->json('data.robust_at_10'))->toBeBool()
+        ->and($response->json('data.rank_comparable'))->toBeTrue()
+        ->and($response->json('data.min_spearman'))->toBeNumeric();
+});
+
+it('classifies WLC by suitability class and TOPSIS by rank quarter', function () {
+    makeZone('Townsite', ['GR' => [80], 'C' => [20]]);
+    makeZone('Suburb', ['GR' => [50], 'PA' => [40], 'C' => [10]]);
+    makeZone('Edge', ['GR' => [30], 'PA' => [70]]);
+
+    $data = $this->getJson('/suitability/compare?analysis_type=residential')->assertOk()->json('data');
+
+    $best = collect($data['units'])->firstWhere('methods.ahp_topsis.rank', 1);
+    expect($data['comparable'])->toBeTrue()
+        ->and($data['level_basis'])->toBe(['ahp_wlc' => 'score', 'ahp_topsis' => 'rank', 'ewm_wlc' => 'score', 'ewm_topsis' => 'rank'])
+        ->and($best['methods']['ahp_topsis']['level'])->toBe('Top quarter')
+        ->and($data['units'][0]['methods']['ahp_wlc']['level'])->toBeIn(['Highly Suitable', 'Moderately Suitable', 'Low Suitability', 'Not Suitable'])
+        ->and($data['agreement']['level_agreement'])->toHaveKeys(['ahp_topsis', 'ewm_topsis']);
+});
+
+it('reports EWM, TOPSIS and rank agreement as not comparable with fewer than 3 eligible barangays', function () {
+    makeZone('Townsite', ['GR' => [80], 'C' => [20]]);
+    makeZone('Suburb', ['GR' => [50], 'PA' => [40], 'C' => [10]]);
+    makeZone('Farmland', ['PA' => [99], 'GR' => [1]]);
+
+    $data = $this->getJson('/suitability/compare?analysis_type=residential')->assertOk()->json('data');
+
+    expect($data['comparable'])->toBeFalse()
+        ->and($data['minimum_units'])->toBe(3)
+        ->and($data['agreement']['eligible_units'])->toBe(2)
+        ->and($data['agreement']['spearman'])->toBeNull()
+        ->and($data['weights']['ewm'])->toBeNull()
+        ->and($data['units'][0]['methods']['ahp_wlc']['rank'])->toBe(1)
+        ->and($data['units'][0]['methods']['ahp_topsis'])->toBeNull()
+        ->and($data['units'][0]['methods']['ewm_wlc'])->toBeNull();
+
+    $sensitivity = $this->getJson('/suitability/sensitivity?analysis_type=residential')->assertOk()->json('data');
+    expect($sensitivity['rank_comparable'])->toBeFalse()
+        ->and($sensitivity['min_spearman'])->toBeNull()
+        ->and($sensitivity['criteria'][0]['results'][0]['spearman'])->toBeNull()
+        ->and($sensitivity['criteria'][0]['results'][0]['area_changed_pct'])->toBeNumeric();
 });
 
 it('breaks a barangay score into criterion score times weight', function () {

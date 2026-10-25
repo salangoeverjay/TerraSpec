@@ -68,3 +68,13 @@ it('ranks by descending score with competition or average ties', function () {
     expect($service->ranks([0.3, 0.9, 0.9, 0.1]))->toBe([0 => 3, 1 => 1, 2 => 1, 3 => 4])
         ->and($service->ranks([0.3, 0.9, 0.9, 0.1], average: true))->toEqual([0 => 3, 1 => 1.5, 2 => 1.5, 3 => 4]);
 });
+
+it('places ranks in quarters of the eligible set', function () {
+    $service = comparison();
+
+    expect($service->rankQuarter(1, 8))->toBe('Top quarter')
+        ->and($service->rankQuarter(3, 8))->toBe('Second quarter')
+        ->and($service->rankQuarter(5, 8))->toBe('Third quarter')
+        ->and($service->rankQuarter(8, 8))->toBe('Bottom quarter')
+        ->and($service->rankQuarter(1, 1))->toBe('Top quarter');
+});

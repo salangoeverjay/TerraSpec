@@ -24,36 +24,56 @@ class SuitabilityComparisonService
         'ewm_topsis' => 'EWM-TOPSIS',
     ];
 
+    /**
+     * With fewer eligible barangays, entropy weights, TOPSIS closeness and rank correlation have no
+     * meaning (one unit is always "ideal", two units always correlate ±1), so only AHP-WLC is reported.
+     */
+    public const MIN_COMPARABLE_UNITS = 3;
+
+    /**
+     * WLC scores are absolute, so they use the suitability classes; TOPSIS closeness is relative to the
+     * best and worst unit in the set, so TOPSIS levels are rank quarters.
+     */
+    public const LEVEL_BASIS = [
+        'ahp_wlc' => 'score',
+        'ahp_topsis' => 'rank',
+        'ewm_wlc' => 'score',
+        'ewm_topsis' => 'rank',
+    ];
+
     private const EPSILON = 1e-12;
 
     public function __construct(private SuitabilityScoreService $scorer) {}
 
     /**
-     * @return array{analysis_type: string, criteria: array<int, string>, weights: array<string, array<string, float>>, units: array<int, array<string, mixed>>, agreement: array<string, mixed>}
+     * @return array{analysis_type: string, comparable: bool, minimum_units: int, level_basis: array<string, string>, criteria: array<int, string>, weights: array{ahp: array<string, float>, ewm: array<string, float>|null}, units: array<int, array<string, mixed>>, agreement: array<string, mixed>}
      */
     public function compare(string $analysisType): array
     {
         ['criteria' => $criteria, 'eligible' => $eligible, 'excluded' => $excluded, 'matrix' => $matrix, 'ahp_weights' => $ahpWeights]
             = $this->decisionMatrix($analysisType);
 
-        $ewmWeights = count($matrix) > 1 ? $this->entropyWeights($matrix) : $ahpWeights;
+        $count = count($matrix);
+        $comparable = $count >= self::MIN_COMPARABLE_UNITS;
+        $ewmWeights = $comparable ? $this->entropyWeights($matrix) : null;
 
-        $scores = [
-            'ahp_wlc' => $this->wlc($matrix, $ahpWeights),
-            'ahp_topsis' => $this->topsis($matrix, $ahpWeights),
-            'ewm_wlc' => $this->wlc($matrix, $ewmWeights),
-            'ewm_topsis' => $this->topsis($matrix, $ewmWeights),
-        ];
+        // Below the minimum only AHP-WLC is computed; the other methods are reported as not comparable
+        $scores = ['ahp_wlc' => $this->wlc($matrix, $ahpWeights)];
+        if ($comparable) {
+            $scores['ahp_topsis'] = $this->topsis($matrix, $ahpWeights);
+            $scores['ewm_wlc'] = $this->wlc($matrix, $ewmWeights);
+            $scores['ewm_topsis'] = $this->topsis($matrix, $ewmWeights);
+        }
         $ranks = array_map(fn (array $s): array => $this->ranks($s), $scores);
 
-        $units = $eligible->map(function (array $r, int $i) use ($scores, $ranks): array {
+        $units = $eligible->map(function (array $r, int $i) use ($scores, $ranks, $count): array {
             $methods = [];
             foreach (array_keys(self::METHODS) as $key) {
-                $methods[$key] = [
+                $methods[$key] = isset($scores[$key]) ? [
                     'score' => round($scores[$key][$i], 4),
                     'rank' => $ranks[$key][$i],
-                    'level' => $this->classify($scores[$key][$i]),
-                ];
+                    'level' => $this->level($key, $scores[$key][$i], $ranks[$key][$i], $count),
+                ] : null;
             }
 
             return $this->unitRow($r, false, $methods);
@@ -66,16 +86,47 @@ class SuitabilityComparisonService
         usort($units, fn (array $a, array $b): int => ($a['excluded'] <=> $b['excluded'])
             ?: (($a['methods']['ahp_wlc']['rank'] ?? 0) <=> ($b['methods']['ahp_wlc']['rank'] ?? 0)));
 
+        $rounded = fn (array $weights): array => array_combine($criteria, array_map(fn (float $w): float => round($w, 4), $weights));
+
         return [
             'analysis_type' => $analysisType,
+            'comparable' => $comparable,
+            'minimum_units' => self::MIN_COMPARABLE_UNITS,
+            'level_basis' => self::LEVEL_BASIS,
             'criteria' => $criteria,
             'weights' => [
-                'ahp' => array_combine($criteria, array_map(fn (float $w): float => round($w, 4), $ahpWeights)),
-                'ewm' => array_combine($criteria, array_map(fn (float $w): float => round($w, 4), $ewmWeights)),
+                'ahp' => $rounded($ahpWeights),
+                'ewm' => $ewmWeights === null ? null : $rounded($ewmWeights),
             ],
             'units' => $units,
-            'agreement' => $this->agreement($scores, $ranks, count($matrix)),
+            'agreement' => $comparable ? $this->agreement($scores, $ranks, $count) : [
+                'eligible_units' => $count,
+                'spearman' => null,
+                'top5_overlap' => null,
+                'mean_rank_shift' => null,
+                'level_agreement' => null,
+            ],
         ];
+    }
+
+    /**
+     * Rank quarter of a unit among $count units (1 = best): the level used for TOPSIS closeness.
+     */
+    public function rankQuarter(int $rank, int $count): string
+    {
+        $position = ($rank - 1) / max(1, $count);
+
+        return match (true) {
+            $position < 0.25 => 'Top quarter',
+            $position < 0.50 => 'Second quarter',
+            $position < 0.75 => 'Third quarter',
+            default => 'Bottom quarter',
+        };
+    }
+
+    private function level(string $method, float $score, int $rank, int $count): string
+    {
+        return self::LEVEL_BASIS[$method] === 'rank' ? $this->rankQuarter($rank, $count) : $this->classify($score);
     }
 
     /**
@@ -290,7 +341,14 @@ class SuitabilityComparisonService
 
         $topOf = fn (string $key): array => array_keys(array_filter($ranks[$key], fn (int $rank): bool => $rank <= 5));
         $baseTop = $topOf('ahp_wlc');
-        $baseLevels = array_map(fn (float $s): string => $this->classify($s), $scores['ahp_wlc']);
+
+        // Levels are compared on the method's own basis: suitability class for WLC, rank quarter for
+        // TOPSIS (AHP-WLC's rank quarter is the baseline then), never a TOPSIS closeness against WLC classes
+        $levelsOf = fn (string $key, string $basis): array => array_map(
+            fn (float $s, int $rank): string => $basis === 'rank' ? $this->rankQuarter($rank, $eligibleCount) : $this->classify($s),
+            $scores[$key],
+            $ranks[$key],
+        );
 
         $overlap = $shift = $levels = [];
         foreach ($keys as $key) {
@@ -298,10 +356,11 @@ class SuitabilityComparisonService
             $shift[$key] = $eligibleCount > 0
                 ? round(array_sum(array_map(fn (int $a, int $b): int => abs($a - $b), $ranks['ahp_wlc'], $ranks[$key])) / $eligibleCount, 2)
                 : 0.0;
+            $basis = self::LEVEL_BASIS[$key];
             $same = array_filter(array_map(
-                fn (float $s, string $base): bool => $this->classify($s) === $base,
-                $scores[$key],
-                $baseLevels,
+                fn (string $level, string $base): bool => $level === $base,
+                $levelsOf($key, $basis),
+                $levelsOf('ahp_wlc', $basis),
             ));
             $levels[$key] = $eligibleCount > 0 ? round(100 * count($same) / $eligibleCount, 1) : 0.0;
         }

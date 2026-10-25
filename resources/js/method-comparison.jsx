@@ -21,12 +21,14 @@ function rhoLabel(rho) {
   return 'opposite';
 }
 
-function Summary({ methods, agreement }) {
-  if (agreement.eligible_units < 2) {
+function Summary({ methods, agreement, comparable, minimumUnits }) {
+  if (!comparable) {
+    const n = agreement.eligible_units;
     return (
       <p style={{ fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>
-        {agreement.eligible_units === 0 ? "No barangay" : "Only one barangay"} passes the constraint step for this land use,
-        so the four methods cannot be compared (rank agreement needs at least two barangays).
+        {n === 0 ? 'No barangay passes' : n === 1 ? 'Only one barangay passes' : `Only ${n} barangays pass`} the constraint step for this land use.
+        EWM, TOPSIS and rank correlation need at least {minimumUnits} barangays, so they are <b>not comparable</b> here
+        {n > 0 && <> and only the AHP-WLC score is shown</>}.
       </p>
     );
   }
@@ -83,9 +85,10 @@ export function MethodComparison({ analysisType, typeLabel }) {
       ) : (
         <>
           <CardBody>
-            <Summary methods={methods} agreement={data.agreement}/>
+            <Summary methods={methods} agreement={data.agreement} comparable={data.comparable} minimumUnits={data.minimum_units}/>
           </CardBody>
 
+          {data.comparable && (
           <div className="grid grid-2" style={{ gap: 0, borderTop: '1px solid hsl(var(--border))' }}>
             {/* Weights: AHP vs EWM */}
             <div style={{ overflowX: 'auto', borderRight: '1px solid hsl(var(--border))' }}>
@@ -135,10 +138,15 @@ export function MethodComparison({ analysisType, typeLabel }) {
                     <td className="muted" style={{ fontSize: 11.5 }}>Mean rank shift vs AHP-WLC</td>
                     {keys.map(k => <td key={k} className="mono" style={{ fontSize: 12 }}>{data.agreement.mean_rank_shift[k]}</td>)}
                   </tr>
+                  <tr>
+                    <td className="muted" style={{ fontSize: 11.5 }}>Same level as AHP-WLC</td>
+                    {keys.map(k => <td key={k} className="mono" style={{ fontSize: 12 }}>{data.agreement.level_agreement[k]}%</td>)}
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
+          )}
 
           {/* Rankings side by side */}
           <div style={{ overflowX: 'auto', borderTop: '1px solid hsl(var(--border))' }}>
@@ -147,7 +155,7 @@ export function MethodComparison({ analysisType, typeLabel }) {
                 <tr>
                   <th>Barangay</th>
                   <th>Usable area</th>
-                  {keys.map(k => <th key={k} title={METHOD_NOTES[k]}>{methods[k]}<div className="muted" style={{ fontSize: 10, fontWeight: 400 }}>rank · score</div></th>)}
+                  {keys.map(k => <th key={k} title={METHOD_NOTES[k]}>{methods[k]}<div className="muted" style={{ fontSize: 10, fontWeight: 400 }}>rank · score · {data.level_basis[k] === 'rank' ? 'rank quarter' : 'class'}</div></th>)}
                 </tr>
               </thead>
               <tbody>
@@ -162,8 +170,15 @@ export function MethodComparison({ analysisType, typeLabel }) {
                       </td>
                     ) : keys.map(k => (
                       <td key={k}>
-                        <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>#{u.methods[k].rank}</span>
-                        <span className="muted mono" style={{ fontSize: 11, marginLeft: 6 }}>{u.methods[k].score.toFixed(3)}</span>
+                        {u.methods[k] ? (
+                          <>
+                            <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>#{u.methods[k].rank}</span>
+                            <span className="muted mono" style={{ fontSize: 11, marginLeft: 6 }}>{u.methods[k].score.toFixed(3)}</span>
+                            <div className="muted" style={{ fontSize: 10.5 }}>{u.methods[k].level}</div>
+                          </>
+                        ) : (
+                          <span className="muted" style={{ fontSize: 11.5 }}>Not comparable</span>
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -174,8 +189,9 @@ export function MethodComparison({ analysisType, typeLabel }) {
 
           <CardBody>
             <p className="muted" style={{ fontSize: 11.5, margin: 0 }}>
-              All methods use the same criterion scores and the same CLUP constraint step. TOPSIS closeness is relative to the
-              best and worst zones in this set, so compare TOPSIS methods by rank, not by score level.
+              All methods use the same criterion scores and the same CLUP constraint step. WLC levels are suitability classes;
+              TOPSIS closeness is relative to the best and worst zones in this set, so TOPSIS levels are rank quarters
+              and are compared with AHP-WLC's rank quarters.
             </p>
           </CardBody>
         </>
