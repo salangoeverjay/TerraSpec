@@ -6,8 +6,8 @@ use App\Models\ZoneUnit;
 use Illuminate\Support\Collection;
 
 /**
- * The reforestation study area: only the barangays with at least one verified reforestation or
- * mangrove site. Other barangays are left out of the reforestation analysis, map, AI context and
+ * The reforestation study area: only the barangays with at least one mapped reforestation or
+ * mangrove site (rehabilitated, adopted or proposed). Other barangays are left out of the reforestation analysis, map, AI context and
  * reports (their data is kept, not deleted). Other land uses still cover every barangay.
  */
 class ReforestationStudyArea
@@ -64,7 +64,7 @@ class ReforestationStudyArea
         $names = $this->names();
 
         return $names === []
-            ? 'No barangay has a verified reforestation or mangrove site yet.'
-            : 'Reforestation study area: '.implode(' and ', $names).' (barangays with verified reforestation or mangrove sites). Other barangays are not part of the reforestation study.';
+            ? 'No barangay has a mapped reforestation or mangrove site yet.'
+            : 'Reforestation study area: '.implode(' and ', $names).' (barangays with mapped reforestation or mangrove sites, including proposed ones). Other barangays are not part of the reforestation study.';
     }
 }

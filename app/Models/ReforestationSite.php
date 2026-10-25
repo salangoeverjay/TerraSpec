@@ -18,6 +18,12 @@ class ReforestationSite extends Model
 
     public const STATUSES = ['rehabilitated', 'adopted', 'proposed'];
 
+    /**
+     * Statuses counted as verified planted area. Proposed sites are still mapped and still define the
+     * study area, but nothing has been planted on them yet.
+     */
+    public const PLANTED_STATUSES = ['rehabilitated', 'adopted'];
+
     protected $fillable = [
         'zone_unit_id',
         'name',

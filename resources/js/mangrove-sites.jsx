@@ -50,7 +50,9 @@ export function MangroveSitesPanel({ onSelectBarangay }) {
       <CardHeader>
         <div className="row-between" style={{ width: '100%' }}>
           <span className="card-title">Mangrove reforestation sites and validation</span>
-          <span className="muted" style={{ fontSize: 12 }}>{summary.site_count} sites · {ha(summary.total_ha)}</span>
+          <span className="muted" style={{ fontSize: 12 }} title="Verified planted area counts rehabilitated and adopted sites; proposed sites are mapped but not yet planted">
+            {summary.site_count} sites · {ha(summary.total_ha)} mapped · <b>{ha(summary.planted.area_ha)} planted</b> ({summary.planted.count} sites)
+          </span>
         </div>
       </CardHeader>
       <CardBody>

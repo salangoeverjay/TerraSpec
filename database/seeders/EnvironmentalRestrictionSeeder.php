@@ -53,10 +53,19 @@ class EnvironmentalRestrictionSeeder extends Seeder
 
         $sites = ReforestationSite::all();
         if ($sites->isNotEmpty()) {
+            $planted = $sites->whereIn('status', ReforestationSite::PLANTED_STATUSES);
+
             $this->create(
                 'Mangrove Reforestation Sites',
                 'Mangrove site',
-                sprintf('%d verified mangrove rehabilitation, adopted and proposed sites (%s ha) from the Mangrove Reforestation and Rehabilitation KML. Keep free of development.', $sites->count(), number_format($sites->sum('area_ha'), 2)),
+                sprintf(
+                    '%d mapped mangrove sites (%s ha) from the Mangrove Reforestation and Rehabilitation KML: %d rehabilitated or adopted (%s ha verified planted) and %d proposed. Keep free of development.',
+                    $sites->count(),
+                    number_format($sites->sum('area_ha'), 2),
+                    $planted->count(),
+                    number_format($planted->sum('area_ha'), 2),
+                    $sites->count() - $planted->count(),
+                ),
                 $sites->pluck('zone_unit_id')->unique()->all(),
             );
         }

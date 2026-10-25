@@ -70,9 +70,16 @@ class ReforestationSiteValidationService
      */
     private function summary(Collection $sites): array
     {
+        $planted = $sites->whereIn('status', ReforestationSite::PLANTED_STATUSES);
+
         return [
             'site_count' => $sites->count(),
             'total_ha' => round($sites->sum('area_ha'), 2),
+            'planted' => [
+                'count' => $planted->count(),
+                'area_ha' => round($planted->sum('area_ha'), 2),
+                'statuses' => ReforestationSite::PLANTED_STATUSES,
+            ],
             'by_status' => collect(ReforestationSite::STATUSES)->mapWithKeys(fn (string $status) => [$status => [
                 'count' => $sites->where('status', $status)->count(),
                 'area_ha' => round($sites->where('status', $status)->sum('area_ha'), 2),

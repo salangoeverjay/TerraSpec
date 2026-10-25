@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\ZoneHazardData;
 use App\Models\ZoneUnit;
 use App\Models\ZoneZoningData;
+use App\Services\ReforestationStudyArea;
 use Database\Seeders\ReforestationSiteSeeder;
 use Database\Seeders\SuitabilityCriteriaSeeder;
 use Database\Seeders\TreeSpeciesSeeder;
@@ -50,6 +51,21 @@ it('summarises the sites by status and barangay', function () {
         ->and($response->json('data.summary.total_ha'))->toEqual(3)
         ->and($response->json('data.summary.by_status.adopted'))->toEqual(['count' => 1, 'area_ha' => 1.0])
         ->and($response->json('data.summary.by_barangay.0.barangay'))->toBe('Coastal');
+});
+
+it('counts only rehabilitated and adopted sites as verified planted area, but keeps proposed sites in the study area', function () {
+    $planted = coastalZone('Planted', ['MG' => 60, 'GR' => 40]);
+    $proposedOnly = coastalZone('Proposed Only', ['MG' => 60, 'GR' => 40]);
+    ReforestationSite::factory()->create(['zone_unit_id' => $planted->zone_unit_id, 'area_ha' => 1.5]);
+    ReforestationSite::factory()->adopted('DICT')->create(['zone_unit_id' => $planted->zone_unit_id, 'area_ha' => 1.0]);
+    ReforestationSite::factory()->proposed()->create(['zone_unit_id' => $proposedOnly->zone_unit_id, 'area_ha' => 0.5]);
+
+    $summary = $this->getJson('/reforestation/sites')->assertOk()->json('data.summary');
+
+    expect($summary['total_ha'])->toEqual(3)
+        ->and($summary['planted']['count'])->toBe(2)
+        ->and($summary['planted']['area_ha'])->toEqual(2.5)
+        ->and(app(ReforestationStudyArea::class)->zoneIds())->toContain($proposedOnly->zone_unit_id);
 });
 
 it('agrees with the actual sites when they are in the mangrove zone or seaward of it', function () {
