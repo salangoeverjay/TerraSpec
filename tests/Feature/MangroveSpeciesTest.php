@@ -2,6 +2,7 @@
 
 use App\Models\MangroveSpecies;
 use App\Models\ReforestationSite;
+use App\Models\User;
 use App\Models\ZoneHazardData;
 use App\Models\ZoneUnit;
 use App\Services\TerraSpecContextService;
@@ -72,4 +73,25 @@ it('lists true mangroves on the dashboard, conservation priorities first', funct
     expect($species)->toHaveCount(5)
         ->and($species[0]['common_name'])->toBe('Api-api')
         ->and($species[1]['common_name'])->toBe('Malatangal');
+});
+
+it('lets staff manage the mangrove species list from the admin Species tab', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $species = [
+        'local_name' => 'Test bakawan', 'scientific_name' => 'Rhizophora testensis', 'family' => 'Rhizophoraceae',
+        'category' => 'true_mangrove', 'iucn_status' => 'Least concern', 'habit' => 'Tree',
+        'tidal_zone' => 'middle', 'zone_note' => null, 'source' => 'Test source',
+    ];
+
+    $list = $this->getJson('/api/admin/species')->assertOk()->json();
+    expect($list)->toHaveCount(MangroveSpecies::count())
+        ->and($list[0])->toHaveKeys(['local_name', 'scientific_name', 'tidal_zone']);
+
+    $id = $this->postJson('/api/admin/species', $species)->assertCreated()->json('data.id');
+    $this->postJson('/api/admin/species', [...$species, 'tidal_zone' => 'mountain'])->assertUnprocessable()->assertInvalid(['scientific_name', 'tidal_zone']);
+    $this->putJson("/api/admin/species/{$id}", [...$species, 'tidal_zone' => 'landward'])->assertOk();
+    expect(MangroveSpecies::find($id)->tidal_zone)->toBe('landward');
+
+    $this->deleteJson("/api/admin/species/{$id}")->assertOk();
+    expect(MangroveSpecies::find($id))->toBeNull();
 });

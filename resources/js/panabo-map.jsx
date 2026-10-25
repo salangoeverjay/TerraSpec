@@ -8,20 +8,20 @@ import {
   ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer, MangroveSitesLayer, MANGROVE_LEGEND,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
-import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, ScoreRing, levelStyle } from './components.jsx';
+import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, levelStyle } from './components.jsx';
 import { ZoningQueryPanel, ZONING_QUERY_PRESETS, EMPTY_QUERY, runZoningQuery, barangayBounds } from './zoning-query.jsx';
 import { AskTheMap } from './ask-the-map.jsx';
 
-function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) {
+function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Ask me about the map — parcels, zoning, flood risk, or reforestation.' }
+    { role: 'assistant', content: 'Ask me about the map — zoning, flood risk, suitability or reforestation.' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  const b = parcel?.barangay ?? nearestBarangay;
+  const b = nearestBarangay;
 
   const bubblePrompts = useMemo(() => {
     const lastMsg = messages.filter(m => m.role === 'assistant').at(-1)?.content ?? '';
@@ -69,9 +69,7 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
     setLoading(true);
     setMessages(m => [...m, { role: 'user', content: text }, { role: 'assistant', content: 'Thinking...' }]);
 
-    const selection = parcel
-      ? `Parcel ${parcel.id}, ${parcel.barangay}, zone ${parcel.zone}. Area: ${parcel.area} sqm. Soil: ${parcel.soil}. Slope: ${parcel.slope}. Flood: ${parcel.flood}. Road: ${parcel.road_m}m. Suitability: ${parcel.score}%.`
-      : nearestBarangay && selectedPoint
+    const selection = nearestBarangay && selectedPoint
       ? `Barangay ${nearestBarangay}. Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E.${selectedPoint.zoning ? ` Zoning: ${selectedPoint.zoning.label}.` : ''}${selectedPoint.scores ? ` Suitability: ${Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, l]) => `${l} ${selectedPoint.scores[k].pct}%`).join(', ')}.` : ''}`.slice(0, 255)
       : nearestBarangay
       ? `Barangay ${nearestBarangay}, Panabo City.`
@@ -110,12 +108,12 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
             </button>
           </div>
 
-          {(parcel || nearestBarangay) && (
+          {nearestBarangay && (
             <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--brand) / 0.06)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Icon name="pin" size={11} style={{ color: 'hsl(var(--brand))' }}/>
               <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Viewing:</span>
               <span style={{ fontSize: 11, fontWeight: 600 }}>
-                {parcel ? `${parcel.id} · ${parcel.barangay}` : nearestBarangay}
+                {nearestBarangay}
               </span>
             </div>
           )}
@@ -180,7 +178,6 @@ function MapChatBubble({ parcel, selectedPoint, nearestBarangay, rightOffset }) 
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void send(); } }}
               placeholder={
-                parcel          ? `Ask about ${parcel.barangay}…` :
                 nearestBarangay ? `Ask about ${nearestBarangay}…` :
                 'Ask about this location…'
               }
@@ -339,7 +336,7 @@ function buildMapContext(barangay, zoning, summary) {
   };
 }
 
-export function MapScreen({ go, initial, barangay, search, setSearch, highlightZones = [], setMapContext, askResult = null }) {
+export function MapScreen({ go, barangay, search, setSearch, highlightZones = [], setMapContext, askResult = null }) {
   const mapRef = useRef(null);
 
   // Opened from a barangay profile ("Show on map"): fly to that barangay
@@ -349,18 +346,12 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
     const timer = setTimeout(() => mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1000 }), 600);
     return () => clearTimeout(timer);
   }, [barangay]);
-  const [selected, setSelected] = useState(initial?.parcel || null);
 
   const [summary, setSummary] = useState([]);
   useEffect(() => {
     fetchSuitabilitySummary().then(setSummary).catch(e => console.warn('Suitability summary error', e));
   }, []);
 
-  // When a barangay is selected (e.g. from a dashboard link), sync to app-level chat context
-  useEffect(() => {
-    if (!setMapContext || !selected) return;
-    setMapContext(buildMapContext(selected, null, summary));
-  }, [selected, setMapContext, summary]);
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => { setShowSearch(!!search); }, [search]);
@@ -553,21 +544,12 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
   }
 
 
-  const parcel = PANABO.parcels.find(p => p.id === selected);
-  const zoneInfo = ZONING_LEGEND.find(z => z.id === parcel?.zone);
-
-  const { filteredParcels, filteredBarangays } = useMemo(() => {
-    if (!search) return { filteredParcels: [], filteredBarangays: [] };
+  const filteredBarangays = useMemo(() => {
+    if (!search) return [];
     const q = search.toLowerCase();
-    const parcels = PANABO.parcels.filter(p =>
-      p.id.toLowerCase().includes(q) || p.barangay.toLowerCase().includes(q)
-    ).slice(0, 4);
-    const barangays = PANABO.barangays.filter(b =>
-      b.toLowerCase().includes(q) && BARANGAY_COORDS[b]
-    ).slice(0, 4);
-    return { filteredParcels: parcels, filteredBarangays: barangays };
+    return PANABO.barangays.filter(b => b.toLowerCase().includes(q) && BARANGAY_COORDS[b]).slice(0, 4);
   }, [search]);
-  const hasResults = filteredParcels.length > 0 || filteredBarangays.length > 0;
+  const hasResults = filteredBarangays.length > 0;
 
   return (
     <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
@@ -745,22 +727,6 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
                   ))}
                 </>
               )}
-              {filteredParcels.length > 0 && (
-                <>
-                  <div style={{ padding: '6px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', borderTop: filteredBarangays.length > 0 ? '1px solid hsl(var(--border))' : 'none' }}>Parcels</div>
-                  {filteredParcels.map(p => (
-                    <div key={p.id} className="row" style={{ padding: '8px 14px', gap: 10, cursor: 'pointer' }}
-                      onClick={() => { setSelected(p.id); setSearch(''); setShowSearch(false); }}>
-                      <Icon name="pin" size={14} style={{ color: 'hsl(var(--brand))', flexShrink: 0 }}/>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500 }}>{p.id}</div>
-                        <div className="muted" style={{ fontSize: 11.5 }}>{p.barangay} · {p.zone}</div>
-                      </div>
-                      <Badge variant={levelStyle(p.suitability_level).variant}>{p.score}%</Badge>
-                    </div>
-                  ))}
-                </>
-              )}
             </div>
           </Card>
         </div>
@@ -906,65 +872,6 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
         </Card>
       </div>
 
-      {/* Parcel detail panel – right */}
-      {parcel && (
-        <div style={{ position: 'absolute', top: 16, right: 16, bottom: 16, width: 330, display: 'flex', flexDirection: 'column', zIndex: 10 }}>
-          <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.14)', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: 16, borderBottom: '1px solid hsl(var(--border))' }}>
-              <div className="row-between">
-                <div>
-                  <div className="row" style={{ gap: 7, marginBottom: 4 }}>
-                    <span className="mono muted" style={{ fontSize: 11 }}>{parcel.code}</span>
-                    {parcel.flag && <Badge variant="destructive">{parcel.flag}</Badge>}
-                  </div>
-                  <h3 style={{ fontSize: 17, fontWeight: 600, margin: 0, letterSpacing: '-0.01em' }}>{parcel.id}</h3>
-                  <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{parcel.barangay}, Panabo City</div>
-                </div>
-                <Btn variant="ghost" sz="sm" icon="x" onClick={() => setSelected(null)}/>
-              </div>
-              <div className="row" style={{ gap: 6, marginTop: 12 }}>
-                <Btn variant="brand" sz="sm" icon="scale">Run analysis</Btn>
-                <Btn variant="outline" sz="sm" icon="file">Report</Btn>
-                <Btn variant="outline" sz="sm" icon="more"/>
-              </div>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-              <div className="row" style={{ gap: 18, marginBottom: 20 }}>
-                <ScoreRing value={parcel.score} size={88} level={parcel.suitability_level}/>
-                <div style={{ flex: 1 }}>
-                  <div className="muted" style={{ fontSize: 11.5 }}>Overall MCDA score</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 500, marginTop: 4 }}>
-                    {parcel.suitability_level ?? 'Not assessed'}
-                  </div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>
-                    {parcel.flag === 'mangrove' ? '⚠ Within Panabo Mangrove Park' : parcel.flag === 'protected' ? '⚠ Within Tibungol Watershed' : 'All ordinances satisfied'}
-                  </div>
-                </div>
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Parcel attributes</div>
-              <div style={{ marginBottom: 18 }}>
-                {[
-                  ['Zoning',         <span key="z"><span className="dot" style={{ background: zoneInfo?.hex, marginRight: 6 }}/>{zoneInfo?.name} ({parcel.zone})</span>],
-                  ['Land area',      `${parcel.area.toLocaleString()} sqm`],
-                  ['Coordinates',    <span key="c" className="mono">{parcel.lat}°, {parcel.lng}°</span>],
-                  ['Soil type',      parcel.soil],
-                  ['Slope',          parcel.slope],
-                  ['Flood risk',     <Badge key="f" variant={parcel.flood === 'Low' ? 'brand' : parcel.flood === 'Med' ? 'warn' : 'destructive'}>{parcel.flood}</Badge>],
-                  ['Road proximity', `${parcel.road_m} m`],
-                ].map(([k, v], i) => (
-                  <div key={k} className="row-between" style={{ padding: '8px 0', borderTop: i > 0 ? '1px solid hsl(var(--border))' : 'none', fontSize: 12.5 }}>
-                    <span className="muted">{k}</span>
-                    <span style={{ fontWeight: 500 }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Permitted uses</div>
-              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: 'hsl(var(--foreground))' }}>{zoneInfo?.allowed_use}</div>
-            </div>
-          </Card>
-        </div>
-      )}
-
       {/* Scale indicator */}
       <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 10 }}>
         <Badge variant="outline" style={{ background: 'hsl(var(--background))' }}>
@@ -973,7 +880,7 @@ export function MapScreen({ go, initial, barangay, search, setSearch, highlightZ
       </div>
 
       {/* AI Chat bubble */}
-      <MapChatBubble parcel={parcel} selectedPoint={selectedPoint} nearestBarangay={nearestBarangay} rightOffset={parcel ? 362 : 16}/>
+      <MapChatBubble selectedPoint={selectedPoint} nearestBarangay={nearestBarangay} rightOffset={16}/>
     </div>
   );
 }

@@ -112,9 +112,8 @@ export const ZONING_LEGEND = [
   { id: 'UTS', label: 'Utilities & Transport',        hex: '#bebebe' },
 ];
 
+// Analysis is per barangay (zone unit); TerraSpec has no parcel-level data
 export const PANABO = {
-  // No parcel-level data yet; analysis is per barangay (zone unit).
-  parcels: [],
   barangays: Object.keys(BARANGAY_COORDS),
 };
 

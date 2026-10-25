@@ -986,7 +986,6 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                     const dotColor = {
                       barangay: 'hsl(var(--brand))',
                       zone:     '#3b82f6',
-                      parcel:   '#8b5cf6',
                       species:  '#0d9488',
                       hazard:   'hsl(var(--destructive))',
                     }[e.type] ?? 'hsl(var(--muted-foreground))';

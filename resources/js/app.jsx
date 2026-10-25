@@ -275,7 +275,7 @@ function App() {
         {/* Center section – search (only on map screen) */}
         <div style={{ flex: '0 0 360px', maxWidth: '36%', display: 'flex', justifyContent: 'center' }}>
           {screen === 'map' && (
-            <Inp icon="search" placeholder="Search parcels or barangays…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
+            <Inp icon="search" placeholder="Search barangays…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
           )}
         </div>
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\EnvironmentalRestriction;
+use App\Models\MangroveSpecies;
 use App\Models\SuitabilityCriteria;
-use App\Models\TreeSpecies;
 use App\Models\User;
 use App\Models\ZoneUnit;
 use Illuminate\Http\JsonResponse;
@@ -153,47 +153,51 @@ class AdminController extends Controller
     }
 
     // ── SPECIES ──────────────────────────────────────────────────────
+    // Mangrove species (true mangroves and associates) recommended by tidal zone
     public function species(): JsonResponse
     {
-        return response()->json(TreeSpecies::all());
+        return response()->json(MangroveSpecies::orderBy('list_order')->get());
     }
 
     public function storeSpecies(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'common_name' => 'required|string|max:100',
-            'scientific_name' => 'required|string|max:150',
-            'soil_preference' => 'required|string|max:100',
-            'elevation_range' => 'required|string|max:50',
-            'temperature_range' => 'required|string|max:50',
-            'salinity_level' => 'required|in:None,Low,Med,High',
-            'suitability_notes' => 'nullable|string',
-        ]);
+        $data = $this->validateSpecies($request);
+        $data['list_order'] = (int) MangroveSpecies::max('list_order') + 1;
 
-        return response()->json(['message' => 'Species added.', 'data' => TreeSpecies::create($data)], 201);
+        return response()->json(['message' => 'Species added.', 'data' => MangroveSpecies::create($data)], 201);
     }
 
     public function updateSpecies(Request $request, int $id): JsonResponse
     {
-        $s = TreeSpecies::findOrFail($id);
-        $s->update($request->validate([
-            'common_name' => 'required|string|max:100',
-            'scientific_name' => 'required|string|max:150',
-            'soil_preference' => 'required|string|max:100',
-            'elevation_range' => 'required|string|max:50',
-            'temperature_range' => 'required|string|max:50',
-            'salinity_level' => 'required|in:None,Low,Med,High',
-            'suitability_notes' => 'nullable|string',
-        ]));
+        $species = MangroveSpecies::findOrFail($id);
+        $species->update($this->validateSpecies($request, $species));
 
-        return response()->json(['message' => 'Species updated.', 'data' => $s]);
+        return response()->json(['message' => 'Species updated.', 'data' => $species]);
     }
 
     public function deleteSpecies(int $id): JsonResponse
     {
-        TreeSpecies::findOrFail($id)->delete();
+        MangroveSpecies::findOrFail($id)->delete();
 
         return response()->json(['message' => 'Species deleted.']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateSpecies(Request $request, ?MangroveSpecies $species = null): array
+    {
+        return $request->validate([
+            'local_name' => 'required|string|max:100',
+            'scientific_name' => ['required', 'string', 'max:150', Rule::unique('mangrove_species', 'scientific_name')->ignore($species?->id)],
+            'family' => 'required|string|max:100',
+            'category' => ['required', Rule::in(array_keys(MangroveSpecies::CATEGORIES))],
+            'iucn_status' => 'required|string|max:50',
+            'habit' => 'required|string|max:50',
+            'tidal_zone' => ['required', Rule::in(array_keys(MangroveSpecies::TIDAL_ZONES))],
+            'zone_note' => 'nullable|string',
+            'source' => 'required|string|max:255',
+        ]);
     }
 
     // ── USERS ────────────────────────────────────────────────────────

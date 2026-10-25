@@ -27,17 +27,12 @@ class ZoneUnit extends Model
         'elevation_min',
         'elevation_max',
         'salinity_level',
-        'center_latitude',
-        'center_longitude',
-        'geojson_poly',
     ];
 
     protected $casts = [
         'total_area_ha' => 'decimal:2',
         'population_density' => 'decimal:2',
         'saturation_index' => 'decimal:4',
-        'center_latitude' => 'decimal:7',
-        'center_longitude' => 'decimal:7',
     ];
 
     public function hazardData(): HasOne
@@ -58,16 +53,6 @@ class ZoneUnit extends Model
     public function reforestationSites(): HasMany
     {
         return $this->hasMany(ReforestationSite::class, 'zone_unit_id', 'zone_unit_id');
-    }
-
-    public function populationProjections(): HasMany
-    {
-        return $this->hasMany(PopulationProjection::class, 'zone_unit_id', 'zone_unit_id');
-    }
-
-    public function suitabilityAnalyses(): HasMany
-    {
-        return $this->hasMany(SuitabilityAnalysis::class, 'zone_unit_id', 'zone_unit_id');
     }
 
     public function latestAnalysis(): HasOne

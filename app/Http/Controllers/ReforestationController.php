@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EnvironmentalRestriction;
 use App\Models\ZoneUnit;
 use App\Services\MangroveRecommendationService;
-use App\Services\ReforestationService;
 use App\Services\ReforestationSiteValidationService;
 use App\Services\ReforestationStudyArea;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 
 class ReforestationController extends Controller
 {
     public function __construct(
-        private ReforestationService $service,
         private ReforestationStudyArea $studyArea,
         private MangroveRecommendationService $mangroves,
     ) {}
@@ -55,7 +55,7 @@ class ReforestationController extends Controller
         return response()->json([
             'zone' => $this->zoneInfo($zone),
             'mangrove' => $this->mangroves->forZone($zone),
-            'restrictions' => $this->service->checkRestrictions($zone),
+            'restrictions' => $this->restrictionsOf($zone),
         ]);
     }
 
@@ -63,7 +63,7 @@ class ReforestationController extends Controller
     {
         $zone = $this->studyAreaZone($id, ['hazardData', 'soilData']);
         $mangrove = $this->mangroves->forZone($zone);
-        $restrictions = $this->service->checkRestrictions($zone);
+        $restrictions = $this->restrictionsOf($zone);
 
         return response()->json([
             'report_type' => 'Reforestation Plan',
@@ -84,7 +84,7 @@ class ReforestationController extends Controller
     {
         $zone = $this->studyAreaZone($id, ['hazardData', 'soilData']);
         $mangrove = $this->mangroves->forZone($zone);
-        $restrictions = $this->service->checkRestrictions($zone);
+        $restrictions = $this->restrictionsOf($zone);
 
         $pdf = Pdf::loadView('pdf.reforestation-plan', [
             'zone' => $this->zoneInfo($zone),
@@ -127,5 +127,20 @@ class ReforestationController extends Controller
         );
 
         return $zone;
+    }
+
+    /**
+     * The environmental restrictions that apply to a barangay.
+     *
+     * @return Collection<int, EnvironmentalRestriction>
+     */
+    private function restrictionsOf(ZoneUnit $zone): Collection
+    {
+        return $zone->restrictions()->get([
+            'environmental_restrictions.restriction_id',
+            'environmental_restrictions.restriction_name',
+            'environmental_restrictions.restriction_type',
+            'environmental_restrictions.description',
+        ]);
     }
 }
