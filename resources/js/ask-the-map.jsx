@@ -17,6 +17,7 @@ export function AskTheMap({ onResult, initialResult = null }) {
   const [asking, setAsking] = useState(false);
   const [result, setResult] = useState(initialResult);
   const [error, setError] = useState('');
+  const [hidden, setHidden] = useState(false);
 
   async function ask(text = question) {
     const q = text.trim();
@@ -48,30 +49,45 @@ export function AskTheMap({ onResult, initialResult = null }) {
     setQuestion('');
   }
 
+  // Hidden: only a small pill stays on the map to bring the bar back (the question and answer are kept)
+  if (hidden) {
+    return (
+      <button onClick={() => setHidden(false)} className="chip" title="Show Ask the map" style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)', fontWeight: 500 }}>
+        <Icon name="bot" size={13} style={{ color: 'hsl(var(--muted-foreground))' }}/> Ask the map
+      </button>
+    );
+  }
+
   return (
     <div style={{ width: 'min(560px, calc(100% - 32px))' }}>
       <form onSubmit={e => { e.preventDefault(); ask(); }} className="row" style={{
-        gap: 8, background: 'hsl(var(--card))', border: '1px solid hsl(var(--brand) / 0.45)', borderRadius: 12,
-        padding: '6px 6px 6px 12px', boxShadow: '0 4px 20px rgba(0,0,0,0.16)',
+        gap: 8, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 10,
+        padding: '5px 5px 5px 12px', boxShadow: 'var(--shadow-float)',
       }}>
-        <Icon name="bot" size={15} style={{ color: 'hsl(var(--brand))', flexShrink: 0 }}/>
+        <Icon name="bot" size={15} style={{ color: 'hsl(var(--muted-foreground))', flexShrink: 0 }}/>
         <input
           value={question}
           onChange={e => setQuestion(e.target.value)}
           placeholder="Ask the map… e.g. agricultural land in flood areas in Dapco"
           maxLength={500}
-          style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'hsl(var(--foreground))' }}
+          style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: 13.5, color: 'hsl(var(--foreground))' }}
         />
         <button type="submit" disabled={asking || question.trim().length < 3} style={{
-          border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          border: 'none', borderRadius: 7, height: 30, padding: '0 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
           background: 'hsl(var(--brand))', color: 'white', opacity: asking || question.trim().length < 3 ? 0.6 : 1,
         }}>
           {asking ? 'Reading…' : 'Ask'}
         </button>
+        <button type="button" onClick={() => setHidden(true)} title="Hide Ask the map" aria-label="Hide Ask the map" style={{
+          border: 'none', background: 'none', borderRadius: 6, width: 26, height: 30, cursor: 'pointer', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--muted-foreground))',
+        }}>
+          <Icon name="x" size={14}/>
+        </button>
       </form>
 
       {(result || error) && (
-        <div style={{ marginTop: 6, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 10, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
+        <div style={{ marginTop: 6, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, boxShadow: 'var(--shadow-float)' }}>
           <div className="row-between" style={{ gap: 8, alignItems: 'flex-start' }}>
             <div style={{ lineHeight: 1.5 }}>
               {error && <span style={{ color: 'hsl(var(--destructive))' }}>{error}</span>}
@@ -80,7 +96,7 @@ export function AskTheMap({ onResult, initialResult = null }) {
               )}
               {result?.understood && (
                 <>
-                  <span style={{ fontWeight: 600, color: 'hsl(var(--brand))' }}>AI understood: </span>{result.explanation}
+                  <span style={{ fontWeight: 600 }}>AI understood: </span>{result.explanation}
                   {result.ignored?.length > 0 && <div className="muted" style={{ fontSize: 11 }}>Not found in TerraSpec data, ignored: {result.ignored.join(', ')}</div>}
                   {result.note && <div className="muted" style={{ fontSize: 11 }}>{result.note}</div>}
                   <div className="muted mono" style={{ fontSize: 10.5 }}>Read by {result.model}{result.fallback_used ? ' (backup model)' : ''}</div>
@@ -97,7 +113,7 @@ export function AskTheMap({ onResult, initialResult = null }) {
       {!result && !error && !asking && question === '' && (
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6, justifyContent: 'center' }}>
           {EXAMPLES.map(example => (
-            <button key={example} onClick={() => ask(example)} className="chip" style={{ background: 'hsl(var(--background) / 0.92)', fontSize: 11 }}>{example}</button>
+            <button key={example} onClick={() => ask(example)} className="chip" style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)' }}>{example}</button>
           ))}
         </div>
       )}

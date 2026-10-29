@@ -23,7 +23,7 @@ export const EMPTY_QUERY = { zones: [], barangays: [], hazard: 'any', minArea: '
 const ha = value => `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })} ha`;
 const zoneHex = code => ZONING_LEGEND.find(z => z.id === code)?.hex ?? '#888888';
 
-const label = { fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '12px 0 6px' };
+const label = { fontSize: 12, fontWeight: 500, color: 'hsl(var(--muted-foreground))', margin: '12px 0 6px' };
 
 export async function runZoningQuery(filters) {
   const params = new URLSearchParams();
@@ -91,26 +91,26 @@ export function ZoningQueryPanel({ filters, setFilters, result, loading, error, 
   const maxZone = result?.by_zone?.[0]?.matched_ha || 1;
 
   return (
-    <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.16)', display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden' }}>
+    <Card style={{ boxShadow: 'var(--shadow-float)', display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden' }}>
       <div className="row-between" style={{ padding: '10px 14px', borderBottom: '1px solid hsl(var(--border))' }}>
         <div className="row" style={{ gap: 8 }}>
-          <Icon name="filter" size={14}/>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>Zoning query</span>
+          <Icon name="filter" size={14} style={{ color: 'hsl(var(--muted-foreground))' }}/>
+          <span style={{ fontSize: 13.5, fontWeight: 600 }}>Zoning query</span>
         </div>
         <Btn variant="ghost" sz="sm" icon="x" onClick={onClose}/>
       </div>
 
       <CardBody style={{ padding: '4px 14px 14px', overflowY: 'auto' }}>
-        <div style={label}>Zoning class {filters.zones.length === 0 && <span style={{ textTransform: 'none', fontWeight: 400 }}>· all</span>}</div>
+        <div style={label}>Zoning class {filters.zones.length === 0 && <span style={{ fontWeight: 400 }}>· all</span>}</div>
         <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
           {ZONING_LEGEND.map(z => {
             const active = filters.zones.includes(z.id);
             return (
               <button key={z.id} onClick={() => toggleZone(z.id)} title={z.label} style={{
-                display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
-                border: `1px solid ${active ? 'hsl(var(--brand))' : 'hsl(var(--border))'}`,
-                background: active ? 'hsl(var(--brand) / 0.12)' : 'hsl(var(--background))',
-                color: 'hsl(var(--foreground))', fontWeight: active ? 600 : 400,
+                display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, height: 26, padding: '0 8px', borderRadius: 6, cursor: 'pointer',
+                border: `1px solid ${active ? 'hsl(var(--foreground))' : 'hsl(var(--border))'}`,
+                background: active ? 'hsl(var(--foreground) / 0.06)' : 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))', fontWeight: 500,
               }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: z.hex }}/>{z.id}
               </button>
@@ -118,7 +118,7 @@ export function ZoningQueryPanel({ filters, setFilters, result, loading, error, 
           })}
         </div>
 
-        <div style={label}>Barangay {filters.barangays.length === 0 && <span style={{ textTransform: 'none', fontWeight: 400 }}>· all 40</span>}</div>
+        <div style={label}>Barangay {filters.barangays.length === 0 && <span style={{ fontWeight: 400 }}>· all 40</span>}</div>
         <select className="input" value="" onChange={e => addBarangay(Number(e.target.value))} style={{ width: '100%', boxSizing: 'border-box', fontSize: 12 }}>
           <option value="">Add a barangay…</option>
           {barangays.filter(b => !filters.barangays.includes(b.zone_unit_id)).map(b => (
@@ -148,7 +148,7 @@ export function ZoningQueryPanel({ filters, setFilters, result, loading, error, 
         </div>
 
         <div className="row" style={{ gap: 6, marginTop: 12 }}>
-          <Btn variant="brand" sz="sm" icon="search" onClick={onRun} disabled={loading} style={{ flex: 1 }}>{loading ? 'Querying…' : 'Run query'}</Btn>
+          <Btn variant="primary" sz="sm" icon="search" onClick={onRun} disabled={loading} style={{ flex: 1 }}>{loading ? 'Querying…' : 'Run query'}</Btn>
           <Btn variant="outline" sz="sm" onClick={onClear}>Clear</Btn>
         </div>
 
@@ -159,7 +159,7 @@ export function ZoningQueryPanel({ filters, setFilters, result, loading, error, 
             <div className="separator" style={{ margin: '14px 0 10px' }}/>
             <div className="row-between" style={{ alignItems: 'flex-end' }}>
               <div>
-                <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em' }}>{ha(result.total_ha)}</div>
+                <div style={{ fontSize: 24, fontWeight: 600 }}>{ha(result.total_ha)}</div>
                 <div className="muted" style={{ fontSize: 11.5 }}>{result.filters.hazard_label} · {result.barangay_count} barangay{result.barangay_count === 1 ? '' : 's'}</div>
               </div>
               {result.rows.length > 0 && <Btn variant="outline" sz="sm" icon="download" onClick={() => downloadCsv(result)}>CSV</Btn>}

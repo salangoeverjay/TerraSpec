@@ -258,29 +258,25 @@ function App() {
       {/* Topbar */}
       <header className="topbar" style={{ gap: 0 }}>
         {/* Left section */}
-        <div className="row" style={{ flex: 1, gap: 12, minWidth: 0 }}>
+        <div className="row topbar-brand" style={{ flex: 1, gap: 12, minWidth: 0 }}>
           <button className="btn btn-ghost btn-icon btn-sm btn-menu" onClick={() => setShowSidebar(s => !s)} style={{ marginRight: 8 }} aria-label="Toggle menu">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
           </button>
           <button onClick={() => go('landing')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
             <Logo/>
           </button>
-          <div className="sep-v" style={{ height: 24 }}/>
-          <div className="row" style={{ gap: 6 }}>
-            <Icon name="pin" size={13} style={{ color: 'hsl(var(--brand))' }}/>
-            <span className="muted" style={{ fontSize: 12.5, whiteSpace: 'nowrap' }}>Panabo City, Davao del Norte</span>
-          </div>
+          <span className="muted" style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Panabo City, Davao del Norte</span>
         </div>
 
         {/* Center section – search (only on map screen) */}
-        <div style={{ flex: '0 0 360px', maxWidth: '36%', display: 'flex', justifyContent: 'center' }}>
+        <div className="topbar-search" style={{ flex: '0 1 548px', maxWidth: '40%', display: 'flex', justifyContent: 'center' }}>
           {screen === 'map' && (
             <Inp icon="search" placeholder="Search barangays…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
           )}
         </div>
 
         {/* Right section */}
-        <div className="row" style={{ flex: 1, justifyContent: 'flex-end', gap: 8 }}>
+        <div className="row topbar-actions" style={{ flex: 1, justifyContent: 'flex-end', gap: 8 }}>
           <div className="tabs">
             <div className={`tab${role === 'public' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? handleLogout() : null}>Public</div>
             <div className={`tab${role === 'admin' ? ' active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => role === 'admin' ? null : setShowLogin(true)}>LGU Admin</div>
@@ -294,7 +290,7 @@ function App() {
             <Icon name={dark ? 'sun' : 'moon'} size={14}/>
           </button>
 
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 600 }}>
+          <div className="topbar-avatar" style={{ width: 28, height: 28, borderRadius: '50%', background: 'hsl(var(--foreground) / 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}>
             {lguUser ? lguUser.name.charAt(0).toUpperCase() : 'G'}
           </div>
         </div>

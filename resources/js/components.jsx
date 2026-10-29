@@ -120,8 +120,8 @@ export function ScoreRing({ value = 0, size = 80, level }) {
 export function Logo() {
   return (
     <div className="row" style={{ gap: 8 }}>
-      <img src="/favicon.png" alt="TerraSpec" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}/>
-      <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.02em' }}>TERRASPEC</span>
+      <img src="/favicon.png" alt="TerraSpec" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}/>
+      <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '0.02em' }}>TERRASPEC</span>
     </div>
   );
 }

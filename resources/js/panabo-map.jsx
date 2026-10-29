@@ -96,11 +96,11 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
   return (
     <div style={{ position: 'absolute', bottom: 16, right: rightOffset, zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, transition: 'right 0.25s ease' }}>
       {open && (
-        <Card style={{ width: 340, height: 400, display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.22)', overflow: 'hidden' }}>
+        <Card style={{ width: 340, height: 400, display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
           <div style={{ padding: '10px 14px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 7, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="bot" size={14} style={{ color: 'white' }}/>
+              <div style={{ width: 26, height: 26, borderRadius: 7, background: 'hsl(var(--foreground) / 0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="bot" size={14}/>
               </div>
               {/* Layers panel – left; anchored from bottom so legends stay visible */}
             </div>
@@ -110,8 +110,8 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
           </div>
 
           {nearestBarangay && (
-            <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--brand) / 0.06)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Icon name="pin" size={11} style={{ color: 'hsl(var(--brand))' }}/>
+            <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--muted))', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="pin" size={11} style={{ color: 'hsl(var(--muted-foreground))' }}/>
               <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Viewing:</span>
               <span style={{ fontSize: 11, fontWeight: 600 }}>
                 {nearestBarangay}
@@ -123,8 +123,8 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
             {messages.map((m, i) => (
               <div key={i} style={{ marginBottom: 10, display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6, alignItems: 'flex-start' }}>
                 {m.role === 'assistant' && (
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <Icon name="bot" size={12} style={{ color: 'white' }}/>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, background: 'hsl(var(--foreground) / 0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                    <Icon name="bot" size={12}/>
                   </div>
                 )}
                 <div style={{
@@ -139,7 +139,7 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
                       {[0, 180, 360].map(d => (
                         <span key={d} style={{
                           width: 7, height: 7, borderRadius: '50%',
-                          background: 'hsl(var(--brand))',
+                          background: 'hsl(var(--muted-foreground))',
                           display: 'inline-block',
                           animation: `bounce 1.5s ${d}ms ease-in-out infinite`,
                         }}/>
@@ -167,7 +167,7 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
                   opacity: loading ? 0.5 : 1,
                   transition: 'border-color 0.15s, background 0.15s',
                 }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'hsl(var(--brand))'; e.currentTarget.style.background = 'hsl(var(--brand) / 0.06)'; }}}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'hsl(var(--foreground) / 0.35)'; e.currentTarget.style.background = 'hsl(var(--accent))'; }}}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'hsl(var(--border))'; e.currentTarget.style.background = 'hsl(var(--muted))'; }}
               >{p}</button>
             ))}
@@ -194,12 +194,12 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
         onClick={() => setOpen(v => !v)}
         style={{
           width: 48, height: 48, borderRadius: '50%',
-          background: open ? 'hsl(var(--foreground))' : 'hsl(var(--brand))',
+          background: 'hsl(var(--foreground))',
           border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          boxShadow: 'var(--shadow-float)',
           transition: 'background 0.15s, transform 0.15s',
-          color: 'white',
+          color: 'hsl(var(--background))',
         }}
         title={open ? 'Close AI Chat' : 'Ask AI about the map'}
       >
@@ -251,20 +251,21 @@ function BasemapLayer({ basemap }) {
   return null;
 }
 
-const sectionLabel = { fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 };
+const sectionLabel = { fontSize: 12, fontWeight: 500, color: 'hsl(var(--muted-foreground))', marginBottom: 6 };
 
+// Segmented control: the chosen option is filled with ink; colour stays on the map's data
 const chip = active => ({
-  flex: '1 1 auto', fontSize: 11, padding: '4px 6px', borderRadius: 6, cursor: 'pointer',
-  border: '1px solid hsl(var(--border))',
-  background: active ? 'hsl(var(--brand))' : 'hsl(var(--background))',
-  color: active ? 'white' : 'hsl(var(--foreground))',
-  fontWeight: active ? 600 : 400,
+  flex: '1 1 auto', fontSize: 12, height: 28, padding: '0 8px', borderRadius: 6, cursor: 'pointer',
+  border: `1px solid ${active ? 'hsl(var(--foreground))' : 'hsl(var(--border))'}`,
+  background: active ? 'hsl(var(--foreground))' : 'hsl(var(--background))',
+  color: active ? 'hsl(var(--background))' : 'hsl(var(--foreground))',
+  fontWeight: 500,
 });
 
 function LegendGroup({ title, children }) {
   return (
     <>
-      <div style={{ fontSize: 10, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4, marginBottom: 2 }}>{title}</div>
+      <div style={{ fontSize: 12, fontWeight: 500, color: 'hsl(var(--muted-foreground))', marginTop: 6, marginBottom: 2 }}>{title}</div>
       {children}
     </>
   );
@@ -274,7 +275,7 @@ function LegendItem({ label, swatch, border, note, hidden, onClick }) {
   return (
     <div className="row" style={{ gap: 7, cursor: 'pointer', userSelect: 'none', opacity: hidden ? 0.35 : 1, transition: 'opacity .15s' }} onClick={onClick} title={hidden ? `Show ${label}` : `Hide ${label}`}>
       <span style={{ width: 14, height: 10, borderRadius: 2, background: swatch, border: border ? `1px solid ${border}` : 'none', flexShrink: 0, filter: hidden ? 'grayscale(1)' : 'none' }}/>
-      <span style={{ fontSize: 11.5, textDecoration: hidden ? 'line-through' : 'none' }}>{label}</span>
+      <span style={{ fontSize: 12.5, textDecoration: hidden ? 'line-through' : 'none' }}>{label}</span>
       {note && <span className="muted mono" style={{ fontSize: 10, marginLeft: 'auto' }}>{note}</span>}
     </div>
   );
@@ -611,7 +612,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
           <MapMarker longitude={125.6847} latitude={7.307}>
             <MarkerContent className="translate-y-[-8px]">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <span style={{ background: 'hsl(var(--brand))', color: 'white', padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Panabo City</span>
+                <span style={{ background: 'hsl(var(--brand))', color: 'white', padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>Panabo City</span>
                 <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'hsl(var(--brand))', border: '3px solid white', boxShadow: '0 0 0 8px hsl(162 47% 39% / 0.2)' }}/>
               </div>
             </MarkerContent>
@@ -633,7 +634,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
               closeButton
               onClose={() => setSelectedPoint(null)}
             >
-                <div className="card" style={{ minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
+                <div className="card" style={{ minWidth: 180, boxShadow: 'var(--shadow-float)' }}>
                   <CardBody>
                     <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{selectedPoint.barangay ?? 'Outside Panabo City'}</div>
                     <div className="muted mono" style={{ fontSize: 11, marginBottom: 6 }}>{selectedPoint.coords[1].toFixed(5)}, {selectedPoint.coords[0].toFixed(5)}</div>
@@ -662,7 +663,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
                     )}
                     {selectedPoint.scores ? (
                       <>
-                        <div className="muted" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Barangay suitability (AHP-WLC)</div>
+                        <div className="muted" style={{ fontSize: 12, fontWeight: 500, marginBottom: 3 }}>Barangay suitability (AHP-WLC)</div>
                         {Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, label]) => (
                           <div key={k} className="row-between" style={{ fontSize: 11.5, gap: 10 }}>
                             <span>{label}</span>
@@ -676,7 +677,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
                     {selectedPoint.barangay && go && (
                       <button
                         onClick={() => go('barangays', { barangay: selectedPoint.barangay })}
-                        style={{ marginTop: 8, width: '100%', fontSize: 11.5, padding: '4px 8px', borderRadius: 6, border: '1px solid hsl(var(--border))', background: 'hsl(var(--background))', color: 'hsl(var(--brand))', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ marginTop: 8, width: '100%', fontSize: 11.5, padding: '4px 8px', borderRadius: 6, border: '1px solid hsl(var(--border))', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', cursor: 'pointer', fontWeight: 500 }}
                       >
                         View barangay profile
                       </button>
@@ -698,12 +699,12 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
         <div style={{
           position: 'absolute', top: 104, left: '50%', transform: 'translateX(-50%)',
           zIndex: 30, display: 'flex', alignItems: 'center', gap: 8,
-          background: 'hsl(var(--card))', border: '1px solid hsl(var(--brand) / 0.4)',
-          borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+          background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))',
+          borderRadius: 10, padding: '8px 14px', boxShadow: 'var(--shadow-float)',
           fontSize: 12.5, whiteSpace: 'nowrap',
         }}>
-          <Icon name="bot" size={13} style={{ color: 'hsl(var(--brand))' }}/>
-          <span style={{ fontWeight: 600, color: 'hsl(var(--brand))' }}>AI Recommendations</span>
+          <Icon name="bot" size={13} style={{ color: 'hsl(var(--muted-foreground))' }}/>
+          <span style={{ fontWeight: 600 }}>AI recommendations</span>
           <span className="muted">·</span>
           {highlightZones.map((z, i) => (
             <span key={z.zone_unit_id} style={{ fontWeight: 500 }}>
@@ -716,12 +717,12 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
 
       {/* Search results dropdown – fixed so it aligns with topbar search bar */}
       {showSearch && hasResults && (
-        <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', width: 360, maxWidth: '50%', zIndex: 50 }}>
-          <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', top: 44, left: '50%', transform: 'translateX(-50%)', width: 548, maxWidth: '40%', zIndex: 50 }}>
+          <Card style={{ boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
             <div style={{ maxHeight: 260, overflowY: 'auto' }}>
               {filteredBarangays.length > 0 && (
                 <>
-                  <div style={{ padding: '6px 14px 3px', fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Barangays</div>
+                  <div style={{ padding: '8px 14px 2px', fontSize: 12, fontWeight: 500, color: 'hsl(var(--muted-foreground))' }}>Barangays</div>
                   {filteredBarangays.map(b => (
                     <div key={b} className="row" style={{ padding: '8px 14px', gap: 10, cursor: 'pointer' }}
                       onClick={() => {
@@ -729,7 +730,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
                         mapRef.current?.flyTo({ center: coords, zoom: 14, duration: 1000 });
                         setSearch(''); setShowSearch(false);
                       }}>
-                      <Icon name="home" size={14} style={{ color: 'hsl(var(--brand))', flexShrink: 0 }}/>
+                      <Icon name="home" size={14} style={{ color: 'hsl(var(--muted-foreground))', flexShrink: 0 }}/>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 500 }}>{b}</div>
                         <div className="muted" style={{ fontSize: 11.5 }}>Panabo City</div>
@@ -746,11 +747,11 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
       {/* Zoning query: open the panel or run a preset query – bottom center of map */}
       <div style={{ position: 'absolute', bottom: 52, left: '50%', transform: 'translateX(-50%)', zIndex: 11 }}>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button className="chip" onClick={() => setQueryOpen(o => !o)} style={{ background: 'hsl(var(--brand))', color: 'white', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <button className={`chip${queryOpen ? ' active' : ''}`} onClick={() => setQueryOpen(o => !o)} style={{ background: queryOpen ? undefined : 'hsl(var(--card))', fontWeight: 500, boxShadow: 'var(--shadow-float)' }}>
             <Icon name="filter" size={12}/> Zoning query
           </button>
           {ZONING_QUERY_PRESETS.map(preset => (
-            <button key={preset.label} className="chip" onClick={() => runPreset(preset)} style={{ background: 'hsl(var(--background))', fontSize: 12 }}>{preset.label}</button>
+            <button key={preset.label} className="chip" onClick={() => runPreset(preset)} style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)' }}>{preset.label}</button>
           ))}
         </div>
       </div>
@@ -775,28 +776,22 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
 
       {/* Layers panel – left; anchored from bottom so legends stay visible */}
       <div style={{ position: 'absolute', left: 16, bottom: 110, width: 210, zIndex: 10 }}>
-        <Card style={{ boxShadow: '0 8px 28px rgba(0,0,0,0.12)' }}>
+        <Card style={{ boxShadow: 'var(--shadow-float)' }}>
           <CardHeader style={{ padding: '10px 14px' }}>
             <div className="row" style={{ gap: 8 }}>
-              <Icon name="layers" size={14}/>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Layers</span>
+              <Icon name="layers" size={14} style={{ color: 'hsl(var(--muted-foreground))' }}/>
+              <span style={{ fontSize: 13.5, fontWeight: 600 }}>Layers</span>
             </div>
           </CardHeader>
           <CardBody style={{ padding: '10px 14px', maxHeight: '60vh', overflowY: 'auto' }}>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Basemap</div>
+            <div style={sectionLabel}>Basemap</div>
             <div className="row" style={{ gap: 4, marginBottom: 12 }}>
               {Object.entries(BASEMAPS).map(([key, def]) => (
                 <button
                   key={key}
                   onClick={() => chooseBasemap(key)}
                   title={def.title}
-                  style={{
-                    flex: 1, fontSize: 11, padding: '4px 6px', borderRadius: 6, cursor: 'pointer',
-                    border: '1px solid hsl(var(--border))',
-                    background: basemap === key ? 'hsl(var(--brand))' : 'hsl(var(--background))',
-                    color: basemap === key ? 'white' : 'hsl(var(--foreground))',
-                    fontWeight: basemap === key ? 600 : 400,
-                  }}
+                  style={{ ...chip(basemap === key), flex: 1 }}
                 >
                   {def.label}
                 </button>
@@ -816,16 +811,16 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
             <div className="stack" style={{ gap: 6, marginBottom: 12 }}>
               {[['zoning', 'Zoning ordinance'], ['suitability', 'Suitability'], ['landslide', 'Landslide hazard'], ['flood', 'Flood hazard']].map(([k, label]) => (
                 <label key={k} className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
-                  <input type="checkbox" checked={layers[k]} onChange={e => toggleLayer(k, e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
+                  <input type="checkbox" checked={layers[k]} onChange={e => toggleLayer(k, e.target.checked)} style={{ accentColor: 'hsl(var(--foreground))' }}/>
                   <span>{label}</span>
                 </label>
               ))}
               <label className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
-                <input type="checkbox" checked={showBarangays} onChange={e => toggleBarangays(e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
+                <input type="checkbox" checked={showBarangays} onChange={e => toggleBarangays(e.target.checked)} style={{ accentColor: 'hsl(var(--foreground))' }}/>
                 <span>Barangay names</span>
               </label>
               <label className="row" style={{ gap: 8, cursor: 'pointer', userSelect: 'none', fontSize: 12.5 }}>
-                <input type="checkbox" checked={showMangrove} onChange={e => toggleMangrove(e.target.checked)} style={{ accentColor: 'hsl(var(--brand))' }}/>
+                <input type="checkbox" checked={showMangrove} onChange={e => toggleMangrove(e.target.checked)} style={{ accentColor: 'hsl(var(--foreground))' }}/>
                 <span>Mangrove sites</span>
               </label>
             </div>
