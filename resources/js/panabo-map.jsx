@@ -96,7 +96,7 @@ function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
   return (
     <div style={{ position: 'absolute', bottom: 16, right: rightOffset, zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, transition: 'right 0.25s ease' }}>
       {open && (
-        <Card style={{ width: 340, height: 400, display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
+        <Card style={{ width: 340, maxWidth: 'calc(100vw - 32px)', height: 400, display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
           <div style={{ padding: '10px 14px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 26, height: 26, borderRadius: 7, background: 'hsl(var(--foreground) / 0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -426,6 +426,8 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
 
   // Zoning query: filters, last result and the barangays it outlines on the map
   const [queryOpen, setQueryOpen] = useState(false);
+  // On a phone the Layers panel starts folded so the map stays visible
+  const [layersOpen, setLayersOpen] = useState(() => window.innerWidth > 900);
   const [queryFilters, setQueryFilters] = useState(EMPTY_QUERY);
   const [queryResult, setQueryResult] = useState(null);
   const [queryLoading, setQueryLoading] = useState(false);
@@ -701,7 +703,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
           zIndex: 30, display: 'flex', alignItems: 'center', gap: 8,
           background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))',
           borderRadius: 10, padding: '8px 14px', boxShadow: 'var(--shadow-float)',
-          fontSize: 12.5, whiteSpace: 'nowrap',
+          fontSize: 12.5, whiteSpace: 'nowrap', maxWidth: 'calc(100% - 32px)', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           <Icon name="bot" size={13} style={{ color: 'hsl(var(--muted-foreground))' }}/>
           <span style={{ fontWeight: 600 }}>AI recommendations</span>
@@ -751,13 +753,13 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
             <Icon name="filter" size={12}/> Zoning query
           </button>
           {ZONING_QUERY_PRESETS.map(preset => (
-            <button key={preset.label} className="chip" onClick={() => runPreset(preset)} style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)' }}>{preset.label}</button>
+            <button key={preset.label} className="chip map-phone-hide" onClick={() => runPreset(preset)} style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)' }}>{preset.label}</button>
           ))}
         </div>
       </div>
 
       {queryOpen && (
-        <div style={{ position: 'absolute', top: 16, right: 56, bottom: 96, width: 320, zIndex: 12, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: 16, right: 56, bottom: 96, width: 320, maxWidth: 'calc(100% - 72px)', zIndex: 12, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
           <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
             <ZoningQueryPanel
               filters={queryFilters}
@@ -775,15 +777,16 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
       )}
 
       {/* Layers panel – left; anchored from bottom so legends stay visible */}
-      <div style={{ position: 'absolute', left: 16, bottom: 110, width: 210, zIndex: 10 }}>
+      <div style={{ position: 'absolute', left: 16, bottom: 110, width: 210, maxWidth: 'calc(100% - 32px)', zIndex: 10 }}>
         <Card style={{ boxShadow: 'var(--shadow-float)' }}>
-          <CardHeader style={{ padding: '10px 14px' }}>
-            <div className="row" style={{ gap: 8 }}>
+          <CardHeader style={{ padding: 0, borderBottom: layersOpen ? undefined : 'none' }}>
+            <button onClick={() => setLayersOpen(o => !o)} aria-expanded={layersOpen} className="row" style={{ gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'inherit', textAlign: 'left' }}>
               <Icon name="layers" size={14} style={{ color: 'hsl(var(--muted-foreground))' }}/>
-              <span style={{ fontSize: 13.5, fontWeight: 600 }}>Layers</span>
-            </div>
+              <span style={{ fontSize: 13.5, fontWeight: 600, flex: 1 }}>Layers</span>
+              <Icon name="chevronDown" size={14} style={{ color: 'hsl(var(--muted-foreground))', transform: layersOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}/>
+            </button>
           </CardHeader>
-          <CardBody style={{ padding: '10px 14px', maxHeight: '60vh', overflowY: 'auto' }}>
+          {layersOpen && (<CardBody style={{ padding: '10px 14px', maxHeight: '60vh', overflowY: 'auto' }}>
             <div style={sectionLabel}>Basemap</div>
             <div className="row" style={{ gap: 4, marginBottom: 12 }}>
               {Object.entries(BASEMAPS).map(([key, def]) => (
@@ -874,7 +877,7 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
               )}
               {!Object.values(layers).some(Boolean) && !reforestationView && <div className="muted" style={{ fontSize: 11.5 }}>No layers shown. Pick a view above.</div>}
             </div>
-          </CardBody>
+          </CardBody>)}
         </Card>
       </div>
 

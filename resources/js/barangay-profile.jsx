@@ -114,12 +114,12 @@ export function BarangayProfileScreen({ go, barangay }) {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 240px) 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="profile-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 240px) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
         {/* Barangay list */}
         <Card>
           <CardBody style={{ padding: 10 }}>
             <input className="input" placeholder="Search barangay…" value={filter} onChange={e => setFilter(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', marginBottom: 8 }}/>
-            <div style={{ maxHeight: 620, overflowY: 'auto' }}>
+            <div className="profile-list-scroll" style={{ maxHeight: 620, overflowY: 'auto' }}>
               {shown.map(b => (
                 <div
                   key={b.zone_unit_id}

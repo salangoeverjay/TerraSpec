@@ -111,7 +111,7 @@ export function AskTheMap({ onResult, initialResult = null }) {
       )}
 
       {!result && !error && !asking && question === '' && (
-        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6, justifyContent: 'center' }}>
+        <div className="row map-phone-hide" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6, justifyContent: 'center' }}>
           {EXAMPLES.map(example => (
             <button key={example} onClick={() => ask(example)} className="chip" style={{ background: 'hsl(var(--card))', boxShadow: 'var(--shadow-float)' }}>{example}</button>
           ))}

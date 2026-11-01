@@ -396,7 +396,7 @@ export function SuitabilityScreen() {
       </div>
 
       {/* Analysis type selector */}
-      <div className="row" style={{ gap: 8, marginBottom: 20 }}>
+      <div className="row" style={{ gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {ANALYSIS_TYPES.map(t => (
           <button
             key={t}

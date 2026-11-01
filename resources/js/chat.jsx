@@ -197,7 +197,9 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
   const [chatInput, setChatInput] = useState('');
   const [chatError, setChatError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [nlpPane, setNlpPane] = useState(true);
+  // On a phone the inspector and the conversation list open over the chat, so both start closed there
+  const [nlpPane, setNlpPane] = useState(() => window.innerWidth > 900);
+  const [showConvs, setShowConvs] = useState(false);
   const [nlpData, setNlpData] = useState({ intent: null, entities: [], messageCount: 0 });
   const [confirmModal, setConfirmModal] = useState(null); // { message, onConfirm }
   const messagesRef = React.useRef(null);
@@ -539,7 +541,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
         style={{ position: 'relative', padding: '7px 8px', borderRadius: 7, cursor: 'pointer', background: isActive ? 'hsl(var(--accent))' : 'transparent', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5 }}
         onMouseEnter={() => setHoveredId(c.id)}
         onMouseLeave={() => setHoveredId(null)}
-        onClick={() => { if (!isRenamingInline) setActiveId(c.id); }}
+        onClick={() => { if (!isRenamingInline) { setActiveId(c.id); setShowConvs(false); } }}
       >
         {isPinned && (
           <Icon name="pin" size={9} style={{ color: 'hsl(var(--brand))', flexShrink: 0, opacity: 0.7 }}/>
@@ -622,9 +624,9 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
       {/* Conversations list */}
-      <div style={{ width: 220, borderRight: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'hsl(var(--background))' }}>
+      <div className={`chat-convs${showConvs ? ' open' : ''}`} style={{ width: 220, borderRight: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'hsl(var(--background))' }}>
         <div style={{ padding: '12px 10px', borderBottom: '1px solid hsl(var(--border))' }}>
           <Btn variant="brand" icon="plus" onClick={newConv} style={{ width: '100%', justifyContent: 'center' }}>New Chat</Btn>
         </div>
@@ -703,8 +705,11 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
       {/* Chat area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <div style={{ padding: '12px 18px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div className="row" style={{ gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="row" style={{ gap: 10, minWidth: 0 }}>
+            <button className="btn btn-ghost btn-icon btn-sm show-on-phone" onClick={() => setShowConvs(v => !v)} title="Conversations" aria-label="Conversations">
+              <Icon name="list" size={15}/>
+            </button>
+            <div className="hide-on-phone" style={{ width: 30, height: 30, borderRadius: 8, background: 'hsl(var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="bot" size={16} style={{ color: 'white' }}/>
             </div>
             <div className="row" style={{ gap: 8 }}>
@@ -718,7 +723,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
                   }}
                   autoFocus
                   className="input"
-                  style={{ height: 30, width: 240, fontSize: 13 }}
+                  style={{ height: 30, width: 240, maxWidth: '45vw', fontSize: 13 }}
                   placeholder="Conversation name"
                 />
               ) : (
@@ -955,7 +960,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
 
       {/* NLP Inspector */}
       {nlpPane && (
-        <div style={{ width: 260, borderLeft: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'hsl(var(--muted) / 0.3)' }}>
+        <div className="chat-inspector" style={{ width: 260, borderLeft: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'hsl(var(--muted) / 0.3)' }}>
           <div style={{ padding: '12px 14px', borderBottom: '1px solid hsl(var(--border))' }}>
             <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>NLP Inspector</div>
           </div>
@@ -1032,7 +1037,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
           onClick={() => setConfirmModal(null)}
         >
           <div
-            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '28px 28px 22px', width: 360, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', display: 'flex', flexDirection: 'column', gap: 14 }}
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '28px 28px 22px', width: 360, maxWidth: 'calc(100vw - 32px)', boxShadow: '0 24px 64px rgba(0,0,0,0.28)', display: 'flex', flexDirection: 'column', gap: 14 }}
             onClick={e => e.stopPropagation()}
           >
             {/* Icon */}

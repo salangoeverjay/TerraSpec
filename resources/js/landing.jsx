@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
 import { BARANGAY_COORDS, fetchSuitabilitySummary } from './data.js';
+import { ZoningScroll } from './zoning-scroll.jsx';
 
 const LEVEL_HEX = { 'Highly Suitable': 'hsl(162 47% 39%)', 'Moderately Suitable': 'hsl(38 92% 50%)', 'Low Suitability': 'hsl(0 72% 51%)' };
 
@@ -234,6 +235,24 @@ export function LandingPage({ go }) {
         .lp-ba-arrow { font-family:'Geist Mono',monospace; font-size:11px; color:hsl(162 47% 32%); }
         .lp-ba-after { font-size:13.5px; color:hsl(240 10% 10%); font-weight:500; }
         .lp-ba-hr { border:none; border-top:1px dashed hsl(240 6% 88%); margin:0; }
+
+        /* Tablet and phone: the multi-column sections stack */
+        @media (max-width: 1000px) {
+          .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+          .lp-arch, .lp-team { grid-template-columns: 1fr 1fr; }
+          .lp-footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 720px) {
+          .lp-shell { padding: 0 16px; }
+          .lp-nav-links { display: none; }
+          .lp-hero { padding: 40px 0 32px; }
+          .lp-hero-meta, .lp-stats { grid-template-columns: 1fr 1fr; }
+          .lp-hero-meta > div:nth-child(2n) { border-right: none; }
+          .lp-pillars, .lp-arch, .lp-team, .sdg-grid { grid-template-columns: 1fr; }
+          .lp-footer-bottom { flex-direction: column; gap: 8px; }
+          .lp-before-after { padding: 18px; }
+          .lp-ba-row { grid-template-columns: 1fr; gap: 4px; }
+        }
       `}</style>
 
       <div className="lp-root">
@@ -246,6 +265,7 @@ export function LandingPage({ go }) {
               <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 11, color: 'hsl(240 6% 55%)', marginLeft: 6, borderLeft: '1px solid hsl(240 6% 85%)', paddingLeft: 10 }}></span>
             </div>
             <div className="lp-nav-links">
+              <a href="#zoning">Zoning</a>
               <a href="#howto">How to use</a>
               <a href="#arch">Architecture</a>
             </div>
@@ -385,6 +405,9 @@ export function LandingPage({ go }) {
           </div>
         </section>
 
+
+        {/* ZONING, LAYER BY LAYER (scroll scene) */}
+        <ZoningScroll/>
 
         {/* HOW TO USE */}
         <section id="howto" className="lp-section">
@@ -589,7 +612,8 @@ export function LandingPage({ go }) {
               <div>
                 <h5>Study</h5>
                 <a href="#arch">Architecture</a>
-                <a href="#howto">How to use</a>
+                <a href="#zoning">Zoning</a>
+              <a href="#howto">How to use</a>
               </div>
               <div>
                 <h5>Institution</h5>

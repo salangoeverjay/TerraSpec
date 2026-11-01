@@ -135,7 +135,7 @@ function AhpCalculator({ criteria }) {
               <span className="card-title">AHP Pairwise Comparison Matrix</span>
               <span className="muted" style={{ fontSize: 12, marginLeft: 10 }}>Fill the upper triangle using Saaty's 1–9 scale</span>
             </div>
-            <select className="input" value={analysisType} onChange={e => { setAnalysisType(e.target.value); setSaved(false); }} style={{ width: 190 }}>
+            <select className="input" value={analysisType} onChange={e => { setAnalysisType(e.target.value); setSaved(false); }} style={{ width: 190, maxWidth: '100%' }}>
               {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]} Analysis</option>)}
             </select>
           </div>
@@ -620,7 +620,7 @@ export function AdminScreen({ staffRole }) {
                 placeholder={`Search ${tab}…`}
                 value={filter}
                 onChange={e => setFilter(e.target.value)}
-                style={{ width: 220 }}
+                style={{ width: 220, maxWidth: '100%' }}
               />
             </div>
           </CardHeader>

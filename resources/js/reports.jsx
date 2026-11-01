@@ -213,7 +213,7 @@ export function ReportsScreen({ role }) {
         <CardHeader>
           <div className="row-between">
             <span className="card-title">Report Archive</span>
-            <Inp icon="search" placeholder="Search reports…" value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 220 }}/>
+            <Inp icon="search" placeholder="Search reports…" value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 220, maxWidth: '100%' }}/>
           </div>
         </CardHeader>
         <div style={{ overflowX: 'auto' }}>
