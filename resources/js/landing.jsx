@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Map, MapMarker, MarkerContent, MarkerTooltip } from '../../components/ui/map';
 import { BARANGAY_COORDS, fetchSuitabilitySummary } from './data.js';
 import { ZoningScroll } from './zoning-scroll.jsx';
-
-const LEVEL_HEX = { 'Highly Suitable': 'hsl(162 47% 39%)', 'Moderately Suitable': 'hsl(38 92% 50%)', 'Low Suitability': 'hsl(0 72% 51%)' };
+import { LandingHero } from './landing-hero.jsx';
 
 // Real figures for the hero map: stored commercial results, restrictions and the top species match.
 function useLandingData() {
@@ -69,38 +67,6 @@ export function LandingPage({ go }) {
         .lp-nav-links a { color: hsl(240 6% 30%); font-size: 13.5px; font-weight: 500; text-decoration: none; cursor: pointer; }
         .lp-nav-links a:hover { color: hsl(162 47% 32%); }
 
-        .lp-hero { padding: 72px 0 56px; }
-        .lp-hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; margin-top: 24px; }
-
-        .lp-eyebrow {
-          display: inline-flex; align-items: center; gap: 10px;
-          font-family: 'Geist Mono', monospace; font-size: 11.5px;
-          text-transform: uppercase; letter-spacing: 0.12em; color: hsl(162 47% 32%);
-          padding: 6px 12px; border-radius: 999px;
-          background: hsl(162 47% 39% / 0.08); border: 1px solid hsl(162 47% 39% / 0.18);
-        }
-        .lp-dotpulse {
-          width: 6px; height: 6px; border-radius: 999px; background: hsl(162 47% 39%);
-          animation: lpdotpulse 2s ease-out infinite;
-        }
-        @keyframes lpdotpulse {
-          0% { box-shadow: 0 0 0 0 hsl(162 47% 39% / 0.55); }
-          80%, 100% { box-shadow: 0 0 0 10px hsl(162 47% 39% / 0); }
-        }
-        .lp-h1 {
-          font-family: 'Fraunces', serif; font-weight: 400;
-          font-size: clamp(48px, 6vw, 86px); line-height: 0.96; letter-spacing: -0.035em;
-          margin: 18px 0 22px; color: hsl(240 10% 6%);
-        }
-        .lp-h1 em { font-style: italic; font-weight: 300; color: hsl(162 47% 32%); }
-        .lp-h1-mono {
-          font-family: 'Geist Mono', monospace; font-size: 0.42em;
-          vertical-align: super; font-weight: 500; letter-spacing: 0;
-          color: hsl(240 6% 50%); margin-left: 6px;
-        }
-        .lp-sub { font-size: 17px; line-height: 1.55; color: hsl(240 6% 32%); max-width: 520px; }
-        .lp-cta-row { display: flex; gap: 12px; margin-top: 28px; align-items: center; }
-
         .lp-btn {
           display: inline-flex; align-items: center; gap: 8px;
           height: 48px; padding: 0 22px; border-radius: 10px;
@@ -114,39 +80,6 @@ export function LandingPage({ go }) {
         .lp-btn .lp-arrow { transition: transform .2s; }
         .lp-btn:hover .lp-arrow { transform: translateX(3px); }
 
-        .lp-hero-meta {
-          margin-top: 56px; display: grid; grid-template-columns: repeat(4,1fr);
-          border-top: 1px solid hsl(240 6% 88%); border-bottom: 1px solid hsl(240 6% 88%);
-        }
-        .lp-hero-meta > div { padding: 20px 24px 20px 0; border-right: 1px solid hsl(240 6% 88%); }
-        .lp-hero-meta > div:last-child { border-right: none; padding-right: 0; }
-        .lp-meta-key { font-family: 'Geist Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em; color: hsl(240 6% 45%); margin-bottom: 8px; }
-        .lp-meta-val { font-size: 14px; font-weight: 500; color: hsl(240 10% 12%); line-height: 1.35; }
-
-        .lp-map-card {
-          position: relative; border-radius: 18px;
-          background: linear-gradient(160deg, #f4f1ea 0%, #ebe6dc 100%);
-          border: 1px solid hsl(240 6% 88%); padding: 22px;
-          box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 60px -30px rgba(20,40,30,0.18);
-          overflow: hidden; aspect-ratio: 1.02 / 1;
-        }
-        .lp-map-svg { width: 100%; height: 100%; display: block; }
-        .lp-map-corner {
-          position: absolute; bottom: 14px; left: 14px; right: 14px;
-          display: flex; align-items: center; justify-content: space-between;
-          font-family: 'Geist Mono', monospace; font-size: 10.5px;
-          color: hsl(240 6% 35%); text-transform: uppercase; letter-spacing: 0.1em;
-        }
-        .lp-map-pill {
-          position: absolute;
-          background: rgba(255,255,255,0.92); border: 1px solid hsl(240 6% 86%);
-          border-radius: 10px; padding: 10px 12px;
-          box-shadow: 0 6px 16px -8px rgba(0,0,0,.15);
-          font-size: 12px; backdrop-filter: blur(6px); max-width: 220px;
-        }
-        .lp-pill-label { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: hsl(240 6% 45%); margin-bottom: 4px; }
-        .lp-pill-val { font-weight: 600; font-size: 13.5px; color: hsl(240 10% 10%); }
-        .lp-map-pin { position: absolute; width: 14px; height: 14px; border-radius: 999px; background: hsl(162 47% 39%); box-shadow: 0 0 0 4px hsl(162 47% 39% / 0.2), 0 0 0 8px hsl(162 47% 39% / 0.08); }
 
         .lp-stats {
           display: grid; grid-template-columns: repeat(4,1fr);
@@ -238,16 +171,13 @@ export function LandingPage({ go }) {
 
         /* Tablet and phone: the multi-column sections stack */
         @media (max-width: 1000px) {
-          .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
           .lp-arch, .lp-team { grid-template-columns: 1fr 1fr; }
           .lp-footer-grid { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 720px) {
           .lp-shell { padding: 0 16px; }
           .lp-nav-links { display: none; }
-          .lp-hero { padding: 40px 0 32px; }
-          .lp-hero-meta, .lp-stats { grid-template-columns: 1fr 1fr; }
-          .lp-hero-meta > div:nth-child(2n) { border-right: none; }
+          .lp-stats { grid-template-columns: 1fr 1fr; }
           .lp-pillars, .lp-arch, .lp-team, .sdg-grid { grid-template-columns: 1fr; }
           .lp-footer-bottom { flex-direction: column; gap: 8px; }
           .lp-before-after { padding: 18px; }
@@ -276,116 +206,8 @@ export function LandingPage({ go }) {
           </div>
         </nav>
 
-        {/* HERO */}
-        <section className="lp-hero">
-          <div className="lp-shell">
-            <div className="lp-hero-grid">
-              <div>
-                <span className="lp-eyebrow">
-                  <span className="lp-dotpulse"/>
-                  DAVAO DEL NORTE STATE COLLEGE · 2026
-                </span>
-                <h1 className="lp-h1">
-                  Urban planning,<br/>
-                  <em>modernized.</em>
-                  <span className="lp-h1-mono"></span>
-                </h1>
-                <p className="lp-sub">
-                  TERRASPEC is a Geospatial Decision Support System that replaces Panabo City's
-                  paper-bound zoning workflow with a multi-criteria scoring engine, an AI chatbot
-                  that reads ordinances in plain English, and an ecological module that decides
-                  where each native tree belongs.
-                </p>
-                <div className="lp-cta-row">
-                  <button className="lp-btn lp-btn-primary" onClick={() => go('dashboard')}>
-                    Get Started
-                    <svg className="lp-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                  </button>
-                </div>
-
-                <div className="lp-hero-meta">
-                  {[
-                    { key: 'Domain',    val: 'Urban planning · Reforestation' },
-                    { key: 'Locale',    val: 'Panabo City · 38 barangays' },
-                    { key: 'Approach',  val: 'GIS + NLP + MCDA' },
-                    { key: 'Aligns with', val: "SDG 11 · SDG 15 · PDP '23-28" },
-                  ].map(({ key, val }) => (
-                    <div key={key}>
-                      <div className="lp-meta-key">{key}</div>
-                      <div className="lp-meta-val">{val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* MAP ARTWORK */}
-              <div className="lp-map-card">
-                {/* real map — same as Dashboard Map Overview */}
-                <div style={{ position: 'absolute', inset: 22, borderRadius: 10, overflow: 'hidden' }}>
-                  <Map
-                    center={[125.6847, 7.307]}
-                    zoom={12}
-                    minZoom={10}
-                    maxZoom={18}
-                    dragPan={false}
-                    scrollZoom={false}
-                    doubleClickZoom={false}
-                    touchZoomRotate={false}
-                    keyboard={false}
-                    dragRotate={false}
-                    className="h-full w-full"
-                  >
-                    <MapMarker longitude={125.6847} latitude={7.307}>
-                      <MarkerContent className="translate-y-[-8px]">
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          <span style={{ background: 'hsl(var(--brand))', color: 'white', padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Panabo City</span>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'hsl(var(--brand))', border: '2px solid white', boxShadow: '0 0 0 5px hsl(162 47% 39% / 0.2)' }}/>
-                        </div>
-                      </MarkerContent>
-                      <MarkerTooltip>Panabo City, Davao del Norte</MarkerTooltip>
-                    </MapMarker>
-                    {commercial.map(z => {
-                      const coords = BARANGAY_COORDS[z.unit_name];
-                      if (!coords) return null;
-                      const s = z.scores.commercial;
-                      return (
-                        <MapMarker key={z.zone_unit_id} longitude={coords[0]} latitude={coords[1]}>
-                          <MarkerContent>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: LEVEL_HEX[s.level] ?? 'hsl(240 5% 65%)', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}/>
-                          </MarkerContent>
-                          <MarkerTooltip>{z.unit_name} · Commercial {s.pct}% · {s.level}</MarkerTooltip>
-                        </MapMarker>
-                      );
-                    })}
-                  </Map>
-                </div>
-
-                {topCommercial && (
-                  <div className="lp-map-pill" style={{ top: 28, left: 42 }}>
-                    <div className="lp-pill-label">TOP BARANGAY · COMMERCIAL</div>
-                    <div className="lp-pill-val">{topCommercial.unit_name} · {topCommercial.scores.commercial.pct}%</div>
-                    <div style={{ height: 4, background: 'hsl(240 6% 92%)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
-                      <div style={{ width: `${topCommercial.scores.commercial.pct}%`, height: '100%', background: 'hsl(162 47% 39%)' }}/>
-                    </div>
-                  </div>
-                )}
-                {restrictions.length > 0 && (
-                  <div className="lp-map-pill" style={{ top: 28, right: 42, background: 'rgba(254,242,242,0.95)', borderColor: 'hsl(0 70% 60% / 0.4)' }}>
-                    <div className="lp-pill-label" style={{ color: 'hsl(0 70% 40%)' }}>⚠ ENV FLAGS · {restrictions.length}</div>
-                    <div className="lp-pill-val" style={{ color: 'hsl(0 70% 35%)' }}>{restrictions[0].name}</div>
-                  </div>
-                )}
-                {topSpecies && topRefo && (
-                  <div className="lp-map-pill" style={{ bottom: 28, left: 42 }}>
-                    <div className="lp-pill-label">SPECIES MATCH · {topRefo.unit_name.toUpperCase()}</div>
-                    <div className="lp-pill-val">{topSpecies.common_name} · {topSpecies.score_pct}%</div>
-                  </div>
-                )}
-
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* HERO: the zoning map sheet over Panabo's farmland */}
+        <LandingHero go={go} barangayCount={summary.length || Object.keys(BARANGAY_COORDS).length} topCommercial={topCommercial} topSpecies={topSpecies} topRefo={topRefo} restrictions={restrictions}/>
 
         {/* STATS */}
         <section className="lp-shell" style={{ paddingBottom: 32 }}>

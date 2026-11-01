@@ -24,16 +24,23 @@ const smooth = t => t * t * (3 - 2 * t);
 const ha = v => `${Math.round(v).toLocaleString()} ha`;
 const pct = v => `${v.toFixed(1)}%`;
 
+// One request for the landing page: the hero's map sheet and this scene share the file
+let zoningMapRequest = null;
+export function loadZoningMap() {
+  zoningMapRequest ??= fetch('/data/zoning_2020_landing.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
+  return zoningMapRequest;
+}
+
 function useZoningMap(sectionRef) {
   const [map, setMap] = useState(null);
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
-    // Fetch only when the visitor is about a screen away, so the hero loads first
+    // Wait until the visitor is about a screen away (the hero usually has the file loaded by then)
     const io = new IntersectionObserver(entries => {
       if (!entries.some(e => e.isIntersecting)) return;
       io.disconnect();
-      fetch('/data/zoning_2020_landing.json').then(r => (r.ok ? r.json() : null)).then(setMap).catch(() => setMap(null));
+      loadZoningMap().then(setMap);
     }, { rootMargin: '100% 0px' });
     io.observe(el);
     return () => io.disconnect();
