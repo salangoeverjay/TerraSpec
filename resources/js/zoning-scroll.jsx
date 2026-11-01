@@ -7,12 +7,13 @@ const LABEL = Object.fromEntries(ZONING_LEGEND.map(z => [z.id, z.label]));
 // The story: each chapter reveals a group of zoning classes and points the camera at where they lie.
 // Hectares and shares are summed from the zoning map itself, never typed in.
 const CHAPTERS = [
-  { key: 'city',    classes: [],                                         focus: null, zoom: 1 },
-  { key: 'farm',    classes: ['PA', 'AI'],                               focus: null, zoom: 1.08 },
-  { key: 'homes',   classes: ['GR', 'R-1'],                              focus: 'GR', zoom: 2.3 },
-  { key: 'trade',   classes: ['GC', 'C', 'I', 'UTS', 'INS', 'TZ', 'QZ'], focus: 'GC', zoom: 2.5 },
-  { key: 'green',   classes: ['FR', 'MG', 'PRC', 'BG'],                  focus: 'MG', zoom: 1.8 },
-  { key: 'all',     classes: [],                                         focus: null, zoom: 1 },
+  // pitch tilts the map away from the viewer (degrees), turn rotates it slightly; flat at the start
+  { key: 'city',    classes: [],                                         focus: null, zoom: 1,    pitch: 0,  turn: 0 },
+  { key: 'farm',    classes: ['PA', 'AI'],                               focus: null, zoom: 1.08, pitch: 22, turn: -4 },
+  { key: 'homes',   classes: ['GR', 'R-1'],                              focus: 'GR', zoom: 2.3,  pitch: 40, turn: 6 },
+  { key: 'trade',   classes: ['GC', 'C', 'I', 'UTS', 'INS', 'TZ', 'QZ'], focus: 'GC', zoom: 2.5,  pitch: 44, turn: -5 },
+  { key: 'green',   classes: ['FR', 'MG', 'PRC', 'BG'],                  focus: 'MG', zoom: 1.8,  pitch: 34, turn: 4 },
+  { key: 'all',     classes: [],                                         focus: null, zoom: 1,    pitch: 14, turn: 0 },
 ];
 
 // Panabo City centre, the same point the hero map is centred on
@@ -91,9 +92,11 @@ export function ZoningScroll() {
   const cameraFor = c => {
     const ch = CHAPTERS[c];
     const focus = ch.focus && byId[ch.focus];
-    return { x: focus ? focus.cx : map.width / 2, y: focus ? focus.cy : map.height / 2, z: ch.zoom };
+    return { x: focus ? focus.cx : map.width / 2, y: focus ? focus.cy : map.height / 2, z: ch.zoom, pitch: ch.pitch, turn: ch.turn };
   };
   let viewBox = '0 0 700 964';
+  let plane = 'none';
+  let edge = 0;
   if (map) {
     const base = Math.max(0, Math.floor(progress));
     const a = cameraFor(Math.min(base, CHAPTERS.length - 1));
@@ -102,6 +105,13 @@ export function ZoningScroll() {
     const z = a.z + (b.z - a.z) * t, x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
     const w = map.width / z, h = map.height / z;
     viewBox = `${(x - w / 2).toFixed(1)} ${(y - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`;
+    // The map lies on a tilted plane, like a camera looking across the city; it scales up a little so
+    // the far edge still fills the frame, and the slab edge under the land keeps a constant thickness
+    if (!reduceMotion) {
+      const pitch = a.pitch + (b.pitch - a.pitch) * t, turn = a.turn + (b.turn - a.turn) * t;
+      plane = `rotateX(${pitch.toFixed(2)}deg) rotateZ(${turn.toFixed(2)}deg) scale(${(1 + pitch / 260).toFixed(3)})`;
+      edge = (pitch / 44) * 7 / z;
+    }
   }
 
   // Each class fades in while its chapter's step reaches the reading line; the chapter in view is lit,
@@ -156,8 +166,10 @@ export function ZoningScroll() {
           <div className="zs-stage">
             <div className="zs-map">
               {map ? (
+                <div className="zs-plane" style={{ transform: plane }}>
                 <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="img"
                   aria-label={`Zoning map of Panabo City, ${map.classes.length} zones over ${ha(total)}`}>
+                  {edge > 0 && <path d={map.outline} className="zs-edge" transform={`translate(0 ${edge.toFixed(2)})`}/>}
                   <path d={map.outline} className="zs-land"/>
                   {map.classes.map(c => (
                     <path key={c.id} d={c.path} fill={HEX[c.id] ?? '#888'} fillRule="evenodd"
@@ -169,10 +181,11 @@ export function ZoningScroll() {
                     <g className="zs-pin-drop">
                       <path d="M0 0 C -12 -19 -15 -24 -15 -31 A 15 15 0 1 1 15 -31 C 15 -24 12 -19 0 0 Z" className="zs-pin-body"/>
                       <circle cy="-31" r="5.5" fill="#fff"/>
-                      <text x="22" y="-26" className="zs-pin-label">City centre</text>
+                      <text x="-22" y="-26" textAnchor="end" className="zs-pin-label">City centre</text>
                     </g>
                   </g>
                 </svg>
+                </div>
               ) : (
                 <div className="zs-loading" aria-hidden="true"/>
               )}
@@ -232,7 +245,10 @@ const ZS_CSS = `
     position: sticky; top: 88px; height: calc(100vh - 120px); max-height: 860px;
     background: hsl(160 18% 93%); border-radius: 16px; overflow: hidden;
   }
-  .zs-map svg { width: 100%; height: 100%; display: block; }
+  .zs-map { perspective: 1400px; perspective-origin: 50% 30%; }
+  .zs-plane { width: 100%; height: 100%; transform-origin: 50% 55%; will-change: transform; }
+  .zs-map svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .zs-edge { fill: hsl(150 8% 70%); }
   .zs-land { fill: hsl(150 10% 84%); }
   .zs-zone { transition: opacity .35s ease; }
   .zs-lines { fill: none; stroke: #fff; stroke-width: 0.9; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
