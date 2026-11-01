@@ -12,7 +12,7 @@ const CHAPTERS = [
   { key: 'farm',    classes: ['PA', 'AI'],                               focus: null, zoom: 1.08, pitch: 22, turn: -4 },
   { key: 'homes',   classes: ['GR', 'R-1'],                              focus: 'GR', zoom: 2.3,  pitch: 40, turn: 6 },
   { key: 'trade',   classes: ['GC', 'C', 'I', 'UTS', 'INS', 'TZ', 'QZ'], focus: 'GC', zoom: 2.5,  pitch: 44, turn: -5 },
-  { key: 'green',   classes: ['FR', 'MG', 'PRC', 'BG'],                  focus: 'MG', zoom: 1.8,  pitch: 34, turn: 4 },
+  { key: 'green',   classes: ['FR', 'MG', 'PRC', 'BG'],                  focus: null, zoom: 1, pitch: 26, turn: 3 },
   { key: 'all',     classes: [],                                         focus: null, zoom: 1,    pitch: 14, turn: 0 },
 ];
 
@@ -47,6 +47,15 @@ export function ZoningScroll() {
   const map = useZoningMap(sectionRef);
   const [progress, setProgress] = useState(0);
   const [isolated, setIsolated] = useState(null);
+  const mapBoxRef = useRef(null);
+  const [mapBox, setMapBox] = useState({ w: 600, h: 800 });
+  useEffect(() => {
+    const el = mapBoxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setMapBox({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const reduceMotion = useMemo(() => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, []);
 
   const byId = useMemo(() => Object.fromEntries((map?.classes ?? []).map(c => [c.id, c])), [map]);
@@ -91,8 +100,12 @@ export function ZoningScroll() {
   // Camera: hold while a card is centred, travel to the next chapter's view between cards
   const cameraFor = c => {
     const ch = CHAPTERS[c];
-    const focus = ch.focus && byId[ch.focus];
-    return { x: focus ? focus.cx : map.width / 2, y: focus ? focus.cy : map.height / 2, z: ch.zoom, pitch: ch.pitch, turn: ch.turn };
+    // A focus of several classes aims at their area-weighted centre
+    const parts = [ch.focus ?? []].flat().map(id => byId[id]).filter(Boolean);
+    const weight = parts.reduce((sum, c) => sum + c.ha, 0);
+    const x = weight ? parts.reduce((sum, c) => sum + c.cx * c.ha, 0) / weight : map.width / 2;
+    const y = weight ? parts.reduce((sum, c) => sum + c.cy * c.ha, 0) / weight : map.height / 2;
+    return { x, y, z: ch.zoom, pitch: ch.pitch, turn: ch.turn };
   };
   let viewBox = '0 0 700 964';
   let plane = 'none';
@@ -128,6 +141,31 @@ export function ZoningScroll() {
   const outlineDrawn = reduceMotion ? 1 : clamp01((progress + 1) / 0.8);
   const revealedHa = CHAPTERS.slice(1, 5).reduce((s, ch, i) => s + groupHa(ch.classes) * clamp01((progress - (i + 0.35)) / 0.5), 0);
   const finale = progress > CHAPTERS.length - 1.35;
+
+  // Barangay names in the zoomed chapters: the few that hold the most of that chapter's zoning and sit in
+  // the camera's view, shown only while the camera holds, at a fixed size on screen
+  const labels = [];
+  if (map) {
+    for (const c of [2, 3, 4]) {
+      const fade = reduceMotion ? (chapter === c ? 1 : 0) : clamp01((0.3 - Math.abs(progress - c)) / 0.1);
+      if (fade <= 0) continue;
+      const cam = cameraFor(c);
+      const w = map.width / cam.z, h = map.height / cam.z;
+      const unitPx = Math.min(mapBox.w / w, mapBox.h / h);
+      const limit = mapBox.w < 600 ? 3 : 4;
+      const placed = [];
+      map.barangayLabels
+        .map(b => ({ ...b, ha: CHAPTERS[c].classes.reduce((sum, id) => sum + (b.zones[id] ?? 0), 0) }))
+        .filter(b => b.ha > 0 && Math.abs(b.x - cam.x) < w * 0.44 && Math.abs(b.y - cam.y) < h * 0.45)
+        .sort((a, b) => b.ha - a.ha)
+        .filter((b, i, list) => b.ha >= list[0].ha * 0.2)
+        .forEach(b => {
+          const clash = placed.some(o => Math.abs(o.x - b.x) * unitPx < 110 && Math.abs(o.y - b.y) * unitPx < 26);
+          if (placed.length < limit && !clash) placed.push(b);
+        });
+      placed.forEach(b => labels.push({ ...b, key: `${c}-${b.name}`, fade, size: 13 / unitPx }));
+    }
+  }
   const pin = map ? [
     (CITY_CENTRE[0] - map.project.minx) * map.project.cosLat * map.project.k,
     (map.project.maxy - CITY_CENTRE[1]) * map.project.k,
@@ -164,7 +202,7 @@ export function ZoningScroll() {
 
         <div className="zs-grid">
           <div className="zs-stage">
-            <div className="zs-map">
+            <div className="zs-map" ref={mapBoxRef}>
               {map ? (
                 <div className="zs-plane" style={{ transform: plane }}>
                 <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="img"
@@ -177,6 +215,10 @@ export function ZoningScroll() {
                   ))}
                   <path d={map.outline} pathLength="1" className="zs-lines"
                     style={{ strokeDasharray: 1, strokeDashoffset: 1 - outlineDrawn }}/>
+                  {labels.map(l => (
+                    <text key={l.key} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" className="zs-brgy"
+                      style={{ opacity: l.fade, fontSize: l.size, strokeWidth: l.size * 0.32 }}>{l.name}</text>
+                  ))}
                   <g className={`zs-pin${finale ? ' on' : ''}`} transform={`translate(${pin[0].toFixed(1)} ${pin[1].toFixed(1)})`}>
                     <g className="zs-pin-drop">
                       <path d="M0 0 C -12 -19 -15 -24 -15 -31 A 15 15 0 1 1 15 -31 C 15 -24 12 -19 0 0 Z" className="zs-pin-body"/>
@@ -260,6 +302,7 @@ const ZS_CSS = `
   .zs-pin-drop { transform: translateY(-40px); transition: transform .5s cubic-bezier(.3,1.6,.5,1); }
   .zs-pin.on .zs-pin-drop { transform: translateY(0); }
   .zs-pin-body { fill: hsl(240 10% 8%); stroke: #fff; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+  .zs-brgy { font-family: 'Geist', sans-serif; font-weight: 600; fill: hsl(240 10% 10%); stroke: rgb(255 255 255 / 0.92); paint-order: stroke; stroke-linejoin: round; pointer-events: none; }
   .zs-pin-label { font-family: 'Geist', sans-serif; font-size: 22px; font-weight: 600; fill: hsl(240 10% 8%); stroke: #fff; stroke-width: 5px; paint-order: stroke; stroke-linejoin: round; }
 
   .zs-counter {
