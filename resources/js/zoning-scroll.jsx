@@ -24,9 +24,8 @@ const smooth = t => t * t * (3 - 2 * t);
 const ha = v => `${Math.round(v).toLocaleString()} ha`;
 const pct = v => `${v.toFixed(1)}%`;
 
-// One request for the landing page: the hero's map sheet and this scene share the file
 let zoningMapRequest = null;
-export function loadZoningMap() {
+function loadZoningMap() {
   zoningMapRequest ??= fetch('/data/zoning_2020_landing.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
   return zoningMapRequest;
 }
@@ -36,7 +35,7 @@ function useZoningMap(sectionRef) {
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
-    // Wait until the visitor is about a screen away (the hero usually has the file loaded by then)
+    // Fetch only when the visitor is about a screen away, so the first screen loads first
     const io = new IntersectionObserver(entries => {
       if (!entries.some(e => e.isIntersecting)) return;
       io.disconnect();
@@ -79,8 +78,14 @@ export function ZoningScroll() {
       const stage = sectionRef.current?.querySelector('.zs-stage');
       const narrow = window.matchMedia('(max-width: 900px)').matches;
       const mid = narrow && stage ? (stage.getBoundingClientRect().bottom + window.innerHeight) / 2 : window.innerHeight / 2;
+      const stageBottom = narrow && stage ? stage.getBoundingClientRect().bottom : -Infinity;
       const centres = stepRefs.current.filter(Boolean).map(el => {
-        const r = el.querySelector('.zs-step-card').getBoundingClientRect();
+        const card = el.querySelector('.zs-step-card');
+        const r = card.getBoundingClientRect();
+        // A card fades out over its last 80px before the sticky map, so no heading is left half covered
+        const visible = clamp01((r.top - stageBottom) / 80);
+        card.style.setProperty('--zs-vis', visible.toFixed(3));
+        card.style.visibility = visible > 0 ? '' : 'hidden';
         return r.top + r.height / 2;
       });
       if (!centres.length) return;
@@ -323,8 +328,8 @@ const ZS_CSS = `
   .zs-steps { list-style: none; margin: 0; padding: 0; }
   .zs-step { min-height: 78vh; display: flex; align-items: center; }
   .zs-step:last-child { min-height: 100vh; }
-  .zs-step-card { opacity: .35; transform: translateY(16px); transition: opacity .4s ease, transform .4s ease; max-width: 460px; }
-  .zs-step.is-on .zs-step-card { opacity: 1; transform: none; }
+  .zs-step-card { opacity: calc(.35 * var(--zs-vis, 1)); transform: translateY(16px); transition: opacity .4s ease, transform .4s ease; max-width: 460px; }
+  .zs-step.is-on .zs-step-card { opacity: var(--zs-vis, 1); transform: none; }
   .zs-step h3 { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(28px, 3vw, 40px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 14px; color: hsl(240 10% 8%); }
   .zs-figure { font-family: 'Fraunces', serif; font-size: 44px; line-height: 1; letter-spacing: -0.02em; margin: 0 0 14px; color: hsl(162 47% 28%); font-variant-numeric: tabular-nums; }
   .zs-figure span { display: block; font-family: 'Geist', sans-serif; font-size: 15px; letter-spacing: 0; color: hsl(240 6% 35%); margin-top: 8px; }

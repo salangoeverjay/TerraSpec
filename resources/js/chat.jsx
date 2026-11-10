@@ -260,6 +260,7 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
     setConversations(cs => [c, ...cs]);
     setActiveId(c.id);
     setChatInput(''); setChatError('');
+    setShowConvs(false);
   }
 
   function deleteConv(id) {
@@ -626,6 +627,8 @@ export function ChatScreen({ initialConvId, go, role = 'public', mapContext, set
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
       {/* Conversations list */}
+      {/* Phone only: tapping beside the open conversation list closes it */}
+      {showConvs && <div className="chat-convs-backdrop" onClick={() => setShowConvs(false)} aria-hidden="true"/>}
       <div className={`chat-convs${showConvs ? ' open' : ''}`} style={{ width: 220, borderRight: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'hsl(var(--background))' }}>
         <div style={{ padding: '12px 10px', borderBottom: '1px solid hsl(var(--border))' }}>
           <Btn variant="brand" icon="plus" onClick={newConv} style={{ width: '100%', justifyContent: 'center' }}>New Chat</Btn>

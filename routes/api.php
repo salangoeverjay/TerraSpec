@@ -33,20 +33,20 @@ Route::middleware('web')->group(function () {
 
         Route::prefix('admin')->group(function () {
             Route::get('/zones', [AdminController::class, 'zones']);
-            Route::put('/zones/{id}', [AdminController::class, 'updateZone']);
+            Route::put('/zones/{id}', [AdminController::class, 'updateZone'])->whereNumber('id');
 
             Route::get('/criteria', [AdminController::class, 'criteria']);
             Route::put('/criteria', [AdminController::class, 'updateAllCriteria']);
 
             Route::get('/restrictions', [AdminController::class, 'restrictions']);
             Route::post('/restrictions', [AdminController::class, 'storeRestriction']);
-            Route::put('/restrictions/{id}', [AdminController::class, 'updateRestriction']);
-            Route::delete('/restrictions/{id}', [AdminController::class, 'deleteRestriction']);
+            Route::put('/restrictions/{id}', [AdminController::class, 'updateRestriction'])->whereNumber('id');
+            Route::delete('/restrictions/{id}', [AdminController::class, 'deleteRestriction'])->whereNumber('id');
 
             Route::get('/species', [AdminController::class, 'species']);
             Route::post('/species', [AdminController::class, 'storeSpecies']);
-            Route::put('/species/{id}', [AdminController::class, 'updateSpecies']);
-            Route::delete('/species/{id}', [AdminController::class, 'deleteSpecies']);
+            Route::put('/species/{id}', [AdminController::class, 'updateSpecies'])->whereNumber('id');
+            Route::delete('/species/{id}', [AdminController::class, 'deleteSpecies'])->whereNumber('id');
         });
     });
 
@@ -54,7 +54,7 @@ Route::middleware('web')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users', [AdminController::class, 'storeUser']);
-        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
-        Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::put('/users/{id}', [AdminController::class, 'updateUser'])->whereNumber('id');
+        Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->whereNumber('id');
     });
 });

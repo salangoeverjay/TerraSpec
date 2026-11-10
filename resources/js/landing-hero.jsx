@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ZONING_LEGEND } from './data.js';
-import { loadZoningMap } from './zoning-scroll.jsx';
 
 const HEX = Object.fromEntries(ZONING_LEGEND.map(z => [z.id, z.hex]));
 const LABEL = Object.fromEntries(ZONING_LEGEND.map(z => [z.id, z.label]));
@@ -17,19 +16,49 @@ export function LandingHero({ go, barangayCount, topCommercial, topSpecies, topR
   const svgRef = useRef(null);
   const pathRefs = useRef({});
 
-  useEffect(() => { loadZoningMap().then(setMap); }, []);
+  // A coarser copy of the zoning map (about a third of the scroll scene's file) so the first screen loads fast
+  useEffect(() => {
+    let active = true;
+    fetch('/data/zoning_2020_hero.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (active) setMap(data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const total = map ? map.classes.reduce((s, c) => s + c.ha, 0) : 0;
 
-  function readZone(e) {
+  // Reads the zone at a point in map units; the dot stays even where no zone is drawn (sea, unzoned land)
+  function probe(x, y) {
     const svg = svgRef.current;
     if (!svg || !map) return;
+    const p = svg.createSVGPoint();
+    p.x = x; p.y = y;
+    // Smallest classes first, so a small zone drawn over a large one wins
+    const zone = [...map.classes].reverse().find(c => pathRefs.current[c.id]?.isPointInFill(p)) ?? null;
+    setPoint({ x, y, zone });
+  }
+
+  function readZone(e) {
+    const svg = svgRef.current;
+    if (!svg) return;
     const pt = svg.createSVGPoint();
     pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    // Smallest classes first, so a small zone drawn over a large one wins
-    const hit = [...map.classes].reverse().find(c => pathRefs.current[c.id]?.isPointInFill(p));
-    setPoint(hit ? { x: p.x, y: p.y, zone: hit } : null);
+    probe(p.x, p.y);
+  }
+
+  // Keyboard: the arrow keys move the dot across the map (Shift for bigger steps), Escape clears it
+  function moveWithKeys(e) {
+    const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (e.key === 'Escape') { setPoint(null); return; }
+    if (!steps[e.key] || !map) return;
+    e.preventDefault();
+    const size = e.shiftKey ? 40 : 10;
+    const from = point ?? { x: map.width / 2, y: map.height / 2 };
+    const x = Math.min(map.width, Math.max(0, from.x + steps[e.key][0] * size));
+    const y = Math.min(map.height, Math.max(0, from.y + steps[e.key][1] * size));
+    probe(x, y);
   }
 
   return (
@@ -40,12 +69,14 @@ export function LandingHero({ go, barangayCount, topCommercial, topSpecies, topR
         <figure className="lh-map">
           {map ? (
             <svg ref={svgRef} viewBox={`0 0 ${map.width} ${map.height}`} preserveAspectRatio="xMidYMid meet"
-              role="img" aria-label={`Zoning map of Panabo City: ${map.classes.length} zones over ${ha(total)}`}
-              onPointerMove={readZone} onPointerDown={readZone} onPointerLeave={() => setPoint(null)}>
+              role="group" tabIndex={0}
+              aria-label={`Zoning map of Panabo City: ${map.classes.length} zones over ${ha(total)}. Use the arrow keys to read the zone at each point.`}
+              onPointerMove={readZone} onPointerDown={readZone} onKeyDown={moveWithKeys} onBlur={() => setPoint(null)}
+              onPointerLeave={e => { if (e.pointerType === 'mouse') setPoint(null); }}>
               <path d={map.outline} className="lh-land"/>
               {map.classes.map(c => (
                 <path key={c.id} ref={el => { pathRefs.current[c.id] = el; }} d={c.path} fill={HEX[c.id] ?? '#888'} fillRule="evenodd"
-                  className={point && point.zone.id !== c.id ? 'lh-zone dim' : 'lh-zone'}/>
+                  className={point?.zone && point.zone.id !== c.id ? 'lh-zone dim' : 'lh-zone'}/>
               ))}
               <path d={map.outline} className="lh-lines"/>
               {point && <circle cx={point.x} cy={point.y} r="7" className="lh-dot"/>}
@@ -63,11 +94,13 @@ export function LandingHero({ go, barangayCount, topCommercial, topSpecies, topR
           </p>
 
           <div className="lh-readout" aria-live="polite">
-            {point ? (
+            {point?.zone ? (
               <>
                 <span className="lh-sw" style={{ background: HEX[point.zone.id] }}/>
                 <span><strong>{LABEL[point.zone.id] ?? point.zone.name}</strong> · {ha(point.zone.ha)} across the city</span>
               </>
+            ) : point ? (
+              <span>No zone here: outside Panabo's zoned land.</span>
             ) : (
               <span>{map ? `Point at the map to read a zone: ${map.classes.length} zones, ${ha(total)}.` : 'Loading the zoning map…'}</span>
             )}
@@ -106,6 +139,7 @@ const LH_CSS = `
   .lh-map svg, .lh-map-wait { width: 100%; height: min(68svh, 640px); display: block; background: hsl(160 14% 90%); cursor: crosshair; touch-action: pan-y; }
   .lh-map-wait { animation: lh-pulse 1.4s ease-in-out infinite; }
   @keyframes lh-pulse { 50% { opacity: .6; } }
+  .lh-map svg:focus-visible { outline: 2px solid hsl(162 47% 26%); outline-offset: 3px; }
   .lh-map figcaption { font-size: 13px; color: hsl(240 6% 35%); }
   .lh-land { fill: hsl(150 8% 82%); }
   .lh-zone { transition: opacity .15s; }

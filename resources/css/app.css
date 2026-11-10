@@ -319,11 +319,13 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height
   /* AI Assistant: the conversation list and the NLP inspector open over the chat */
   .chat-convs { display: none !important; position: absolute; top: 0; bottom: 0; left: 0; z-index: 6; width: min(280px, 85%) !important; box-shadow: var(--shadow-float); }
   .chat-convs.open { display: flex !important; }
+  .chat-convs-backdrop { display: block !important; position: absolute; inset: 0; z-index: 5; background: rgb(0 0 0 / 0.25); }
   .chat-inspector { position: absolute; top: 0; bottom: 0; right: 0; z-index: 6; width: min(300px, 90%) !important; background: hsl(var(--background)) !important; box-shadow: var(--shadow-float); }
   /* Map Viewer: keep the map visible behind fewer overlays */
   .map-phone-hide { display: none !important; }
 }
 .show-on-phone { display: none; }
+.chat-convs-backdrop { display: none; }
 
 /* ── Tables ── */
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }

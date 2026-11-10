@@ -55,6 +55,18 @@ it('returns 404 for non-numeric ids instead of a server error', function () {
     $this->getJson('/reforestation/abc/pdf')->assertNotFound();
 });
 
+it('returns 404 for non-numeric ids on the admin routes instead of a server error', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $this->putJson('/api/admin/zones/abc', [])->assertNotFound();
+    $this->putJson('/api/admin/restrictions/abc', [])->assertNotFound();
+    $this->deleteJson('/api/admin/restrictions/abc')->assertNotFound();
+    $this->putJson('/api/admin/species/abc', [])->assertNotFound();
+    $this->deleteJson('/api/admin/species/abc')->assertNotFound();
+    $this->putJson('/api/admin/users/abc', [])->assertNotFound();
+    $this->deleteJson('/api/admin/users/abc')->assertNotFound();
+});
+
 it('rejects an unknown land use in the rankings', function () {
     $this->getJson('/suitability/rankings?analysis_type=casino')->assertUnprocessable()->assertInvalid(['analysis_type']);
     $this->getJson('/suitability/rankings')->assertOk()->assertJsonPath('analysis_type', 'commercial');
