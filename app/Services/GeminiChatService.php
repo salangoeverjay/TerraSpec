@@ -32,8 +32,8 @@ class GeminiChatService
             $result = $this->client->generate(
                 $this->prompts->systemPrompt($prompt),
                 $this->prompts->userPrompt($prompt, $context),
-                // Room for models that think before answering; the visible answer stays short
-                ['temperature' => 0.1, 'topP' => 0.9, 'maxOutputTokens' => 2048],
+                // Room for models that think before answering (thinking counts against this ceiling); the visible answer stays short
+                ['temperature' => 0.1, 'topP' => 0.9, 'maxOutputTokens' => 4096],
             );
         } catch (GeminiResponseBlocked) {
             return [

@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\EnvironmentalRestriction;
 use App\Models\MangroveSpecies;
+use App\Models\SuitabilityCriteria;
 use App\Models\ZoneUnit;
+use App\Models\ZoneZoningData;
 
 class TerraSpecContextService
 {
@@ -19,6 +21,9 @@ class TerraSpecContextService
     {
         $sections = [
             $this->buildCityOverview(),
+            $this->buildCriteriaWeights(),
+            $this->buildAllowedUses(),
+            $this->buildPrincipalZoneLand(),
             $this->buildSuitabilityRankings(),
             $this->buildZoningByBarangay(),
             $this->buildEnvironmentalRestrictions(),
@@ -41,6 +46,119 @@ class TerraSpecContextService
              ."Method: CLUP development-constraint step, then AHP-Weighted Linear Combination (7 criteria); compared with AHP-TOPSIS, EWM-WLC and EWM-TOPSIS\n"
              ."Criteria: Flood Risk, Slope, Soil, Liquefaction, Population Density, Market Saturation, Zoning Compliance\n"
              .'Note: the scores below are computed live from the current AHP weights set by the LGU; they are decision support only.';
+    }
+
+    /**
+     * The AHP weights the LGU has set, the same ones every score on screen uses.
+     */
+    private function buildCriteriaWeights(): string
+    {
+        $criteria = SuitabilityCriteria::orderBy('criteria_id')->get();
+
+        if ($criteria->isEmpty()) {
+            return '';
+        }
+
+        $lines = ['=== CURRENT AHP CRITERIA WEIGHTS (set by the LGU in Admin; the weights of each land use sum to 100%) ==='];
+        foreach (self::TYPES as $type) {
+            $weights = $criteria->map(fn (SuitabilityCriteria $c) => $c->criteria_name.' '.round($c->getWeightForType($type) * 100).'%');
+            $lines[] = ucfirst($type).': '.$weights->implode(', ');
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Which zoning classes TerraSpec treats as allowing each use (its zoning-compliance values) and which
+     * it removes before scoring, plus the kinds of building that belong to each use.
+     */
+    private function buildAllowedUses(): string
+    {
+        $labels = config('suitability.constraint_labels', []);
+        $label = fn (string $code) => $labels[$code] ?? $code;
+
+        $lines = [
+            '=== WHAT TERRASPEC ALLOWS WHERE (provisional: based on the HLURB model zoning ordinance, NOT the Panabo Zoning Ordinance text) ===',
+            'Kinds of building and the TerraSpec land use they fall under:',
+            '- houses, subdivisions and apartments: residential',
+            '- stores, malls, markets, restaurants, hotels and offices: commercial',
+            '- factories, warehouses and storage: industrial',
+            '- farms and plantations: agricultural',
+            '- tree planting: reforestation (mangrove sites)',
+            '- schools, hospitals and government buildings: General Institutional zone (TerraSpec has no institutional suitability score)',
+            '- resorts and tourism businesses: Tourism zone (TerraSpec has no tourism suitability score)',
+            'TerraSpec has no partly-compatible values for institutional or tourism use: do not say they fit any zone other than their own.',
+            'Zoning compliance per use (1.0 = principal use; lower = partly compatible; a zone not listed scores 0):',
+        ];
+
+        foreach (config('suitability.zoning_compatibility', []) as $type => $values) {
+            $principal = collect($values)->filter(fn ($v) => $v >= 1.0)->keys()->map($label)->implode(', ');
+            $partial = collect($values)->filter(fn ($v) => $v < 1.0)->map(fn ($v, $code) => $label($code).' '.$v)->implode(', ');
+            $lines[] = '- '.ucfirst($type).": principal in {$principal}".($partial !== '' ? "; partly compatible: {$partial}" : '');
+        }
+
+        $lines[] = 'Land removed before scoring (development constraints, CLUP 2020-2029):';
+        foreach (config('suitability.constraints', []) as $type => $rule) {
+            $excluded = array_map($label, $rule['zoning'] ?? []);
+            if ($rule['flood_very_high'] ?? false) {
+                $excluded[] = 'very high flood land';
+            }
+            if ($rule['landslide_high'] ?? false) {
+                $excluded[] = 'high landslide land';
+            }
+            $lines[] = "- excluded for {$type}: ".implode(', ', $excluded);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * For each kind of building, the barangays with the most land in its principal zones, and how much of
+     * that land lies outside very high flood and high landslide areas (MGB 2020).
+     */
+    private function buildPrincipalZoneLand(): string
+    {
+        $uses = [
+            'Residential (houses)' => ['GR', 'R-1'],
+            'Commercial (stores, malls, offices)' => ['C', 'GC'],
+            'Industrial (factories, warehouses)' => ['I'],
+            'Institutional (schools, hospitals, government)' => ['INS'],
+            'Tourism (resorts)' => ['TZ'],
+        ];
+        $labels = config('suitability.constraint_labels', []);
+        $rows = ZoneZoningData::with('zoneUnit:zone_unit_id,unit_name')->get();
+
+        if ($rows->isEmpty()) {
+            return '';
+        }
+
+        $lines = [
+            '=== LAND IN EACH USE\'S PRINCIPAL ZONES, PER BARANGAY (top 8 by land outside very high flood and high landslide; digitized Integrated Zoning Map 2020-2029 and MGB 2020 hazard maps) ===',
+        ];
+
+        foreach ($uses as $use => $codes) {
+            $perBarangay = $rows->whereIn('zoning_code', $codes)
+                ->groupBy('zone_unit_id')
+                ->map(fn ($group) => [
+                    'name' => $group->first()->zoneUnit->unit_name,
+                    'zoned' => (float) $group->sum('area_ha'),
+                    'safe' => (float) $group->sum(fn ($r) => max(0, $r->area_ha - $r->flood_very_high_ha - $r->landslide_high_ha)),
+                ])
+                ->sortByDesc('safe');
+
+            if ($perBarangay->isEmpty()) {
+                continue;
+            }
+
+            $zoneNames = implode(' + ', array_map(fn ($code) => $labels[$code] ?? $code, $codes));
+            $lines[] = "{$use}, zones {$zoneNames}: city total ".number_format($perBarangay->sum('zoned'), 1).' ha zoned, '
+                .number_format($perBarangay->sum('safe'), 1).' ha outside very high flood and high landslide';
+            foreach ($perBarangay->take(8) as $b) {
+                $lines[] = "- {$b['name']}: ".number_format($b['zoned'], 1).' ha zoned, '.number_format($b['safe'], 1).' ha outside very high flood and high landslide';
+            }
+        }
+
+        return implode("\n", $lines);
     }
 
     private function buildSuitabilityRankings(): string
