@@ -9,205 +9,9 @@ import {
   ZoningLayer, FloodLayer, LandslideLayer, SuitabilityLayer, QueryBarangayLayer, BarangayLabelLayer, MangroveSitesLayer, MANGROVE_LEGEND,
   FLOOD_LEGEND, LANDSLIDE_LEGEND, SUITABILITY_LEGEND, SUITABILITY_USES, MAP_VIEWS, OVERLAY_LAYER_IDS, hatchSwatch,
 } from './map-layers.jsx';
-import { Icon, Btn, Card, CardHeader, CardBody, Badge, Inp, levelStyle } from './components.jsx';
+import { Icon, Card, CardHeader, CardBody, Badge, levelStyle } from './components.jsx';
 import { ZoningQueryPanel, ZONING_QUERY_PRESETS, EMPTY_QUERY, runZoningQuery, barangayBounds } from './zoning-query.jsx';
 import { AskTheMap } from './ask-the-map.jsx';
-
-function MapChatBubble({ selectedPoint, nearestBarangay, rightOffset }) {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Ask me about the map — zoning, flood risk, suitability or reforestation.' }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
-
-  const b = nearestBarangay;
-
-  const bubblePrompts = useMemo(() => {
-    const lastMsg = messages.filter(m => m.role === 'assistant').at(-1)?.content ?? '';
-    const talked  = messages.length > 1;
-
-    const isRefo  = /reforest|tree|species|mangrove|bakawan|molave|toog|nipa/i.test(lastMsg);
-    const isEnv   = /flood|hazard|landslide|storm|restrict|protect|watershed/i.test(lastMsg);
-    const isSuit  = /suitabilit|score|suitable|commercial|residential|industrial/i.test(lastMsg);
-
-    if (!talked) {
-      return b ? [
-        `What is the suitability of ${b}?`,
-        `Are there flood risks in ${b}?`,
-        `Best tree species for ${b}?`,
-        `What zone is ${b} under?`,
-      ] : [
-        'Which areas have high flood risk?',
-        'Where are the mangrove protection zones?',
-        'Top commercial zones in Panabo City',
-        'Best reforestation sites in Panabo',
-      ];
-    }
-
-    if (b) {
-      if (isRefo) return [`What species are best for ${b}?`, `Watershed restrictions in ${b}?`, `Elevation of ${b}?`, 'Other reforestation zones'];
-      if (isEnv)  return [`Suitability score of ${b}?`, `What development is allowed in ${b}?`, 'Which zones have similar risks?', `Reforestation options for ${b}?`];
-      if (isSuit) return [`Flood risks in ${b}?`, `Restrictions in ${b}?`, `Best tree species for ${b}?`, `Compare ${b} with nearby zones`];
-      return [`Commercial suitability of ${b}?`, `Environmental risks in ${b}?`, `Zone classification of ${b}?`, `Reforestation potential of ${b}?`];
-    }
-
-    if (isRefo) return ['Which barangays are in watershed zones?', 'Native trees best for coastal areas?', 'DENR priority reforestation sites?', 'Mangrove restoration areas in Panabo'];
-    if (isEnv)  return ['Barangays with storm surge risk?', 'Where are all protected areas?', 'Zones with landslide exposure?', 'Show all SAFDZ areas'];
-    if (isSuit) return ['Top commercial zones in Panabo City', 'Best barangays for residential use?', 'Zones with lowest flood risk?', 'Compare urban vs rural suitability'];
-    return ['Which areas have the highest flood risk?', 'Where are the protected mangrove zones?', 'Top commercial zones in Panabo', 'Reforestation potential here?'];
-  }, [b, messages]);
-
-  useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, open]);
-
-  async function send() {
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput('');
-    setLoading(true);
-    setMessages(m => [...m, { role: 'user', content: text }, { role: 'assistant', content: 'Thinking...' }]);
-
-    const selection = nearestBarangay && selectedPoint
-      ? `Barangay ${nearestBarangay}. Map point at ${selectedPoint.coords[1].toFixed(4)}°N, ${selectedPoint.coords[0].toFixed(4)}°E.${selectedPoint.zoning ? ` Zoning: ${selectedPoint.zoning.label}.` : ''}${selectedPoint.scores ? ` Suitability: ${Object.entries(USE_LABELS).filter(([k]) => selectedPoint.scores[k]).map(([k, l]) => `${l} ${selectedPoint.scores[k].pct}%`).join(', ')}.` : ''}`.slice(0, 255)
-      : nearestBarangay
-      ? `Barangay ${nearestBarangay}, Panabo City.`
-      : 'Panabo City map view';
-
-    try {
-      const res = await fetch('/api/chatbot', {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: text, context: { selection } }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || 'Error');
-      setMessages(m => m.filter(x => x.content !== 'Thinking...').concat({ role: 'assistant', content: data.answer || 'No response.' }));
-    } catch (err) {
-      const reason = err instanceof Error && err.message !== 'Error' ? err.message : 'Could not reach the AI. Try again.';
-      setMessages(m => m.filter(x => x.content !== 'Thinking...').concat({ role: 'assistant', content: reason }));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div style={{ position: 'absolute', bottom: 16, right: rightOffset, zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, transition: 'right 0.25s ease' }}>
-      {open && (
-        <Card style={{ width: 340, maxWidth: 'calc(100vw - 32px)', height: 400, display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 7, background: 'hsl(var(--foreground) / 0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="bot" size={14}/>
-              </div>
-              {/* Layers panel – left; anchored from bottom so legends stay visible */}
-            </div>
-            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', padding: 4, borderRadius: 5, display: 'flex' }}>
-              <Icon name="x" size={14}/>
-            </button>
-          </div>
-
-          {nearestBarangay && (
-            <div style={{ padding: '5px 14px', borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--muted))', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Icon name="pin" size={11} style={{ color: 'hsl(var(--muted-foreground))' }}/>
-              <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Viewing:</span>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>
-                {nearestBarangay}
-              </span>
-            </div>
-          )}
-
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 10, display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6, alignItems: 'flex-start' }}>
-                {m.role === 'assistant' && (
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: 'hsl(var(--foreground) / 0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <Icon name="bot" size={12}/>
-                  </div>
-                )}
-                <div style={{
-                  maxWidth: '82%', padding: '7px 11px',
-                  borderRadius: m.role === 'user' ? '10px 10px 3px 10px' : '10px 10px 10px 3px',
-                  background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
-                  color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
-                  fontSize: 12.5, lineHeight: 1.5,
-                }}>
-                  {m.content === 'Thinking...' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '2px 0' }}>
-                      {[0, 180, 360].map(d => (
-                        <span key={d} style={{
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: 'hsl(var(--muted-foreground))',
-                          display: 'inline-block',
-                          animation: `bounce 1.5s ${d}ms ease-in-out infinite`,
-                        }}/>
-                      ))}
-                    </div>
-                  ) : m.content}
-                </div>
-              </div>
-            ))}
-            <div ref={bottomRef}/>
-          </div>
-
-          {/* Dynamic quick prompts */}
-          <div style={{ padding: '5px 8px', borderTop: '1px solid hsl(var(--border) / 0.5)', display: 'flex', gap: 4, overflowX: 'auto', flexWrap: 'nowrap' }}>
-            {bubblePrompts.map((p, i) => (
-              <button
-                key={i}
-                onClick={() => { if (!loading) { setInput(p); } }}
-                disabled={loading}
-                style={{
-                  flexShrink: 0, fontSize: 10.5, padding: '3px 9px',
-                  borderRadius: 6, border: '1px solid hsl(var(--border))',
-                  background: 'hsl(var(--muted))', color: 'hsl(var(--foreground))',
-                  cursor: loading ? 'default' : 'pointer', whiteSpace: 'nowrap',
-                  opacity: loading ? 0.5 : 1,
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'hsl(var(--foreground) / 0.35)'; e.currentTarget.style.background = 'hsl(var(--accent))'; }}}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'hsl(var(--border))'; e.currentTarget.style.background = 'hsl(var(--muted))'; }}
-              >{p}</button>
-            ))}
-          </div>
-
-          <div style={{ padding: '8px 10px', borderTop: '1px solid hsl(var(--border))', display: 'flex', gap: 6 }}>
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void send(); } }}
-              placeholder={
-                nearestBarangay ? `Ask about ${nearestBarangay}…` :
-                'Ask about this location…'
-              }
-              className="input"
-              style={{ flex: 1, height: 36, fontSize: 12.5, padding: '0 10px' }}
-            />
-            <Btn variant="brand" sz="sm" icon="send" disabled={loading || !input.trim()} onClick={send}/>
-          </div>
-        </Card>
-      )}
-
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: 48, height: 48, borderRadius: '50%',
-          background: 'hsl(var(--foreground))',
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: 'var(--shadow-float)',
-          transition: 'background 0.15s, transform 0.15s',
-          color: 'hsl(var(--background))',
-        }}
-        title={open ? 'Close AI Chat' : 'Ask AI about the map'}
-      >
-        <Icon name={open ? 'x' : 'messageSquare'} size={20}/>
-      </button>
-    </div>
-  );
-}
 
 // Raster basemaps drawn under the TerraSpec layers. "carto" shows the default vector style only.
 const BASEMAPS = {
@@ -399,7 +203,6 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
   const [hiddenFlood, setHiddenFlood] = useState(new Set());
   function toggleFlood(level) { setHiddenFlood(prev => { const n = new Set(prev); n.has(level) ? n.delete(level) : n.add(level); return n; }); }
   const [selectedPoint, setSelectedPoint]     = useState(null);
-  const [nearestBarangay, setNearestBarangay] = useState(null);
 
   // Barangay names and boundaries on top of the map (on by default, remembered per browser)
   const [showBarangays, setShowBarangays] = useState(() => {
@@ -551,7 +354,6 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
     const scores = summaryRef.current.find(z => z.unit_name === barangay)?.scores ?? null;
 
     setSelectedPoint({ coords: [lng, lat], barangay, zoning, scores, site });
-    setNearestBarangay(barangay);
     if (setMapContext && barangay) {
       setMapContext(buildMapContext(barangay, zoning, summaryRef.current));
     }
@@ -887,9 +689,6 @@ export function MapScreen({ go, barangay, search, setSearch, highlightZones = []
           <Icon name="info" size={11}/>&nbsp;Lat 7.3088° · Lng 125.6841° · 1:8,000
         </Badge>
       </div>
-
-      {/* AI Chat bubble */}
-      <MapChatBubble selectedPoint={selectedPoint} nearestBarangay={nearestBarangay} rightOffset={16}/>
     </div>
   );
 }
